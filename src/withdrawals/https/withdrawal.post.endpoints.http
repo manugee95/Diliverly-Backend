@@ -1,0 +1,7 @@
+POST http://localhost:3000/withdrawals/request 
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwicm9sZSI6ImFnZW50IiwiaWF0IjoxNzY1MDE0OTY3LCJleHAiOjE3NjUwMTg1NjcsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.VmLL8tyvBMeL7_-1ig-XW92nXwmAiPNWB2I7O4qkTH0
+
+{
+    "amount": 150
+}

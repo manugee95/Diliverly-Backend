@@ -1,0 +1,20 @@
+PATCH http://localhost:3000/agent/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiaWF0IjoxNzY3NzA3MjMxLCJleHAiOjE3Njc3MTA4MzEsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.5wJj1UvAvuDI3A1vgL_kSTkEYtZRzcmu8DDMrnGuSl8
+Content-Type: application/json
+
+{
+    "businessName": "Benson Logistics",
+    "address": "123 Uniben school gate road, Benin city",
+    "bio": "Experienced agent specializing in deliveries in the southern part of Nigeria",
+    "statesCovered": ["imo", "edo", "delta"]
+}
+
+
+PATCH http://localhost:3000/agent-bank-account/4 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwicm9sZSI6ImFnZW50IiwiaWF0IjoxNzYwMTI4NDI3LCJleHAiOjE3NjAxMzIwMjcsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.fpLQkuXo9kwj7PWUXYKHFVd19H3tVoFcfQhyFN5WEpg
+Content-Type: application/json
+
+{
+    "bankCode": "999991",
+    "accountNumber": "9030381626"
+}

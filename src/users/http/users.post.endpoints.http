@@ -1,0 +1,20 @@
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+    "firstName": "Cole",
+    "lastName": "Palmer",
+    "email": "lydiamcgill22@gmail.com",
+    "phone": "09090909009",
+    "password": "securePassword@123",
+    "role": "agent"
+}
+
+
+POST http://localhost:3000/users/verify-email
+Content-Type: application/json
+
+{
+    "email": "lydiamcgill22@gmail.com",
+    "code": "708663"
+}

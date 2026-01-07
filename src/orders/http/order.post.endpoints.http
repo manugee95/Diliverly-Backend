@@ -1,0 +1,51 @@
+POST http://localhost:3000/orders 
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAsImVtYWlsIjoibWFudWVsZ2VldGVjaEBnbWFpbC5jb20iLCJyb2xlIjoidmVuZG9yIiwiaWF0IjoxNzY0ODcyNDg0LCJleHAiOjE3NjQ4NzYwODQsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.Mgh35C30I2n9Jy206t96A7S0232_OsPQwEPVeGrf6tI
+
+{
+    "paymentReference": "wy32tvrz7f",
+    "items": [
+        {
+            "itemName": "Wireless Mouse",
+            "quantity": 2,
+            "buyerName": "John Doe",
+            "buyerPhone": "+1234567890"
+        },
+        {
+            "itemName": "Keyboard",
+            "quantity": 1,
+            "buyerName": "Jane Smith",
+            "buyerPhone": "+0987654321",
+            "codAmount": 20000
+        }
+    ]
+}
+
+POST http://localhost:3000/orders/mark-delivered
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwicm9sZSI6ImFnZW50IiwiaWF0IjoxNzY0ODczNTI2LCJleHAiOjE3NjQ4NzcxMjYsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.4RegDsUUwSLYHAyTJu9QXSoW33qJm9c_MYyPzGm91ng
+
+{
+    "orderItemId": 32,
+    "deliveryPin": "9566"
+    // "paymentReceiptUrl": "http://aws.google.com"
+}
+
+
+POST http://localhost:3000/orders/vendor-decision
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAsImVtYWlsIjoibWFudWVsZ2VldGVjaEBnbWFpbC5jb20iLCJyb2xlIjoidmVuZG9yIiwiaWF0IjoxNzY0ODU2NDY1LCJleHAiOjE3NjQ4NjAwNjUsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.gryHUW_fvP_fkBZBpyJSWth8iPJ-pmIED9Y-jRmiwvQ
+
+{
+    "orderItemId": 30,
+    "approve": true
+}
+
+
+POST http://localhost:3000/orders/cancel-order-item
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwicm9sZSI6ImFnZW50IiwiaWF0IjoxNzY0ODczNTI2LCJleHAiOjE3NjQ4NzcxMjYsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.4RegDsUUwSLYHAyTJu9QXSoW33qJm9c_MYyPzGm91ng
+
+{
+    "orderItemId": 33
+}

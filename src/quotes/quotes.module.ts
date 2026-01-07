@@ -1,0 +1,34 @@
+import { Module } from '@nestjs/common';
+import { QuotesController } from './quotes.controller';
+import { QuotesService } from './providers/quotes.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Quote } from './entities/quote.entity';
+import { DeliveryCost } from './entities/deliveryCost.entity';
+import { DeliveryRequestsModule } from 'src/delivery-requests/delivery-requests.module';
+import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
+import { AgentModule } from 'src/agent/agent.module';
+import { Agent } from 'src/agent/entities/agent.entity';
+import { VendorModule } from 'src/vendor/vendor.module';
+import { Vendor } from 'src/vendor/vendor.entity';
+import { CacheModule } from '@nestjs/cache-manager';
+import { PaginationModule } from 'src/common/pagination/pagination.module';
+
+@Module({
+  controllers: [QuotesController],
+  providers: [QuotesService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Quote,
+      DeliveryCost,
+      DeliveryRequest,
+      Agent,
+      Vendor,
+    ]),
+    DeliveryRequestsModule,
+    AgentModule,
+    VendorModule,
+    PaginationModule,
+    CacheModule.register()
+  ],
+})
+export class QuotesModule {}

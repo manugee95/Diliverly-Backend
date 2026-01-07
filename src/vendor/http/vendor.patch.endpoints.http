@@ -1,0 +1,8 @@
+PATCH http://localhost:3000/vendor/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiZW1haWwiOiJtYW51Z2VldGVjaEBnbWFpbC5jb20iLCJyb2xlIjoidmVuZG9yIiwiaWF0IjoxNzYxNjUyNDAxLCJleHAiOjE3NjE2NTYwMDEsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.IbunXHeAROEhkQ0YQ62FPdXDL4H5NtMk8WTo8WJ8ZQI
+
+{
+    "businessName": "Highcrown Digital Hub",
+    "address": "15, Adeola Odeku Street, Victoria Island, Lagos"
+}

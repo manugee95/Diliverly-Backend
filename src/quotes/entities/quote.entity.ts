@@ -1,0 +1,43 @@
+import { Agent } from 'src/agent/entities/agent.entity';
+import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { QuoteStatus } from '../enums/quoteStatus.enum';
+import { DeliveryCost } from './deliveryCost.entity';
+
+@Entity('quote')
+export class Quote {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Agent, (agent) => agent.quotes, { nullable: false })
+  agent: Agent;
+
+  @ManyToOne(() => DeliveryRequest, (request) => request.quotes, {
+    nullable: false,
+  })
+  request: DeliveryRequest;
+
+  @OneToMany(() => DeliveryCost, (dq) => dq.quote, { cascade: true })
+  deliveryCost: DeliveryCost[];
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  subtotal: number;
+
+  @Column({ type: 'enum', enum: QuoteStatus, default: QuoteStatus.PENDING })
+  status: QuoteStatus;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+

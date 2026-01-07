@@ -1,0 +1,8 @@
+POST http://localhost:3000/vendor/create-profile 
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTAsImVtYWlsIjoibWFudWVsZ2VldGVjaEBnbWFpbC5jb20iLCJyb2xlIjoidmVuZG9yIiwiaWF0IjoxNzYzMzc0MTgxLCJleHAiOjE3NjMzNzc3ODEsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.Gx4I3gxn7uWPGhYV8ZsUjeaDCuMRchAHxSzY9NAWnn8
+
+{
+  "businessName": "Heaven Gate logistics",
+  "address": "Airport road, calabar bypass inter junction"
+}

@@ -1,0 +1,7 @@
+PATCH http://localhost:3000/users/me
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiaWF0IjoxNzY3NzA3MjMxLCJleHAiOjE3Njc3MTA4MzEsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.5wJj1UvAvuDI3A1vgL_kSTkEYtZRzcmu8DDMrnGuSl8
+{
+    "firstName": "Ademola",
+    "lastName": "LookMan"
+}
