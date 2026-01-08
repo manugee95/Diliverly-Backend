@@ -43,16 +43,34 @@ const ENV = process.env.NODE_ENV;
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        autoLoadEntities: true, // Set to true for development, false for production
-        synchronize: true, // Set to true for development, false for production
-        port: configService.get('database.port'),
-        username: configService.get('database.user'),
-        password: configService.get('database.password'),
-        host: configService.get('database.host'),
-        database: configService.get('database.name'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProd = configService.get<boolean>('appConfig.isProduction');
+
+        return {
+          type: 'postgres',
+          autoLoadEntities: true,
+          synchronize: !isProd,
+          logging: !isProd,
+
+          host: configService.get('database.host'),
+          port: configService.get<number>('database.port'),
+          username: configService.get('database.user'),
+          password: configService.get('database.password'),
+          database: configService.get('database.name'),
+
+          extra: {
+            max: 10,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000,
+            keepAlive: true,
+          },
+
+          retryAttempts: 5,
+          retryDelay: 3000,
+
+          ssl: isProd ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
     UsersModule,
     PaginationModule,

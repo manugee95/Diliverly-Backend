@@ -26,7 +26,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('DILIVERLY API')
     .setDescription('Use the base API URL as https://diliverly-backend.onrender.com')
-    .addServer('http://localhost:3000', 'https://diliverly-backend.onrender.com')
+    .addServer('https://diliverly-backend.onrender.com')
     .setVersion('1.0')
     .build();
 
