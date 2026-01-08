@@ -51,7 +51,7 @@ const ENV = process.env.NODE_ENV;
           type: 'postgres',
           autoLoadEntities: true,
           synchronize: !isProd,
-          logging: !isProd,
+          logging: false,
 
           host: configService.get('database.host'),
           port: configService.get<number>('database.port'),
