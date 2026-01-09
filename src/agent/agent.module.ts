@@ -2,7 +2,6 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AgentService } from './providers/agent.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentController } from './agent.controller';
-import { AgentKycController } from './controllers/agent_kyc.controller';
 import { UsersModule } from 'src/users/users.module';
 import { User } from 'src/users/user.entity';
 import { YouverifyProvider } from './providers/youverify.provider';
@@ -14,7 +13,6 @@ import { Agent } from './agent.entity';
 @Module({
   controllers: [
     AgentController,
-    AgentKycController
   ],
   providers: [
     AgentService,

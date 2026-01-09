@@ -32,8 +32,7 @@ export class AgentService {
      * Inject Pagination Provider
      */
     private readonly paginationProvider: PaginationProvider,
-  ) { }
-
+  ) {}
 
   /**
    * Method to get agent profile by user ID
@@ -41,7 +40,6 @@ export class AgentService {
   async getAgentProfile(userId: number): Promise<Agent> {
     const agent = await this.agentRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['kyc', 'bank_account'],
     });
     if (!agent) throw new NotFoundException('Agent profile not found');
     return agent;
@@ -59,7 +57,6 @@ export class AgentService {
       try {
         agent = await this.agentRepository.findOne({
           where: { id: agentId },
-          relations: ['kyc', 'bank_account'],
         });
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -96,12 +93,7 @@ export class AgentService {
     userId: number,
     dto: CreateAgentDto,
   ): Promise<Agent> {
-    const {
-      businessName,
-      address,
-      bio,
-      statesCovered,
-    } = dto;
+    const { businessName, address, bio, statesCovered } = dto;
 
     // Ensure user exists & is an agent
     const user = await this.userRepository.findOne({
@@ -135,5 +127,4 @@ export class AgentService {
 
     return await this.agentRepository.save(agent);
   }
-
 }
