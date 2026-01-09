@@ -26,6 +26,9 @@ export class ReviewsController {
     private readonly reviewsService: ReviewsService,
   ) {}
 
+  /**
+   * Endpoint to rate an agent for a specific order
+   */
   @ApiOperation({
     summary: 'Rate an agent for a specific order',
   })
@@ -51,6 +54,9 @@ export class ReviewsController {
     return this.reviewsService.rateAgent(userId, orderId, dto);
   }
 
+  /**
+   * Endpoint to get reviews for a specific agent
+   */
   @ApiOperation({
     summary: 'Get reviews for a specific agent',
   })

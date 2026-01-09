@@ -95,7 +95,6 @@ export class DeliveryRequestsController {
     description: 'The Delivery Request Id',
     example: 5,
   })
-  @UseGuards(AgentGuard)
   @Get('/:requestId')
   public async getRequestInfo(
     @Req() req,

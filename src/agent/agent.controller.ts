@@ -9,9 +9,9 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AgentService } from '../providers/agent.service';
-import { CreateAgentDto } from '../dtos/create-agent.dto';
-import { GetAgentsDto } from '../dtos/get-agents.dto';
+import { AgentService } from './providers/agent.service';
+import { CreateAgentDto } from './dtos/create-agent.dto';
+import { GetAgentsDto } from './dtos/get-agents.dto';
 import { AuthenticationGuard } from 'src/auth/guards/authentication/authentication.guard';
 import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';

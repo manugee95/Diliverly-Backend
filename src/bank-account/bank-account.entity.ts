@@ -1,3 +1,4 @@
+import { User } from 'src/users/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,15 +7,16 @@ import {
   UpdateDateColumn,
   OneToOne,
 } from 'typeorm';
-import { Agent } from './agent.entity';
 
 @Entity()
-export class Agent_Bank_Account {
+export class Bank_Account {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Agent, (agent) => agent.bank_account, { onDelete: 'SET NULL' })
-  agent: Agent;
+  @OneToOne(() => User, (user) => user.bank_account, {
+    onDelete: 'SET NULL',
+  })
+  user: User;
 
   @Column({ nullable: true })
   bankName?: string;

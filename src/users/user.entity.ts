@@ -7,12 +7,13 @@ import {
   UpdateDateColumn,
   OneToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { UserStatus } from './enums/userStatus.enum';
-import { UserRole } from './enums/userRole.enum';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { Transaction } from 'src/transactions/transaction.entity';
+import { Bank_Account } from 'src/bank-account/bank-account.entity';
+import { Agent } from 'src/agent/agent.entity';
 
 @Entity()
 export class User {
@@ -58,6 +59,12 @@ export class User {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   walletBalance: number;
+
+  @OneToOne(() => Bank_Account, (bank_account) => bank_account.user, {
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn()
+  bank_account: Bank_Account;
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];

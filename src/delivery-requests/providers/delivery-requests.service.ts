@@ -12,7 +12,6 @@ import { Delivery } from '../entities/delivery.entity';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { CreateDeliveryRequestDto } from '../dtos/create-delivery-request.dto';
 import { RequestStatus } from '../enums/requestStatus.enum';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { GetDeliveryRequestsDto } from '../dtos/get-delivery-requests.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
@@ -20,6 +19,7 @@ import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from 'src/common/providers/cache.service';
 import { CacheTTL } from 'src/common/cache/cacheTTL';
+import { Agent } from 'src/agent/agent.entity';
 
 @Injectable()
 export class DeliveryRequestService {

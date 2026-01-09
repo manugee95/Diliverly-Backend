@@ -10,11 +10,11 @@ import { Repository } from 'typeorm';
 import { Review } from '../review.entity';
 import { RateAgentDto } from '../dtos/rate-agent.dto';
 import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { GetReviewsDto } from '../dtos/get-review.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { Agent } from 'src/agent/agent.entity';
 
 @Injectable()
 export class ReviewsService {

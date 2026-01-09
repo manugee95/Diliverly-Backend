@@ -4,14 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import axios from 'axios';
 import { User } from 'src/users/user.entity';
-import { Agent } from 'src/agent/entities/agent.entity';
-import { Agent_Bank_Account } from 'src/agent/entities/agent_bank_account.entity';
 import { TransactionsService } from 'src/transactions/providers/transactions.service';
 import { TransactionType } from 'src/transactions/enums/transactionType.enum';
 import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
 import { Transaction } from 'src/transactions/transaction.entity';
 import { ConfigService } from '@nestjs/config';
 import { ReferenceProvider } from 'src/common/reference/reference.provider';
+import { Agent } from 'src/agent/agent.entity';
+import { Bank_Account } from 'src/bank-account/bank-account.entity';
 
 @Injectable()
 export class PayoutService {
@@ -56,45 +56,44 @@ export class PayoutService {
    * Run auto payout daily
    */
   @Cron(CronExpression.MONDAY_TO_FRIDAY_AT_7AM)
-  async autoPayoutAgents() {
-    this.logger.log('Running Auto Payout Job...');
+  // async autoPayoutAgents() {
+  //   this.logger.log('Running Auto Payout Job...');
 
-    const agents = await this.agentRepo.find({
-      relations: ['user', 'bank_account'],
-      where: {
-        user: {
-          walletBalance: MoreThan(0),
-        },
-      },
-    });
+  //   const agents = await this.agentRepo.find({
+  //     relations: ['user', 'bank_account'],
+  //     where: {
+  //       user: {
+  //         walletBalance: MoreThan(0),
+  //       },
+  //     },
+  //   });
 
-    if (!agents.length) {
-      this.logger.log('No agents eligible for auto payout');
-      return;
-    }
+  //   if (!agents.length) {
+  //     this.logger.log('No agents eligible for auto payout');
+  //     return;
+  //   }
 
-    for (const agent of agents) {
-      try {
-        await this.processPayout(agent);
-      } catch (err) {
-        this.logger.error(
-          `Payout failed for Agent ${agent.id}: ${err.message}`,
-        );
-      }
-    }
-  }
+  //   for (const agent of agents) {
+  //     try {
+  //       await this.processPayout(agent);
+  //     } catch (err) {
+  //       this.logger.error(
+  //         `Payout failed for Agent ${agent.id}: ${err.message}`,
+  //       );
+  //     }
+  //   }
+  // }
 
   /**
    * Handle payout for one agent
    */
-  async processPayout(agent: Agent) {
-    const user = agent.user;
+  async processPayout(user: User) {
 
     if (user.walletBalance <= 0) {
       throw new BadRequestException('No available wallet balance');
     }
 
-    const bank = agent.bank_account;
+    const bank = user.bank_account;
 
     if (!bank || !bank.accountNumber || !bank.bankCode) {
       throw new BadRequestException('Agent bank account incomplete');
@@ -133,7 +132,7 @@ export class PayoutService {
    * Send money to Paystack
    */
   private async sendToPaystack(
-    bank: Agent_Bank_Account,
+    bank: Bank_Account,
     amount: number,
     transactionId: number,
   ) {

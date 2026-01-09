@@ -7,11 +7,11 @@ import { DeliveryCost } from './entities/deliveryCost.entity';
 import { DeliveryRequestsModule } from 'src/delivery-requests/delivery-requests.module';
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
 import { AgentModule } from 'src/agent/agent.module';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { VendorModule } from 'src/vendor/vendor.module';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
+import { Agent } from 'src/agent/agent.entity';
 
 @Module({
   controllers: [QuotesController],

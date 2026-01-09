@@ -15,7 +15,6 @@ import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
 import { Order } from '../entities/order.entity';
 import { OrderItem } from '../entities/orderItem.entity';
 import { DataSource } from 'typeorm';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from 'src/common/providers/cache.service';
 import { CacheTTL } from 'src/common/cache/cacheTTL';
@@ -32,6 +31,7 @@ import { TransactionType } from 'src/transactions/enums/transactionType.enum';
 import { TransactionsService } from 'src/transactions/providers/transactions.service';
 import { ReferenceProvider } from 'src/common/reference/reference.provider';
 import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
+import { Agent } from 'src/agent/agent.entity';
 
 @Injectable()
 export class OrdersService {

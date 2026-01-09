@@ -9,9 +9,6 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { KYCStatus } from '../enums/kycStatus.enum';
-import { Agent_KYC } from './agent_kyc.entity';
-import { Agent_Bank_Account } from './agent_bank_account.entity';
 import { Quote } from 'src/quotes/entities/quote.entity';
 import { Review } from 'src/reviews/review.entity';
 import { OrderItem } from 'src/orders/entities/orderItem.entity';
@@ -45,13 +42,6 @@ export class Agent {
   @Column('simple-array', { nullable: true })
   statesCovered?: string[];
 
-  @Column({
-    type: 'enum',
-    enum: KYCStatus,
-    default: KYCStatus.PENDING,
-  })
-  kycStatus: KYCStatus;
-
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
   rating_avg: number;
 
@@ -63,16 +53,6 @@ export class Agent {
 
   @Column({ default: false })
   isVerified: boolean;
-
-  @OneToOne(() => Agent_KYC, (kyc) => kyc.agent)
-  @JoinColumn()
-  kyc: Agent_KYC;
-
-  @OneToOne(() => Agent_Bank_Account, (bank_account) => bank_account.agent, {
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn()
-  bank_account: Agent_Bank_Account;
 
   @OneToMany(() => Quote, (quote) => quote.agent)
   quotes: Quote[];

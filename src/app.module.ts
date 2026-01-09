@@ -30,6 +30,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ReferenceModule } from './common/reference/reference.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { HealthModule } from './health/health.module';
+import { BankAccountModule } from './bank-account/bank-account.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -92,6 +93,7 @@ const ENV = process.env.NODE_ENV;
     ReferenceModule,
     WithdrawalsModule,
     HealthModule,
+    BankAccountModule,
   ],
   controllers: [AppController],
   providers: [

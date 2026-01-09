@@ -11,7 +11,6 @@ import { AuthService } from './providers/auth.service';
 import { Auth } from './decorators/auth.decorator';
 import { AuthType } from './enums/auth-type.enum';
 import { SignInDto } from './dtos/signin.dto';
-import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import { VerifyResetCodeDto } from './dtos/verify-reset-code.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';

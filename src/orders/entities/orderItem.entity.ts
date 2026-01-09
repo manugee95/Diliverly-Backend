@@ -10,7 +10,7 @@ import { Order } from './order.entity';
 import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
 import { DeliveryType } from 'src/delivery-requests/enums/deliveryType.enum';
 import { OrderStatus } from '../enums/orderStatus.enum';
-import { Agent } from 'src/agent/entities/agent.entity';
+import { Agent } from 'src/agent/agent.entity';
 
 @Entity()
 export class OrderItem {

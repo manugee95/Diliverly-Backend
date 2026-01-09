@@ -1,4 +1,3 @@
-import { Agent } from 'src/agent/entities/agent.entity';
 import { User } from 'src/users/user.entity';
 import {
   Entity,
@@ -17,8 +16,8 @@ export class Withdrawal {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Agent, { eager: true })
-  agent: Agent;
+  @ManyToOne(() => User, { eager: true })
+  user: User;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount: number;

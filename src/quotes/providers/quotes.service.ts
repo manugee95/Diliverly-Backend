@@ -10,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { CreateQuoteDto } from '../dtos/create-quote.dto';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { QuoteStatus } from '../enums/quoteStatus.enum';
@@ -19,6 +18,7 @@ import { CacheService } from 'src/common/providers/cache.service';
 import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { GetQuoteDto } from '../dtos/get-quote.dto';
+import { Agent } from 'src/agent/agent.entity';
 
 @Injectable()
 export class QuotesService {

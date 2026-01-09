@@ -26,9 +26,9 @@ import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { DataSource } from 'typeorm';
 import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
 import { UserRole } from '../enums/userRole.enum';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { Response } from 'express';
+import { Agent } from 'src/agent/agent.entity';
 
 @Injectable()
 export class UsersService {

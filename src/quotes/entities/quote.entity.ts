@@ -1,4 +1,3 @@
-import { Agent } from 'src/agent/entities/agent.entity';
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
 import {
   Entity,
@@ -11,6 +10,7 @@ import {
 } from 'typeorm';
 import { QuoteStatus } from '../enums/quoteStatus.enum';
 import { DeliveryCost } from './deliveryCost.entity';
+import { Agent } from 'src/agent/agent.entity';
 
 @Entity('quote')
 export class Quote {

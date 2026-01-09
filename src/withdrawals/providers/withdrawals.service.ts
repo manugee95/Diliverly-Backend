@@ -7,7 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Withdrawal } from '../withdrawal.entity';
 import { Repository, DataSource } from 'typeorm';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { User } from 'src/users/user.entity';
 import { TransactionsService } from 'src/transactions/providers/transactions.service';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +16,7 @@ import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum
 import axios from 'axios';
 import { ReferenceProvider } from 'src/common/reference/reference.provider';
 import * as crypto from 'crypto';
+import { Agent } from 'src/agent/agent.entity';
 
 @Injectable()
 export class WithdrawalsService {
@@ -61,16 +61,15 @@ export class WithdrawalsService {
   ) {}
 
   async manualWithdrawal(userId: number, amount: number) {
-    const agent = await this.agentRepo.findOne({
-      where: { user: { id: userId } },
-      relations: ['user', 'bank_account'],
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['bank_account'],
     });
 
-    if (!agent) throw new NotFoundException('Agent not found');
-    if (!agent.bank_account)
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.bank_account)
       throw new BadRequestException('Bank account is required');
 
-    const user = agent.user;
     if (Number(user.walletBalance) < amount) {
       throw new BadRequestException('Insufficient wallet balance');
     }
@@ -79,13 +78,13 @@ export class WithdrawalsService {
       const userRepo = manager.getRepository(User);
       const withdrawalRepo = manager.getRepository(Withdrawal);
 
-      // Deduct wallet
+      // 1. Deduct wallet balance
       user.walletBalance = Number(user.walletBalance) - amount;
       await userRepo.save(user);
 
-      // Create withdrawal
+      // 2. Create withdrawal record
       const withdrawal = withdrawalRepo.create({
-        agent,
+        user,
         amount,
         reference: `WD-${Date.now()}`,
         status: WithdrawalStatus.PROCESSING,
@@ -93,13 +92,13 @@ export class WithdrawalsService {
 
       const savedWithdrawal = await withdrawalRepo.save(withdrawal);
 
-      // Transaction Record
+      // 3. Log transaction
       await this.transactionService.logTransaction(
         {
           user,
           type: TransactionType.WITHDRAWAL,
           amount,
-          description: `Withdrawal to bank account (${agent.bank_account.accountNumber} ${agent.bank_account.bankName})`,
+          description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
           reference: this.reference.generateTransactionRef(),
           status: TransactionStatus.PENDING,
           withdrawal: savedWithdrawal,
@@ -107,11 +106,11 @@ export class WithdrawalsService {
         manager,
       );
 
-      // Paystack Transfer
+      // 4. Initiate Paystack transfer
       const transfer = await this.processPaystackTransfer(
-        agent,
+        user,
         amount,
-        withdrawal.reference,
+        savedWithdrawal.reference,
       );
 
       savedWithdrawal.paystackTransferCode = transfer.transferCode;
@@ -127,19 +126,21 @@ export class WithdrawalsService {
   }
 
   private async processPaystackTransfer(
-    agent: Agent,
+    user: User,
     amount: number,
     reference: string,
   ) {
-    // Create transfer recipient
+    const bank = user.bank_account;
+
     try {
-      const response = await axios.post(
+      // Create transfer recipient
+      const recipientRes = await axios.post(
         'https://api.paystack.co/transferrecipient',
         {
           type: 'nuban',
-          name: agent.bank_account.accountName,
-          account_number: agent.bank_account.accountNumber,
-          bank_code: agent.bank_account.bankCode,
+          name: bank.accountName,
+          account_number: bank.accountNumber,
+          bank_code: bank.bankCode,
           currency: 'NGN',
         },
         {
@@ -149,10 +150,10 @@ export class WithdrawalsService {
         },
       );
 
-      const recipientCode = response.data.data.recipient_code;
+      const recipientCode = recipientRes.data.data.recipient_code;
 
       // Initiate transfer
-      const transfer = await axios.post(
+      const transferRes = await axios.post(
         'https://api.paystack.co/transfer',
         {
           recipient: recipientCode,
@@ -168,10 +169,12 @@ export class WithdrawalsService {
         },
       );
 
-      return { transferCode: transfer.data.data.transfer_code };
+      return {
+        transferCode: transferRes.data.data.transfer_code,
+      };
     } catch (error) {
-      console.log('PAYSTACK ERROR:', error.response?.data);
-      throw error;
+      console.error('PAYSTACK ERROR:', error.response?.data || error.message);
+      throw new BadRequestException('Transfer initiation failed');
     }
   }
 
@@ -238,8 +241,8 @@ export class WithdrawalsService {
     await this.withdrawalRepo.save(withdrawal);
 
     // Refund wallet
-    withdrawal.agent.user.walletBalance += withdrawal.amount;
-    await this.userRepo.save(withdrawal.agent.user);
+    withdrawal.user.walletBalance += withdrawal.amount;
+    await this.userRepo.save(withdrawal.user);
 
     // Update transaction status
     await this.transactionService.updateTransaction(data.reference, {
@@ -253,8 +256,8 @@ export class WithdrawalsService {
     await this.withdrawalRepo.save(withdrawal);
 
     // Refund wallet
-    withdrawal.agent.user.walletBalance += withdrawal.amount;
-    await this.userRepo.save(withdrawal.agent.user);
+    withdrawal.user.walletBalance += withdrawal.amount;
+    await this.userRepo.save(withdrawal.user);
 
     // Update transaction status
     await this.transactionService.updateTransaction(data.reference, {

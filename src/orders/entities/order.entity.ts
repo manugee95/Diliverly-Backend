@@ -11,7 +11,6 @@ import { Vendor } from 'src/vendor/vendor.entity';
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
 import { OrderStatus } from '../enums/orderStatus.enum';
 import { OrderItem } from './orderItem.entity';
-import Joi from 'joi';
 import { Review } from 'src/reviews/review.entity';
 
 @Entity()

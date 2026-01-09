@@ -6,10 +6,10 @@ import { DeliveryRequest } from './entities/delivery-request.entity';
 import { Delivery } from './entities/delivery.entity';
 import { VendorModule } from 'src/vendor/vendor.module';
 import { Vendor } from 'src/vendor/vendor.entity';
-import { Agent } from 'src/agent/entities/agent.entity';
 import { AgentModule } from 'src/agent/agent.module';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { Agent } from 'src/agent/agent.entity';
 
 @Module({
   controllers: [DeliveryRequestsController],

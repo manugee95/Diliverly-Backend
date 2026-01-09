@@ -1,4 +1,4 @@
-import { Agent } from 'src/agent/entities/agent.entity';
+import { Agent } from 'src/agent/agent.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Vendor } from 'src/vendor/vendor.entity';
 import {
