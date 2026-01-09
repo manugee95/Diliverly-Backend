@@ -65,7 +65,14 @@ export class BankAccountService {
 
       verifiedData = res.data.data;
     } catch (error) {
-      throw new BadRequestException('Bank verification failed');
+      console.error(
+        'PAYSTACK RESOLVE ERROR:',
+        error.response?.data || error.message,
+      );
+
+      throw new BadRequestException(
+        error.response?.data?.message || 'Bank verification failed',
+      );
     }
 
     const { account_name, account_number, bank_id } = verifiedData;
