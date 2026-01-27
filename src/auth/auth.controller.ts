@@ -67,6 +67,8 @@ export class AuthController {
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: tokens.accessTokenTtl * 1000,
       path: '/',
+      domain: process.env.CLIENT_DOMAIN,
+      signed: true
     });
 
     res.cookie('refreshToken', tokens.refreshToken, {
@@ -75,6 +77,8 @@ export class AuthController {
       sameSite: isProduction ? 'none' : 'lax',
       maxAge: tokens.refreshTokenTtl * 1000,
       path: '/',
+      domain: process.env.CLIENT_DOMAIN,
+      signed: true
     });
 
     return {
