@@ -9,16 +9,19 @@ import { VendorModule } from 'src/vendor/vendor.module';
 import { Payment } from './payment.entity';
 import { ReferenceModule } from 'src/common/reference/reference.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
+import { MailerModule } from 'src/mailer/mailer.module';
+import { User } from 'src/users/user.entity';
 
 @Module({
   controllers: [PaymentsController],
   providers: [PaymentsService],
   imports: [
-    TypeOrmModule.forFeature([DeliveryRequest, Vendor, Payment]),
+    TypeOrmModule.forFeature([DeliveryRequest, Vendor, Payment, User]),
     DeliveryRequestsModule,
     VendorModule,
     ReferenceModule,
     TransactionsModule,
+    MailerModule
   ],
 })
 export class PaymentsModule {}

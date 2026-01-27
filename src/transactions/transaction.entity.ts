@@ -11,6 +11,7 @@ import { TransactionType } from './enums/transactionType.enum';
 import { TransactionStatus } from './enums/transactionStatus.enum';
 import { OrderItem } from 'src/orders/entities/orderItem.entity';
 import { Withdrawal } from 'src/withdrawals/withdrawal.entity';
+import { Order } from 'src/orders/entities/order.entity';
 
 @Entity()
 export class Transaction {
@@ -34,6 +35,9 @@ export class Transaction {
 
   @Column({ type: 'enum', enum: TransactionStatus })
   status: TransactionStatus;
+
+  @OneToOne(() => Order, { nullable: true })
+  order: Order;
 
   @ManyToOne(() => OrderItem, { nullable: true })
   orderItem: OrderItem;

@@ -31,13 +31,14 @@ export class TransactionsService {
     private readonly userRepo: Repository<User>,
   ) {}
 
-  // Called internally: logs a transaction (payout/refund/withdraw)
+  // Called internally: logs a transaction 
   async logTransaction(dto: CreateTransactionDto, manager?: EntityManager) {
     const {
       user,
       type,
       amount,
       description,
+      order,
       orderItem,
       reference,
       status,
@@ -50,6 +51,7 @@ export class TransactionsService {
       type,
       amount,
       description,
+      order,
       orderItem,
       status,
       reference,
@@ -130,16 +132,4 @@ export class TransactionsService {
     };
   }
 
-  // Nigerian payout: next business day
-  private calculatePayoutDate(): Date {
-    const now = new Date();
-    let payout = new Date(now);
-    payout.setDate(payout.getDate() + 1); // +24 hours
-
-    // If weekend, move to Monday
-    if (payout.getDay() === 6) payout.setDate(payout.getDate() + 2); // Saturday → Monday
-    if (payout.getDay() === 0) payout.setDate(payout.getDate() + 1); // Sunday → Monday
-
-    return payout;
-  }
 }

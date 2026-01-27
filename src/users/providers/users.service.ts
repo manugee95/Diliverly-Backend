@@ -60,7 +60,7 @@ export class UsersService {
      * Injecting Data Source
      */
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   /**
    * Method to create a new user
@@ -68,7 +68,7 @@ export class UsersService {
   public async createUser(
     createUserDto: CreateUserDto,
   ): Promise<{ message: string }> {
-    const { email, password, role } = createUserDto;
+    const { email, password, role, firstName } = createUserDto;
 
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
@@ -91,21 +91,26 @@ export class UsersService {
     // Store pending user data in cache (expires in 15 mins)
     await this.cacheManager.set(
       `pending_user:${email}`,
-      { ...createUserDto, password: hashedPassword, verificationCode, isAgent, isVendor },
+      {
+        ...createUserDto,
+        password: hashedPassword,
+        verificationCode,
+        isAgent,
+        isVendor,
+      },
       CacheTTL.UserSignup,
     );
 
     // Send verification email
-    await this.mailService.sendMail({
-      to: email,
-      subject: 'Verify your email',
-      html: `
-      <p>Hello ${createUserDto.firstName},</p>
-      <p>Your email verification code is:</p>
-      <h2>${verificationCode}</h2>
-      <p>This code expires in 15 minutes.</p>
-    `,
-    });
+    await this.mailService.sendTemplate(
+      email,
+      'Verify your email',
+      'verify-email',
+      {
+        name: firstName,
+        code: verificationCode,
+      },
+    );
 
     return { message: 'Verification code sent to your email.' };
   }
@@ -149,15 +154,11 @@ export class UsersService {
       await manager.save(createdUser);
 
       if (pendingUser.isAgent) {
-        await manager.save(
-          manager.create(Agent, { user: createdUser }),
-        );
+        await manager.save(manager.create(Agent, { user: createdUser }));
       }
 
       if (pendingUser.isVendor) {
-        await manager.save(
-          manager.create(Vendor, { user: createdUser }),
-        );
+        await manager.save(manager.create(Vendor, { user: createdUser }));
       }
     });
 
@@ -166,7 +167,8 @@ export class UsersService {
     }
 
     // Generate tokens
-    const tokens = await this.generateTokensProvider.generateTokens(createdUser);
+    const tokens =
+      await this.generateTokensProvider.generateTokens(createdUser);
 
     /// Save tokens in cookies
     const isProduction = process.env.NODE_ENV === 'production';
@@ -188,6 +190,17 @@ export class UsersService {
     });
 
     await this.cacheManager.del(`pending_user:${email}`);
+
+    // Send Welcome email
+    await this.mailService.sendTemplate(
+      email,
+      'Welcome to Diliverly 🎉',
+      'welcome',
+      {
+        name: createdUser.firstName,
+        dashboardUrl: "https://google.com", // TODO: Update with actual dashboard URL
+      },
+    );
 
     return {
       message: 'Email verified successfully. Account created.',
@@ -289,23 +302,19 @@ export class UsersService {
   /**
    * Method to update a user
    */
-  public async updateUser(
-  userId: number,
-  dto: UpdateUserDto,
-): Promise<User> {
-  const user = await this.userRepository.findOne({
-    where: { id: userId },
-  });
+  public async updateUser(userId: number, dto: UpdateUserDto): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
 
-  if (!user) {
-    throw new NotFoundException('User not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    Object.assign(user, dto);
+
+    return this.userRepository.save(user);
   }
-
-  Object.assign(user, dto);
-
-  return this.userRepository.save(user);
-}
-
 
   /**
    * Method to delete a user

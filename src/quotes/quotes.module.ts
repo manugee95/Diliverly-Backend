@@ -12,6 +12,7 @@ import { Vendor } from 'src/vendor/vendor.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { Agent } from 'src/agent/agent.entity';
+import { MailerModule } from 'src/mailer/mailer.module';
 
 @Module({
   controllers: [QuotesController],
@@ -28,6 +29,7 @@ import { Agent } from 'src/agent/agent.entity';
     AgentModule,
     VendorModule,
     PaginationModule,
+    MailerModule,
     CacheModule.register()
   ],
 })

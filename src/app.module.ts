@@ -31,6 +31,8 @@ import { ReferenceModule } from './common/reference/reference.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { HealthModule } from './health/health.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
+import { WalletsModule } from './wallets/wallets.module';
+import { EscrowModule } from './escrow/escrow.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -94,6 +96,8 @@ const ENV = process.env.NODE_ENV;
     WithdrawalsModule,
     HealthModule,
     BankAccountModule,
+    WalletsModule,
+    EscrowModule,
   ],
   controllers: [AppController],
   providers: [

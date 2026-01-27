@@ -3,7 +3,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  InsertQueryBuilder,
   ManyToOne,
   OneToMany,
   OneToOne,

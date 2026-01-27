@@ -19,6 +19,7 @@ import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { GetQuoteDto } from '../dtos/get-quote.dto';
 import { Agent } from 'src/agent/agent.entity';
+import { MailerService } from 'src/mailer/providers/mailer.service';
 
 @Injectable()
 export class QuotesService {
@@ -63,57 +64,16 @@ export class QuotesService {
      */
     @Inject(CACHE_MANAGER)
     private cacheManager: CacheService,
+
+    /**
+     * Injecting mail service
+     */
+    private readonly mailService: MailerService,
   ) {}
 
   /**
    * Method to create a quote for a delivery request
    */
-
-  // async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
-  //   const { requestId, deliveryCosts } = dto;
-
-  //   const agent = await this.agentRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!agent) throw new NotFoundException('Agent not found');
-
-  //   const request = await this.deliveryRequestRepo.findOne({
-  //     where: { id: requestId },
-  //     relations: ['deliveries'],
-  //   });
-  //   if (!request) throw new NotFoundException('Delivery request not found');
-
-  //   // Validate deliveries belong to this request
-  //   const validDeliveryIds = request.deliveries.map((d) => d.id);
-  //   for (const { deliveryId } of deliveryCosts) {
-  //     if (!validDeliveryIds.includes(deliveryId)) {
-  //       throw new BadRequestException(
-  //         `Delivery ${deliveryId} does not belong to this request`,
-  //       );
-  //     }
-  //   }
-
-  //   // Calculate subtotal
-  //   const subtotal = deliveryCosts.reduce((sum, d) => sum + Number(d.cost), 0);
-
-  //   // Create Agent Quote
-  //   const quote = this.quoteRepo.create({
-  //     agent,
-  //     request,
-  //     subtotal,
-  //     deliveryCost: deliveryCosts.map((item) => ({
-  //       delivery: { id: item.deliveryId },
-  //       cost: item.cost,
-  //     })),
-  //   });
-
-  //   const savedQuote = await this.quoteRepo.save(quote);
-
-  //   // Return clean response
-  //   return savedQuote;
-  // }
-
   async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
     const { requestId, deliveryCosts } = dto;
 
@@ -241,7 +201,7 @@ export class QuotesService {
   async acceptQuote(userId: number, quoteId: number) {
     const quote = await this.quoteRepo.findOne({
       where: { id: quoteId },
-      relations: ['request', 'request.vendor'],
+      relations: ['request', 'request.vendor', 'agent', 'agent.user'],
     });
 
     if (!quote) throw new BadRequestException('Quote not found');
@@ -261,6 +221,20 @@ export class QuotesService {
         id: Not(quote.id),
       },
       { status: QuoteStatus.DECLINED },
+    );
+
+    // Notify agent by email
+    await this.mailService.sendTemplate(
+      quote.agent.user.email,
+      'Your delivery quote has been accepted',
+      'vendor-accepts-quote',
+      {
+        agentName: quote.agent.businessName || quote.agent.user.firstName,
+        vendorName:
+          quote.request.vendor.businessName ||
+          quote.request.vendor.user.firstName,
+        deliveryTitle: quote.request.title,
+      },
     );
 
     return { message: 'Quote accepted successfully' };

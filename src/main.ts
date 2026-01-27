@@ -7,6 +7,14 @@ import * as express from 'express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // ---- CORS Configuration ----
+  app.enableCors({
+    origin: ['http://localhost:3000'], // add your real frontend domain(s) too
+    credentials: true,                // only if you use cookies/auth
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   //handle raw Paystack webhook body
   app.use('/withdrawals/webhook/paystack', express.raw({ type: '*/*' }));
 

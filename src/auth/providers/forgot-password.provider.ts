@@ -38,16 +38,17 @@ export class ForgotPasswordProvider {
     await this.userRepo.save(user);
 
     // Send email
-    await this.mailService.sendMail({
-      to: email,
-      subject: 'Password Reset Code',
-      html: `
-      <p>Hello ${user.firstName},</p>
-      <p>Your password reset code is:</p>
-      <h2>${resetCode}</h2>
-      <p>This code expires in 10 minutes.</p>
-    `,
-    });
+
+    // await this.mailService.sendMail({
+    //   to: email,
+    //   subject: 'Password Reset Code',
+    //   html: `
+    //   <p>Hello ${user.firstName},</p>
+    //   <p>Your password reset code is:</p>
+    //   <h2>${resetCode}</h2>
+    //   <p>This code expires in 10 minutes.</p>
+    // `,
+    // });
 
     return { message: 'Reset code sent to email.' };
   }
