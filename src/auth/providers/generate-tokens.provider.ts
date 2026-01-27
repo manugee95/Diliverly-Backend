@@ -35,31 +35,6 @@ export class GenerateTokensProvider {
     );
   }
 
-  // public async generateTokens(user: User) {
-  //   const payload: Partial<ActiveUserData> = {
-  //     email: user.email,
-  //     isAgent: user.isAgent,
-  //     isVendor: user.isVendor,
-  //   };
-
-  //   const [accessToken, refreshToken] = await Promise.all([
-  //     // Access token
-  //     this.signToken<Partial<ActiveUserData>>(
-  //       user.id,
-  //       this.jwtConfiguration.accessTokenTtl,
-  //       payload,
-  //     ),
-
-  //     // Refresh token (minimal payload)
-  //     this.signToken(
-  //       user.id,
-  //       this.jwtConfiguration.refreshTokenTtl,
-  //     ),
-  //   ]);
-
-  //   return { accessToken, refreshToken };
-  // }
-
   public async generateTokens(user: User) {
     const payload: Partial<ActiveUserData> = {
       email: user.email,
