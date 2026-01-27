@@ -53,35 +53,36 @@ export class AuthController {
   public async login(
     @Body() signInDto: SignInDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ message: string; accessToken: string }> {
+  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
     const user = await this.authsService.signin(signInDto);
 
     const tokens = await this.generateTokensProvider.generateTokens(user);
 
     // Save tokens in cookies
-    const isProduction = process.env.NODE_ENV === 'production';
+    // const isProduction = process.env.NODE_ENV === 'production';
 
-    res.cookie('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: tokens.accessTokenTtl * 1000,
-      path: '/',
-      domain: process.env.CLIENT_DOMAIN,
-    });
+    // res.cookie('accessToken', tokens.accessToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: isProduction ? 'none' : 'lax',
+    //   maxAge: tokens.accessTokenTtl * 1000,
+    //   path: '/',
+    //   domain: process.env.CLIENT_DOMAIN,
+    // });
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: tokens.refreshTokenTtl * 1000,
-      path: '/',
-      domain: process.env.CLIENT_DOMAIN,
-    });
+    // res.cookie('refreshToken', tokens.refreshToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: isProduction ? 'none' : 'lax',
+    //   maxAge: tokens.refreshTokenTtl * 1000,
+    //   path: '/',
+    //   domain: process.env.CLIENT_DOMAIN,
+    // });
 
     return {
       message: 'Login successful',
       accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 
@@ -98,28 +99,28 @@ export class AuthController {
   public async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ message: string; refreshToken: string }> {
+  ): Promise<{ message: string; refreshToken: string}> {
     const refreshToken = req.cookies?.refreshToken;
 
     const tokens = await this.refreshTokensProvider.refreshTokens(refreshToken);
 
-    const isProduction = process.env.NODE_ENV === 'production';
+    // const isProduction = process.env.NODE_ENV === 'production';
 
-    res.cookie('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: tokens.accessTokenTtl * 1000,
-      path: '/',
-    });
+    // res.cookie('accessToken', tokens.accessToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: 'lax',
+    //   maxAge: tokens.accessTokenTtl * 1000,
+    //   path: '/',
+    // });
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: tokens.refreshTokenTtl * 1000,
-      path: '/',
-    });
+    // res.cookie('refreshToken', tokens.refreshToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: 'lax',
+    //   maxAge: tokens.refreshTokenTtl * 1000,
+    //   path: '/',
+    // });
 
     return {
       message: 'Tokens refreshed successfully',

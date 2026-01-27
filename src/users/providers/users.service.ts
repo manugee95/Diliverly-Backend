@@ -296,7 +296,7 @@ export class UsersService {
   public async verifyEmail(
     dto: VerifyEmailDto,
     res: Response,
-  ): Promise<{ message: string; accessToken: string }> {
+  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
     const { email, code } = dto;
 
     const pendingUser = await this.cacheManager.get<any>(
@@ -346,23 +346,23 @@ export class UsersService {
       await this.generateTokensProvider.generateTokens(createdUser);
 
     /// Save tokens in cookies
-    const isProduction = process.env.NODE_ENV === 'production';
+    // const isProduction = process.env.NODE_ENV === 'production';
 
-    res.cookie('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: tokens.accessTokenTtl * 1000,
-      path: '/',
-    });
+    // res.cookie('accessToken', tokens.accessToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: 'lax',
+    //   maxAge: tokens.accessTokenTtl * 1000,
+    //   path: '/',
+    // });
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: tokens.refreshTokenTtl * 1000,
-      path: '/',
-    });
+    // res.cookie('refreshToken', tokens.refreshToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: 'lax',
+    //   maxAge: tokens.refreshTokenTtl * 1000,
+    //   path: '/',
+    // });
 
     await this.cacheManager.del(`pending_user:${email}`);
 
@@ -380,6 +380,7 @@ export class UsersService {
     return {
       message: 'Email verified successfully. Account created.',
       accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 
