@@ -15,7 +15,7 @@ export class ChangePasswordDto {
   })
   @IsNotEmpty()
   @MinLength(8)
-  @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/, {
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/, {
     message:
       'Password must be atleast 8 characters with atleast one number, one character and one letter',
   })

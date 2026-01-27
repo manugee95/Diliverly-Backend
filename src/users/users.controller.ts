@@ -21,6 +21,7 @@ import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AdminGuard } from 'src/auth/guards/roles/admin.guard';
+import { ResendCodeDto } from './dtos/resend-code.dto';
 
 @Controller('users')
 export class UsersController {
@@ -48,6 +49,22 @@ export class UsersController {
   }
 
   /**
+   * Endpoint to resend signup verification code
+   */
+  @ApiOperation({
+    summary: 'Resend signup verification code',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User can resend a new code after 60 seconds.',
+  })
+  @Auth(AuthType.None)
+  @Post('resend-signup-code')
+  resendSignupCode(@Body() dto: ResendCodeDto) {
+    return this.usersService.resendSignupVerificationCode(dto);
+  }
+
+  /**
    * Endpoint to verify email
    */
   @ApiOperation({
@@ -64,6 +81,21 @@ export class UsersController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return this.usersService.verifyEmail(dto, res);
+  }
+
+  /**
+   * Endpoint to get a logged in user's profile
+   */
+  @ApiOperation({
+    summary: 'Get logged in user profile',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile retrieved successfully.',
+  })
+  @Get('/me')
+  public getProfile(@Req() req) {
+    return this.usersService.findOneById(req.user.id);
   }
 
   /**

@@ -4,10 +4,17 @@ Content-Type: application/json
 {
     "firstName": "Cole",
     "lastName": "Palmer",
-    "email": "manugeetech@gmail.com",
-    "phone": "09090909009",
-    "password": "securePassword@123",
+    "email": "manuelgeetech@gmail.com",
+    "phone": "09099090009",
+    "password": "securePassword_123",
     "role": "agent"
+}
+
+POST http://localhost:3000/users/resend-signup-code
+Content-Type: application/json
+
+{
+    "email": "manuelgeetech@gmail.com"
 }
 
 
@@ -15,6 +22,6 @@ POST http://localhost:3000/users/verify-email
 Content-Type: application/json
 
 {
-    "email": "lydiamcgill22@gmail.com",
-    "code": "708663"
+    "email": "manuelgeetech@gmail.com",
+    "code": "151962"
 }

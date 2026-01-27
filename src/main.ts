@@ -1,6 +1,6 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 
@@ -27,6 +27,20 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
+      exceptionFactory: (validationErrors) => {
+      const errors: Record<string, string[]> = {};
+
+      validationErrors.forEach((err) => {
+        const field = err.property;
+
+        errors[field] = Object.values(err.constraints ?? {});
+      });
+
+      return new BadRequestException({
+        message: 'Validation failed',
+        errors,
+      });
+    },
     }),
   );
 

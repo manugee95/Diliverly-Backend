@@ -29,6 +29,8 @@ import { UserRole } from '../enums/userRole.enum';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { Response } from 'express';
 import { Agent } from 'src/agent/agent.entity';
+import { generateVerificationCode } from 'src/common/utils/verification-code.util';
+import { ResendCodeDto } from '../dtos/resend-code.dto';
 
 @Injectable()
 export class UsersService {
@@ -65,54 +67,227 @@ export class UsersService {
   /**
    * Method to create a new user
    */
+
+  // public async createUser(
+  //   createUserDto: CreateUserDto,
+  // ): Promise<{ message: string }> {
+  //   const { email, password, role, firstName } = createUserDto;
+
+  //   // Check if user already exists
+  //   const existingUser = await this.userRepository.findOne({
+  //     where: { email },
+  //   });
+  //   if (existingUser) throw new ConflictException('Email already exists');
+
+  //   // Hash password
+  //   const hashedPassword = await bcrypt.hash(password, 10);
+
+  //   // Generate 6-digit verification code
+  //   const verificationCode = Math.floor(
+  //     100000 + Math.random() * 900000,
+  //   ).toString();
+
+  //   // Determine initial capabilities
+  //   const isAgent = role === UserRole.AGENT;
+  //   const isVendor = role === UserRole.VENDOR;
+
+  //   // Store pending user data in cache (expires in 15 mins)
+  //   await this.cacheManager.set(
+  //     `pending_user:${email}`,
+  //     {
+  //       ...createUserDto,
+  //       password: hashedPassword,
+  //       verificationCode,
+  //       isAgent,
+  //       isVendor,
+  //     },
+  //     CacheTTL.UserSignup,
+  //   );
+
+  //   // Send verification email
+  //   await this.mailService.sendTemplate(
+  //     email,
+  //     'Verify your email',
+  //     'verify-email',
+  //     {
+  //       name: firstName,
+  //       code: verificationCode,
+  //     },
+  //   );
+
+  //   return { message: 'Verification code sent to your email.' };
+  // }
+
   public async createUser(
     createUserDto: CreateUserDto,
+  ): Promise<{ message: string; errors?: Record<string, string[]> }> {
+    try {
+      const { email, password, role, firstName } = createUserDto;
+
+      // Check if user already exists
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
+
+      if (existingUser) {
+        throw new ConflictException({
+          message: 'Validation failed',
+          errors: {
+            email: ['Email already exists'],
+          },
+        });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Generate 6-digit verification code
+      const verificationCode = generateVerificationCode();
+
+      // Determine initial capabilities
+      const isAgent = role === UserRole.AGENT;
+      const isVendor = role === UserRole.VENDOR;
+
+      // Store pending user data in cache (expires in 15 mins)
+      await this.cacheManager.set(
+        `pending_user:${email}`,
+        {
+          ...createUserDto,
+          password: hashedPassword,
+          verificationCode,
+          isAgent,
+          isVendor,
+        },
+        CacheTTL.UserSignup,
+      );
+
+      // Send verification email
+      await this.mailService.sendTemplate(
+        email,
+        'Verify your email',
+        'verify-email',
+        {
+          name: firstName,
+          code: verificationCode,
+        },
+      );
+
+      return { message: 'Verification code sent to your email.' };
+    } catch (error: any) {
+      /**
+       * If it's already a NestJS HttpException (Conflict, BadRequest, etc)
+       * we keep its structured response.
+       */
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
+      /**
+       * Typical mail service errors
+       */
+      if (error?.message?.toLowerCase?.().includes('mail')) {
+        throw new BadRequestException({
+          message: 'Email delivery failed',
+          errors: {
+            email: ['Unable to send verification email. Try again later.'],
+          },
+        });
+      }
+
+      /**
+       * Cache errors
+       */
+      if (error?.message?.toLowerCase?.().includes('cache')) {
+        throw new BadRequestException({
+          message: 'Signup failed',
+          errors: {
+            email: ['Unable to process signup at the moment. Try again later.'],
+          },
+        });
+      }
+
+      /**
+       * Default fallback
+       */
+      throw new InternalServerErrorException({
+        message: 'Something went wrong while creating user',
+        errors: {
+          general: ['Unexpected server error, please try again'],
+        },
+      });
+    }
+  }
+
+  /**
+   * Method to resend verification code
+   */
+  public async resendSignupVerificationCode(
+    dto: ResendCodeDto,
   ): Promise<{ message: string }> {
-    const { email, password, role, firstName } = createUserDto;
+    const { email } = dto;
 
-    // Check if user already exists
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
-    });
-    if (existingUser) throw new ConflictException('Email already exists');
+    const normalizedEmail = email.trim().toLowerCase();
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // 1) get pending signup from cache
+    const cacheKey = `pending_user:${normalizedEmail}`;
+    const pending = await this.cacheManager.get<any>(cacheKey);
 
-    // Generate 6-digit verification code
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
+    if (!pending) {
+      throw new NotFoundException({
+        message: 'Signup session not found',
+        errors: {
+          email: [
+            'No pending signup found for this email. Please sign up again.',
+          ],
+        },
+      });
+    }
 
-    // Determine initial capabilities
-    const isAgent = role === UserRole.AGENT;
-    const isVendor = role === UserRole.VENDOR;
+    // 2) rate-limit resend (e.g. once every 60s)
+    const resendKey = `pending_user_resend:${normalizedEmail}`;
+    const recentlyResent = await this.cacheManager.get<boolean>(resendKey);
 
-    // Store pending user data in cache (expires in 15 mins)
+    if (recentlyResent) {
+      throw new BadRequestException({
+        message: 'Too many requests',
+        errors: {
+          email: ['Please wait a bit before requesting a new code.'],
+        },
+      });
+    }
+
+    // 3) generate a new code
+    const verificationCode = generateVerificationCode()
+
+    // 4) update cache (keep other pending fields)
     await this.cacheManager.set(
-      `pending_user:${email}`,
+      cacheKey,
       {
-        ...createUserDto,
-        password: hashedPassword,
+        ...pending,
         verificationCode,
-        isAgent,
-        isVendor,
       },
-      CacheTTL.UserSignup,
+      CacheTTL.UserSignup, // reset signup TTL (e.g. 15 minutes)
     );
 
-    // Send verification email
+    // 5) set resend cooldown (e.g. 60 seconds)
+    await this.cacheManager.set(resendKey, true, 60);
+
+    // 6) send email
+    const name = pending.firstName ?? 'there';
     await this.mailService.sendTemplate(
-      email,
-      'Verify your email',
+      normalizedEmail,
+      'Your verification code',
       'verify-email',
       {
-        name: firstName,
+        name,
         code: verificationCode,
       },
     );
 
-    return { message: 'Verification code sent to your email.' };
+    return { message: 'A new verification code has been sent to your email.' };
   }
 
   /**
@@ -198,7 +373,7 @@ export class UsersService {
       'welcome',
       {
         name: createdUser.firstName,
-        dashboardUrl: "https://google.com", // TODO: Update with actual dashboard URL
+        dashboardUrl: 'https://google.com', // TODO: Update with actual dashboard URL
       },
     );
 

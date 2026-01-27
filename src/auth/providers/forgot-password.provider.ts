@@ -7,6 +7,7 @@ import { ForgotPasswordDto } from '../dtos/forgot-password.dto';
 import { VerifyResetCodeDto } from '../dtos/verify-reset-code.dto';
 import * as bcrypt from 'bcrypt';
 import { ResetPasswordDto } from '../dtos/reset-password.dto';
+import { generateVerificationCode } from 'src/common/utils/verification-code.util';
 
 @Injectable()
 export class ForgotPasswordProvider {
@@ -30,7 +31,7 @@ export class ForgotPasswordProvider {
     if (!user) throw new BadRequestException('User not found');
 
     // Generate 6-digit reset code
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCode = generateVerificationCode();
 
     user.resetCode = resetCode;
     user.resetCodeExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
