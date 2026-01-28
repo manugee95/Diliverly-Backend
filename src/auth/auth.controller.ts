@@ -20,6 +20,7 @@ import { Response } from 'express';
 import { GenerateTokensProvider } from './providers/generate-tokens.provider';
 import { RefreshTokensProvider } from './providers/refresh-tokens.provider';
 import { Request } from 'express';
+import { RefreshTokenDto } from './dtos/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -95,36 +96,15 @@ export class AuthController {
       'Refresh token is gotten from cookies and new tokens are issued',
   })
   @Post('refresh-tokens')
-  @Auth(AuthType.None)
   public async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ message: string; refreshToken: string}> {
-    const refreshToken = req.cookies?.refreshToken;
-
-    const tokens = await this.refreshTokensProvider.refreshTokens(refreshToken);
-
-    // const isProduction = process.env.NODE_ENV === 'production';
-
-    // res.cookie('accessToken', tokens.accessToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: 'lax',
-    //   maxAge: tokens.accessTokenTtl * 1000,
-    //   path: '/',
-    // });
-
-    // res.cookie('refreshToken', tokens.refreshToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: 'lax',
-    //   maxAge: tokens.refreshTokenTtl * 1000,
-    //   path: '/',
-    // });
+    @Body() dto: RefreshTokenDto
+  ): Promise<{ message: string; refreshToken: string, accessToken: string }> {
+    const tokens = await this.refreshTokensProvider.refreshTokens(dto.refreshToken);
 
     return {
       message: 'Tokens refreshed successfully',
       refreshToken: tokens.refreshToken,
+      accessToken: tokens.accessToken,
     };
   }
 
