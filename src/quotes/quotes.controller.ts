@@ -10,13 +10,11 @@ import {
 } from '@nestjs/common';
 import { QuotesService } from './providers/quotes.service';
 import { CreateQuoteDto } from './dtos/create-quote.dto';
-import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UserRole } from 'src/users/enums/userRole.enum';
 import { GetQuoteDto } from './dtos/get-quote.dto';
 import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
 import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { QuotePaymentService } from './providers/quote-payment.service';
 
 @Controller('quotes')
 export class QuotesController {
@@ -25,6 +23,11 @@ export class QuotesController {
      * Injecting Quotes Service
      */
     private readonly quotesService: QuotesService,
+
+    /** 
+     * Inject Quote Payment Service
+     */
+    private readonly quotePaymentService: QuotePaymentService,
   ) {}
 
   /**
@@ -108,5 +111,18 @@ export class QuotesController {
   public async acceptQuote(@Req() req, @Param('quoteId') quoteId: number) {
     const userId = req.user.id;
     return this.quotesService.acceptQuote(userId, quoteId);
+  }
+
+  /** 
+   * Endpoint to make payment for accepted quote
+   */
+  @ApiOperation({
+    summary: 'Make payment for an accepted quote',
+  })
+  @UseGuards(VendorGuard)
+  @Post('/:quoteId/pay')
+  public async payAcceptedQuote(@Req() req, @Param('quoteId') quoteId: number) {
+    const userId = req.user.id;
+    return this.quotePaymentService.payAcceptedQuoteWithWallet(userId, quoteId);
   }
 }

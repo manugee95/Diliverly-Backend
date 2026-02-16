@@ -1,8 +1,13 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { BadRequestException, ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ClassSerializerInterceptor,
+  ValidationPipe,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,13 +15,22 @@ async function bootstrap() {
   // ---- CORS Configuration ----
   app.enableCors({
     origin: ['https://localhost:3000', 'http://localhost:3000'], // add your real frontend domain(s) too
-    credentials: true,                // only if you use cookies/auth
+    credentials: true, // only if you use cookies/auth
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  //handle raw Paystack webhook body
-  app.use('/withdrawals/webhook/paystack', express.raw({ type: '*/*' }));
+  // Capture raw body for webhook verification
+  app.use(
+    bodyParser.json({
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
+  // ---- Body Parser Configuration ----
+  app.use(express.json());
 
   // ---- Validation Pipes ----
   app.useGlobalPipes(
@@ -28,26 +42,28 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
       exceptionFactory: (validationErrors) => {
-      const errors: Record<string, string[]> = {};
+        const errors: Record<string, string[]> = {};
 
-      validationErrors.forEach((err) => {
-        const field = err.property;
+        validationErrors.forEach((err) => {
+          const field = err.property;
 
-        errors[field] = Object.values(err.constraints ?? {});
-      });
+          errors[field] = Object.values(err.constraints ?? {});
+        });
 
-      return new BadRequestException({
-        message: 'Validation failed',
-        errors,
-      });
-    },
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors,
+        });
+      },
     }),
   );
 
   //Swagger Configuration
   const config = new DocumentBuilder()
     .setTitle('DILIVERLY API')
-    .setDescription('Use the base API URL as https://diliverly-backend.onrender.com')
+    .setDescription(
+      'Use the base API URL as https://diliverly-backend.onrender.com',
+    )
     .addServer('https://diliverly-backend.onrender.com')
     .setVersion('1.0')
     .build();

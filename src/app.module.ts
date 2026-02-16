@@ -33,6 +33,7 @@ import { HealthModule } from './health/health.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
 import { WalletsModule } from './wallets/wallets.module';
 import { EscrowModule } from './escrow/escrow.module';
+import { PaystackModule } from './paystack/paystack.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -98,6 +99,7 @@ const ENV = process.env.NODE_ENV;
     BankAccountModule,
     WalletsModule,
     EscrowModule,
+    PaystackModule,
   ],
   controllers: [AppController],
   providers: [

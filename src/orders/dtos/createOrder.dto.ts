@@ -5,11 +5,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateOrderDto {
   @ApiProperty({
-    description: 'payment reference for the order',
-    example: 'PAY1234567890',
+    description: 'delivery request id for this order',
+    example: 12,
   })
-  @IsString()
-  paymentReference: string;
+  @IsNumber()
+  requestId: number;
 
   @ApiProperty({
     description: 'list of items in the order',

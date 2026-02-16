@@ -17,13 +17,4 @@ export class MarkDeliveredDto {
   @IsNotEmpty()
   @IsString()
   deliveryPin: string;
-
-  // only required for CoD
-  @ApiProperty({
-    description: 'Payment receipt URL for Cash on Delivery orders',
-    example: 'https://example.com/receipt.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  paymentReceiptUrl?: string;
 }

@@ -50,9 +50,6 @@ export class OrderItem {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   codAmount?: number;
 
-  @Column({ nullable: true })
-  paymentReceiptUrl?: string;
-
   @Column({ unique: true, nullable: true })
   deliveryPin?: string;
 

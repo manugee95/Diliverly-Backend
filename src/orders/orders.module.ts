@@ -13,6 +13,7 @@ import { Transaction } from 'src/transactions/transaction.entity';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { ReferenceModule } from 'src/common/reference/reference.module';
 import { Agent } from 'src/agent/agent.entity';
+import { EscrowModule } from 'src/escrow/escrow.module';
 
 @Module({
   controllers: [OrdersController],
@@ -30,6 +31,7 @@ import { Agent } from 'src/agent/agent.entity';
     PaginationModule,
     TransactionsModule,
     ReferenceModule,
+    EscrowModule,
     CacheModule.register(),
   ],
 })

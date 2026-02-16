@@ -31,7 +31,7 @@ export class Payment {
   reference: string; // paystack reference
 
   @Column({ nullable: true })
-  gatewayResponse: string; // raw JSON response or short msg
+  gatewayResponse?: string; // raw JSON response or short msg
 
   @Column({ nullable: true, type: 'float' })
   walletDeduction: number;

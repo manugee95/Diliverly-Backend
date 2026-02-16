@@ -4,6 +4,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -16,10 +17,14 @@ export class WalletFunding {
   id: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
+  @Column()
+  userId: number;
+
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  amount: string;
+  amount: number;
 
   @Index({ unique: true })
   @Column({ length: 64 })
