@@ -6,18 +6,15 @@ import { TransactionsService } from 'src/transactions/providers/transactions.ser
 import { Vendor } from 'src/vendor/vendor.entity';
 import { WalletsService } from 'src/wallets/providers/wallets.service';
 import { DataSource, Not, Repository } from 'typeorm';
-import { Payment } from 'src/payments/payment.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { OrderItem } from 'src/orders/entities/orderItem.entity';
 import { Escrow } from 'src/escrow/escrow.entity';
 import { QuoteStatus } from '../enums/quoteStatus.enum';
-import { PaymentStatus } from 'src/payments/enums/paymentStatus.enum';
 import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
 import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
 import { TransactionType } from 'src/transactions/enums/transactionType.enum';
 import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
-import { PaymentMethod } from 'src/payments/enums/paymentMethod.enum';
 import { MailerService } from 'src/mailer/providers/mailer.service';
 
 @Injectable()

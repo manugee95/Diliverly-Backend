@@ -17,8 +17,6 @@ import { QuotePaymentService } from './providers/quote-payment.service';
 import { WalletsModule } from 'src/wallets/wallets.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { ReferenceModule } from 'src/common/reference/reference.module';
-import { PaymentsModule } from 'src/payments/payments.module';
-import { Payment } from 'src/payments/payment.entity';
 
 @Module({
   controllers: [QuotesController],
@@ -30,7 +28,6 @@ import { Payment } from 'src/payments/payment.entity';
       DeliveryRequest,
       Agent,
       Vendor,
-      Payment
     ]),
     DeliveryRequestsModule,
     AgentModule,

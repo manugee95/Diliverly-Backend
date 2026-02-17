@@ -17,7 +17,6 @@ import { AgentModule } from './agent/agent.module';
 import { VendorModule } from './vendor/vendor.module';
 import { DeliveryRequestsModule } from './delivery-requests/delivery-requests.module';
 import { QuotesModule } from './quotes/quotes.module';
-import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { redisProvider } from './common/providers/redis.provider';
 import { CacheService } from './common/providers/cache.service';
@@ -25,7 +24,6 @@ import { RedisCacheModule } from './rediscache/rediscache.module';
 import { MailerModule } from './mailer/mailer.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { TransactionsModule } from './transactions/transactions.module';
-import { PayoutModule } from './payout/payout.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReferenceModule } from './common/reference/reference.module';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
@@ -85,13 +83,11 @@ const ENV = process.env.NODE_ENV;
     VendorModule,
     DeliveryRequestsModule,
     QuotesModule,
-    PaymentsModule,
     OrdersModule,
     RedisCacheModule,
     MailerModule,
     ReviewsModule,
     TransactionsModule,
-    PayoutModule,
     ScheduleModule.forRoot(),
     ReferenceModule,
     WithdrawalsModule,

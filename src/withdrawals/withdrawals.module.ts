@@ -7,6 +7,7 @@ import { User } from 'src/users/user.entity';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { ReferenceModule } from 'src/common/reference/reference.module';
 import { Agent } from 'src/agent/agent.entity';
+import { MailerModule } from 'src/mailer/mailer.module';
 
 @Module({
   controllers: [WithdrawalsController],
@@ -15,6 +16,7 @@ import { Agent } from 'src/agent/agent.entity';
     TypeOrmModule.forFeature([Withdrawal, Agent, User]),
     TransactionsModule,
     ReferenceModule,
+    MailerModule
   ],
 })
 export class WithdrawalsModule {}

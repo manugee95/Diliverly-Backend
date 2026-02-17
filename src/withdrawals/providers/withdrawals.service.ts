@@ -17,6 +17,8 @@ import axios from 'axios';
 import { ReferenceProvider } from 'src/common/reference/reference.provider';
 import * as crypto from 'crypto';
 import { Agent } from 'src/agent/agent.entity';
+import { Wallet } from 'src/wallets/entities/wallet.entity';
+import { MailerService } from 'src/mailer/providers/mailer.service';
 
 @Injectable()
 export class WithdrawalsService {
@@ -26,12 +28,6 @@ export class WithdrawalsService {
      */
     @InjectRepository(Withdrawal)
     private withdrawalRepo: Repository<Withdrawal>,
-
-    /**
-     * Inject Agent repository
-     */
-    @InjectRepository(Agent)
-    private agentRepo: Repository<Agent>,
 
     /**
      * Inject User repository
@@ -58,33 +54,86 @@ export class WithdrawalsService {
      * Injecting Reference Provider
      */
     private readonly reference: ReferenceProvider,
+
+    /**
+     * Injecting mail service
+     */
+    private readonly mailService: MailerService,
   ) {}
 
+  /**
+   * Method to notify a user of a withdarwal initiated
+   */
+  private async notifyUser(payload: {
+    userEmail: string;
+    orderReference: string;
+    userName: string;
+    accountName: string | undefined;
+    accountNumber: string | undefined;
+    bankName: string | undefined;
+    amount: number;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.userEmail,
+        'Your Withdrawal Has Been Initiated',
+        'withdrawal-initiated',
+        {
+          orderReference: payload.orderReference,
+          userName: payload.userName,
+          accountName: payload.accountName,
+          accountNumber: payload.accountNumber,
+          bankName: payload.bankName,
+          amount: payload.amount,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send user email:', error);
+    }
+  }
+
   async manualWithdrawal(userId: number, amount: number) {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Invalid amount');
+    }
+
+    // Fetch user + bank account (no wallet join needed here)
     const user = await this.userRepo.findOne({
       where: { id: userId },
       relations: ['bank_account'],
     });
 
     if (!user) throw new NotFoundException('User not found');
-    if (!user.bank_account)
+    if (!user.bank_account) {
       throw new BadRequestException('Bank account is required');
-
-    if (Number(user.walletBalance) < amount) {
-      throw new BadRequestException('Insufficient wallet balance');
     }
 
     return await this.dataSource.transaction(async (manager) => {
-      const userRepo = manager.getRepository(User);
+      const walletRepo = manager.getRepository(Wallet);
       const withdrawalRepo = manager.getRepository(Withdrawal);
 
-      // 1. Deduct wallet balance
-      user.walletBalance = Number(user.walletBalance) - amount;
-      await userRepo.save(user);
+      // Lock wallet row (avoid joins + safe against race conditions)
+      const wallet = await walletRepo.findOne({
+        where: { user: { id: userId } },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-      // 2. Create withdrawal record
+      if (!wallet) throw new Error('Wallet not found');
+
+      if (Number(wallet.availableBalance) < amount) {
+        throw new BadRequestException('Insufficient wallet balance');
+      }
+
+      // Deduct immediately
+      wallet.availableBalance = (
+        Number(wallet.availableBalance) - amount
+      ).toFixed(2);
+
+      await walletRepo.save(wallet);
+
+      // Create withdrawal record
       const withdrawal = withdrawalRepo.create({
-        user,
+        user: { id: userId } as any,
         amount,
         reference: `WD-${Date.now()}`,
         status: WithdrawalStatus.PROCESSING,
@@ -92,7 +141,7 @@ export class WithdrawalsService {
 
       const savedWithdrawal = await withdrawalRepo.save(withdrawal);
 
-      // 3. Log transaction
+      // Log transaction (PENDING because transfer not confirmed yet)
       await this.transactionService.logTransaction(
         {
           user,
@@ -106,7 +155,8 @@ export class WithdrawalsService {
         manager,
       );
 
-      // 4. Initiate Paystack transfer
+      // Initiate Paystack transfer
+      // If this throws, the whole TX rolls back (wallet deduction is undone)
       const transfer = await this.processPaystackTransfer(
         user,
         amount,
@@ -115,6 +165,17 @@ export class WithdrawalsService {
 
       savedWithdrawal.paystackTransferCode = transfer.transferCode;
       await withdrawalRepo.save(savedWithdrawal);
+
+      // Notify user via email (don't await, we don't want to block the response)
+      this.notifyUser({
+        userEmail: user.email,
+        userName: user.firstName,
+        accountName: user.bank_account.accountName,
+        accountNumber: user.bank_account.accountNumber,
+        bankName: user.bank_account.bankName,
+        amount,
+        orderReference: savedWithdrawal.reference,
+      });
 
       return {
         success: true,
@@ -241,7 +302,10 @@ export class WithdrawalsService {
     await this.withdrawalRepo.save(withdrawal);
 
     // Refund wallet
-    withdrawal.user.walletBalance += withdrawal.amount;
+    withdrawal.user.wallet.availableBalance = String(
+      Number(withdrawal.user.wallet.availableBalance) + withdrawal.amount,
+    );
+
     await this.userRepo.save(withdrawal.user);
 
     // Update transaction status
@@ -256,7 +320,10 @@ export class WithdrawalsService {
     await this.withdrawalRepo.save(withdrawal);
 
     // Refund wallet
-    withdrawal.user.walletBalance += withdrawal.amount;
+    withdrawal.user.wallet.availableBalance = String(
+      Number(withdrawal.user.wallet.availableBalance) + withdrawal.amount,
+    );
+
     await this.userRepo.save(withdrawal.user);
 
     // Update transaction status

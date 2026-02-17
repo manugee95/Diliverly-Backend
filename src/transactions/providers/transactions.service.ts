@@ -3,9 +3,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Transaction } from '../transaction.entity';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
-import { User } from 'src/users/user.entity';
-import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
 import { CreateTransactionDto } from '../dtos/create-transaction.dto';
 import { TransactionStatus } from '../enums/transactionStatus.enum';
 
@@ -17,18 +14,6 @@ export class TransactionsService {
      */
     @InjectRepository(Transaction)
     private readonly transRepo: Repository<Transaction>,
-
-    /**
-     * Inject OrderItem repository
-     */
-    @InjectRepository(OrderItem)
-    private readonly orderItemRepo: Repository<OrderItem>,
-
-    /**
-     * Inject User repository
-     */
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
   ) {}
 
   // Called internally: logs a transaction 
@@ -94,42 +79,4 @@ export class TransactionsService {
     // Save and return updated record
     return await repo.save(tx);
   }
-
-  // Wallet Overview: available, pending, next payout date
-  async getWalletOverview(userId: number) {
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-      relations: ['agent'],
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Get Available balance
-    const availableBalance = Number(user.walletBalance);
-
-    // Get Pending balance
-    let pendingBalance = 0;
-
-    if (user.agent) {
-      const pendingItems = await this.orderItemRepo.find({
-        where: {
-          agent: { id: user.agent.id },
-          status: OrderStatus.IN_PROGRESS,
-        },
-      });
-
-      pendingBalance = pendingItems.reduce(
-        (sum, oi) => sum + Number(oi.cost),
-        0,
-      );
-    }
-
-    return {
-      availableBalance,
-      pendingBalance,
-    };
-  }
-
 }

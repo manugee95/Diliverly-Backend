@@ -43,16 +43,4 @@ export class TransactionsController {
   async getTransactions(@Req() req, @Query() dto: GetTransactionsDto) {
     return this.transactionsQueryService.getUserTransactions(req.user.id, dto);
   }
-
-  @ApiOperation({
-    summary: 'Fetches wallet overview for the logged in user',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Wallet overview fetched successfully',
-  })
-  @Get('/wallet')
-  async getWallet(@Req() req) {
-    return this.transactionsService.getWalletOverview(req.user.id);
-  }
 }

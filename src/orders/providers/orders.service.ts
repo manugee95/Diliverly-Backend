@@ -9,7 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Vendor } from 'src/vendor/vendor.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { CreateOrderDto } from '../dtos/createOrder.dto';
-import { Payment } from 'src/payments/payment.entity';
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
 import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
 import { Order } from '../entities/order.entity';
@@ -36,6 +35,7 @@ import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
 import { Escrow } from 'src/escrow/escrow.entity';
 import { EscrowService } from 'src/escrow/providers/escrow.service';
+import { MailerService } from 'src/mailer/providers/mailer.service';
 
 @Injectable()
 export class OrdersService {
@@ -45,12 +45,6 @@ export class OrdersService {
      */
     @InjectRepository(Vendor)
     private readonly vendorRepo: Repository<Vendor>,
-
-    /**
-     * Injecting Payment Repository
-     */
-    @InjectRepository(Payment)
-    private readonly paymentRepo: Repository<Payment>,
 
     /**
      * Injecting Data Source
@@ -104,6 +98,11 @@ export class OrdersService {
 
     /** Inject Escrow Service */
     private readonly escrowService: EscrowService,
+
+    /**
+     * Injecting mail service
+     */
+    private readonly mailService: MailerService,
   ) {}
 
   /**
@@ -111,6 +110,123 @@ export class OrdersService {
    */
   private generateDeliveryPin(): string {
     return Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  /**
+   * Method to notify agent of new order assignment
+   */
+  private async notifyAgent(payload: {
+    agentEmail: string;
+    orderReference: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.agentEmail,
+        'Your Order Has Started',
+        'order-started',
+        {
+          orderReference: payload.orderReference,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send agent email:', error);
+    }
+  }
+
+  /**
+   * Method to notify vendor of item delivered
+   */
+  private async notifyVendorDelivered(payload: {
+    vendorEmail: string;
+    orderReference: string;
+    vendorName: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.vendorEmail,
+        'Item Delivered 🚀',
+        'item-delivered',
+        {
+          orderReference: payload.orderReference,
+          vendorName: payload.vendorName,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send vendor email:', error);
+    }
+  }
+
+  /**
+   * Method to notify vendor of order completed
+   */
+  private async notifyVendorCompleted(payload: {
+    vendorEmail: string;
+    orderReference: string;
+    vendorName: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.vendorEmail,
+        'Order Completed 🚀',
+        'order-completed',
+        {
+          orderReference: payload.orderReference,
+          vendorName: payload.vendorName,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send vendor email:', error);
+    }
+  }
+
+  /**
+   * Method to notify vendor of item cancelled
+   */
+  private async notifyVendorCancelled(payload: {
+    vendorEmail: string;
+    orderReference: string;
+    vendorName: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.vendorEmail,
+        'Item Cancelled',
+        'item-cancelled',
+        {
+          orderReference: payload.orderReference,
+          vendorName: payload.vendorName,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send vendor email:', error);
+    }
+  }
+
+  /**
+   * Method to notify vendor of item cancelled
+   */
+  private async notifyVendorCodPayment(payload: {
+    vendorEmail: string;
+    orderReference: string;
+    vendorName: string;
+    amountPaid: number;
+    deliveryItem: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.vendorEmail,
+        'You’ve Been Paid for a COD Delivery',
+        'cod-payment',
+        {
+          orderReference: payload.orderReference,
+          vendorName: payload.vendorName,
+          amountPaid: payload.amountPaid,
+          deliveryItem: payload.deliveryItem,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send vendor email:', error);
+    }
   }
 
   /**
@@ -243,6 +359,12 @@ export class OrdersService {
       // Mark order ACTIVE after vendor completes details
       await orderRepo.update(order.id, { status: OrderStatus.ACTIVE });
 
+      // Notify agent of new order assignment
+      await this.notifyAgent({
+        agentEmail: assignedAgent.user.email,
+        orderReference: order.reference,
+      });
+
       return {
         message: 'Order items updated successfully',
         agentId: assignedAgent.id,
@@ -281,7 +403,6 @@ export class OrdersService {
 
       if (!oi) throw new Error('Order item not found');
 
-
       // Update status to DELIVERED
       oi.status = OrderStatus.DELIVERED;
       await oiRepo.save(oi);
@@ -293,6 +414,13 @@ export class OrdersService {
       await this.autoCompleteOrder(oi.order.id, manager);
     });
 
+    // Notify vendor of item delivered
+    await this.notifyVendorDelivered({
+      vendorEmail: orderItem.order.vendor.user.email,
+      orderReference: orderItem.order.reference,
+      vendorName: orderItem.order.vendor.user.firstName,
+    });
+
     return { message: 'Delivered successfully. Escrow released to agent.' };
   }
 
@@ -300,190 +428,216 @@ export class OrdersService {
    * Method to mark order item as delivered
    */
   async markDelivered(userId: number, dto: MarkDeliveredDto) {
-  const { orderItemId, deliveryPin } = dto;
+    const { orderItemId, deliveryPin } = dto;
 
-  // Find agent profile
-  const agentUser = await this.agentRepo.findOne({
-    where: { user: { id: userId } },
-  });
-  if (!agentUser) throw new UnauthorizedException('Agent not found');
+    // Find agent profile
+    const agentUser = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!agentUser) throw new UnauthorizedException('Agent not found');
 
-  // Light fetch (no need to load huge graph here)
-  const orderItem = await this.orderItemRepo.findOne({
-    where: { id: orderItemId },
-    relations: ['agent', 'agent.user'], // enough to verify ownership + pin
-  });
-
-  if (!orderItem) throw new NotFoundException('Order item not found');
-
-  if (!orderItem.agent || orderItem.agent.id !== agentUser.id) {
-    throw new UnauthorizedException('This delivery does not belong to you.');
-  }
-
-  const allowed = [OrderStatus.IN_PROGRESS, OrderStatus.DECLINED];
-  if (!allowed.includes(orderItem.status)) {
-    throw new BadRequestException('Order item already processed');
-  }
-
-  if (orderItem.deliveryPin !== deliveryPin) {
-    throw new BadRequestException('Invalid delivery PIN');
-  }
-
-  // =========================
-  // PREPAID => deliver + release escrow now
-  // =========================
-  if (orderItem.deliveryType === DeliveryType.PREPAID) {
-    return await this.handlePrepaidDelivery(orderItem);
-  }
-
-  // =========================
-  // COD => settle COD from agent wallet + release escrow
-  // =========================
-  if (!orderItem.codAmount || Number(orderItem.codAmount) <= 0) {
-    throw new BadRequestException('COD amount not set by vendor');
-  }
-
-  await this.dataSource.transaction(async (manager) => {
-    const oiRepo = manager.getRepository(OrderItem);
-    const walletRepo = manager.getRepository(Wallet);
-    const userRepo = manager.getRepository(User);
-    const escrowRepo = manager.getRepository(Escrow);
-
-    // STEP 1: Lock OrderItem WITHOUT relations (avoids LEFT JOIN + FOR UPDATE)
-    const lockedOI = await oiRepo.findOne({
+    // Light fetch (no need to load huge graph here)
+    const orderItem = await this.orderItemRepo.findOne({
       where: { id: orderItemId },
-      lock: { mode: 'pessimistic_write' },
+      relations: [
+        'agent',
+        'agent.user',
+        'order',
+        'order.vendor',
+        'order.vendor.user',
+      ],
     });
 
-    if (!lockedOI) throw new Error('Order item not found');
+    if (!orderItem) throw new NotFoundException('Order item not found');
 
-    // STEP 2: Load full graph WITHOUT lock
-    const oi = await oiRepo.findOne({
-      where: { id: orderItemId },
-      relations: ['order', 'order.vendor', 'order.vendor.user', 'agent', 'agent.user'],
-    });
-
-    if (!oi) throw new Error('Order item not found');
-
-    // Re-check ownership inside TX (safe)
-    if (!oi.agent || oi.agent.id !== agentUser.id) {
+    if (!orderItem.agent || orderItem.agent.id !== agentUser.id) {
       throw new UnauthorizedException('This delivery does not belong to you.');
     }
 
-    // Re-check status inside TX
-    const allowedInTx = [OrderStatus.IN_PROGRESS, OrderStatus.DECLINED];
-    if (!allowedInTx.includes(oi.status)) {
+    const allowed = [OrderStatus.IN_PROGRESS, OrderStatus.DECLINED];
+    if (!allowed.includes(orderItem.status)) {
       throw new BadRequestException('Order item already processed');
     }
 
-    // Re-check PIN inside TX
-    if (oi.deliveryPin !== deliveryPin) {
+    if (orderItem.deliveryPin !== deliveryPin) {
       throw new BadRequestException('Invalid delivery PIN');
     }
 
-    // Lock escrow row
-    const escrow = await escrowRepo.findOne({
-      where: { reference: `ESCROW-OI-${oi.id}` },
-      lock: { mode: 'pessimistic_write' },
+    // =========================
+    // PREPAID => deliver + release escrow now
+    // =========================
+    if (orderItem.deliveryType === DeliveryType.PREPAID) {
+      return await this.handlePrepaidDelivery(orderItem);
+    }
+
+    // =========================
+    // COD => settle COD from agent wallet + release escrow
+    // =========================
+    if (!orderItem.codAmount || Number(orderItem.codAmount) <= 0) {
+      throw new BadRequestException('COD amount not set by vendor');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const oiRepo = manager.getRepository(OrderItem);
+      const walletRepo = manager.getRepository(Wallet);
+      const userRepo = manager.getRepository(User);
+      const escrowRepo = manager.getRepository(Escrow);
+
+      // STEP 1: Lock OrderItem WITHOUT relations (avoids LEFT JOIN + FOR UPDATE)
+      const lockedOI = await oiRepo.findOne({
+        where: { id: orderItemId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!lockedOI) throw new Error('Order item not found');
+
+      // STEP 2: Load full graph WITHOUT lock
+      const oi = await oiRepo.findOne({
+        where: { id: orderItemId },
+        relations: [
+          'order',
+          'order.vendor',
+          'order.vendor.user',
+          'agent',
+          'agent.user',
+        ],
+      });
+
+      if (!oi) throw new Error('Order item not found');
+
+      // Re-check ownership inside TX (safe)
+      if (!oi.agent || oi.agent.id !== agentUser.id) {
+        throw new UnauthorizedException(
+          'This delivery does not belong to you.',
+        );
+      }
+
+      // Re-check status inside TX
+      const allowedInTx = [OrderStatus.IN_PROGRESS, OrderStatus.DECLINED];
+      if (!allowedInTx.includes(oi.status)) {
+        throw new BadRequestException('Order item already processed');
+      }
+
+      // Re-check PIN inside TX
+      if (oi.deliveryPin !== deliveryPin) {
+        throw new BadRequestException('Invalid delivery PIN');
+      }
+
+      // Lock escrow row
+      const escrow = await escrowRepo.findOne({
+        where: { reference: `ESCROW-OI-${oi.id}` },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!escrow) throw new Error('Escrow not found');
+      if (escrow.status !== EscrowStatus.HELD) {
+        throw new BadRequestException('Escrow already processed for this item');
+      }
+
+      const codAmount = Number(oi.codAmount);
+      if (!Number.isFinite(codAmount) || codAmount <= 0) {
+        throw new BadRequestException('Invalid COD amount');
+      }
+
+      const agentUserId = oi.agent?.user?.id;
+      const vendorUserId = oi.order?.vendor?.user?.id;
+
+      if (!agentUserId) throw new Error('Agent user not found');
+      if (!vendorUserId) throw new Error('Vendor user not found');
+
+      // Lock wallets
+      const agentWallet = await walletRepo.findOne({
+        where: { user: { id: agentUserId } },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      const vendorWallet = await walletRepo.findOne({
+        where: { user: { id: vendorUserId } },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!agentWallet) throw new Error('Agent wallet not found');
+      if (!vendorWallet) throw new Error('Vendor wallet not found');
+
+      if (Number(agentWallet.availableBalance) < codAmount) {
+        throw new BadRequestException(
+          'Insufficient wallet balance to settle COD, Fund your wallet and try again.',
+        );
+      }
+
+      // (1) COD settlement: agent -> vendor
+      agentWallet.availableBalance = (
+        Number(agentWallet.availableBalance) - codAmount
+      ).toFixed(2);
+
+      vendorWallet.availableBalance = (
+        Number(vendorWallet.availableBalance) + codAmount
+      ).toFixed(2);
+
+      await walletRepo.save([agentWallet, vendorWallet]);
+
+      // (2) update status to delivered
+      oi.status = OrderStatus.DELIVERED;
+      await oiRepo.save(oi);
+
+      // (3) Release delivery fee to agent
+      await this.escrowService.releaseToAgent(oi.id, manager);
+
+      // (4) Auto-complete order
+      await this.autoCompleteOrder(oi.order.id, manager);
+
+      // (5) Log COD transactions
+      const agentUserEntity = await userRepo.findOne({
+        where: { id: agentUserId },
+      });
+      const vendorUserEntity = await userRepo.findOne({
+        where: { id: vendorUserId },
+      });
+
+      if (agentUserEntity) {
+        await this.txService.logTransaction(
+          {
+            user: agentUserEntity,
+            type: TransactionType.DEBIT,
+            amount: codAmount,
+            description: `COD paid to vendor for order #${oi.order.reference}, item #${oi.id}`,
+            orderItem: oi,
+            reference: this.reference.generateTransactionRef(),
+            status: TransactionStatus.SUCCESSFUL,
+          },
+          manager,
+        );
+      }
+
+      if (vendorUserEntity) {
+        await this.txService.logTransaction(
+          {
+            user: vendorUserEntity,
+            type: TransactionType.CREDIT,
+            amount: codAmount,
+            description: `COD received from agent for order #${oi.order.reference}, item #${oi.id}`,
+            orderItem: oi,
+            reference: this.reference.generateTransactionRef(),
+            status: TransactionStatus.SUCCESSFUL,
+          },
+          manager,
+        );
+      }
     });
 
-    if (!escrow) throw new Error('Escrow not found');
-    if (escrow.status !== EscrowStatus.HELD) {
-      throw new BadRequestException('Escrow already processed for this item');
-    }
-
-    const codAmount = Number(oi.codAmount);
-    if (!Number.isFinite(codAmount) || codAmount <= 0) {
-      throw new BadRequestException('Invalid COD amount');
-    }
-
-    const agentUserId = oi.agent?.user?.id;
-    const vendorUserId = oi.order?.vendor?.user?.id;
-
-    if (!agentUserId) throw new Error('Agent user not found');
-    if (!vendorUserId) throw new Error('Vendor user not found');
-
-    // Lock wallets
-    const agentWallet = await walletRepo.findOne({
-      where: { user: { id: agentUserId } },
-      lock: { mode: 'pessimistic_write' },
+    // Notify vendor of COD payment
+    await this.notifyVendorCodPayment({
+      vendorEmail: orderItem.order.vendor.user.email,
+      orderReference: orderItem.order.reference,
+      vendorName: orderItem.order.vendor.user.firstName,
+      amountPaid: orderItem.codAmount,
+      deliveryItem: orderItem.itemName,
     });
 
-    const vendorWallet = await walletRepo.findOne({
-      where: { user: { id: vendorUserId } },
-      lock: { mode: 'pessimistic_write' },
-    });
-
-    if (!agentWallet) throw new Error('Agent wallet not found');
-    if (!vendorWallet) throw new Error('Vendor wallet not found');
-
-    if (Number(agentWallet.availableBalance) < codAmount) {
-      throw new BadRequestException(
-        'Insufficient wallet balance to settle COD, Fund your wallet and try again.',
-      );
-    }
-
-    // (1) COD settlement: agent -> vendor
-    agentWallet.availableBalance = (
-      Number(agentWallet.availableBalance) - codAmount
-    ).toFixed(2);
-
-    vendorWallet.availableBalance = (
-      Number(vendorWallet.availableBalance) + codAmount
-    ).toFixed(2);
-
-    await walletRepo.save([agentWallet, vendorWallet]);
-
-    // (2) update status to delivered
-    oi.status = OrderStatus.DELIVERED;
-    await oiRepo.save(oi);
-
-    // (3) Release delivery fee to agent
-    await this.escrowService.releaseToAgent(oi.id, manager);
-
-    // (4) Auto-complete order
-    await this.autoCompleteOrder(oi.order.id, manager);
-
-    // (5) Log COD transactions
-    const agentUserEntity = await userRepo.findOne({ where: { id: agentUserId } });
-    const vendorUserEntity = await userRepo.findOne({ where: { id: vendorUserId } });
-
-    if (agentUserEntity) {
-      await this.txService.logTransaction(
-        {
-          user: agentUserEntity,
-          type: TransactionType.DEBIT,
-          amount: codAmount,
-          description: `COD paid to vendor for order #${oi.order.reference}, item #${oi.id}`,
-          orderItem: oi,
-          reference: this.reference.generateTransactionRef(),
-          status: TransactionStatus.SUCCESSFUL,
-        },
-        manager,
-      );
-    }
-
-    if (vendorUserEntity) {
-      await this.txService.logTransaction(
-        {
-          user: vendorUserEntity,
-          type: TransactionType.CREDIT,
-          amount: codAmount,
-          description: `COD received from agent for order #${oi.order.reference}, item #${oi.id}`,
-          orderItem: oi,
-          reference: this.reference.generateTransactionRef(),
-          status: TransactionStatus.SUCCESSFUL,
-        },
-        manager,
-      );
-    }
-  });
-
-  return {
-    message: 'COD settled from wallet. order item marked as delivered.',
-  };
-}
-
+    return {
+      message: 'COD settled from wallet. order item marked as delivered.',
+    };
+  }
 
   /**
    * Method to cancel an order Item
@@ -496,8 +650,9 @@ export class OrdersService {
     const agentUser = await this.agentRepo.findOne({
       where: { user: { id: userId } },
     });
+    if (!agentUser) throw new UnauthorizedException('Agent not found');
 
-    // Find order item with relations
+    // Find order item (no lock here, relations OK)
     const orderItem = await this.orderItemRepo.findOne({
       where: { id: orderItemId },
       relations: [
@@ -509,17 +664,12 @@ export class OrdersService {
       ],
     });
 
-    // Validate order item
     if (!orderItem) throw new NotFoundException('Order item not found');
 
-    // Validate ownership
-    if (orderItem.agent.id !== agentUser?.id) {
+    if (!orderItem.agent || orderItem.agent.id !== agentUser.id) {
       throw new UnauthorizedException('You cannot cancel this order');
     }
 
-    // Allowed statuses:
-    // - IN_PROGRESS
-    // - DECLINED
     const allowed = [OrderStatus.IN_PROGRESS, OrderStatus.DECLINED];
     if (!allowed.includes(orderItem.status)) {
       throw new BadRequestException(
@@ -531,7 +681,14 @@ export class OrdersService {
     await this.dataSource.transaction(async (manager) => {
       const oiRepo = manager.getRepository(OrderItem);
 
-      // Re-fetch with lock to prevent double cancel
+      // STEP 1: Lock the OrderItem row WITHOUT relations
+      const lockedOI = await oiRepo.findOne({
+        where: { id: orderItemId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!lockedOI) throw new NotFoundException('Order item not found');
+
+      // STEP 2: Load graph WITHOUT lock (safe)
       const oi = await oiRepo.findOne({
         where: { id: orderItemId },
         relations: [
@@ -541,10 +698,21 @@ export class OrdersService {
           'agent',
           'agent.user',
         ],
-        lock: { mode: 'pessimistic_write' },
       });
-
       if (!oi) throw new NotFoundException('Order item not found');
+
+      // Re-check ownership inside TX (safe)
+      if (!oi.agent || oi.agent.id !== agentUser.id) {
+        throw new UnauthorizedException('You cannot cancel this order');
+      }
+
+      // Re-check status inside TX (safe)
+      const allowedInTx = [OrderStatus.IN_PROGRESS, OrderStatus.DECLINED];
+      if (!allowedInTx.includes(oi.status)) {
+        throw new BadRequestException(
+          'Only IN_PROGRESS and DECLINED items can be cancelled',
+        );
+      }
 
       // Mark order item cancelled
       oi.status = OrderStatus.CANCELLED;
@@ -555,6 +723,13 @@ export class OrdersService {
 
       // auto-complete order
       await this.autoCompleteOrder(oi.order.id, manager);
+    });
+
+    // Notify vendor of item cancelled
+    await this.notifyVendorCancelled({
+      vendorEmail: orderItem.order.vendor.user.email,
+      orderReference: orderItem.order.reference,
+      vendorName: orderItem.order.vendor.user.firstName,
     });
 
     return { message: 'Order canceled. Vendor refunded from escrow.' };
@@ -568,7 +743,7 @@ export class OrdersService {
 
     const order = await orderRepo.findOne({
       where: { id: orderId },
-      relations: ['items'],
+      relations: ['items', 'vendor', 'vendor.user'],
     });
 
     if (!order) return;
@@ -585,6 +760,13 @@ export class OrdersService {
       await orderRepo.save(order);
 
       console.log(`Order ${order.id} marked as COMPLETE automatically.`);
+
+      // Notify vendor of order completion
+      await this.notifyVendorCompleted({
+        vendorEmail: order.vendor.user.email,
+        orderReference: order.reference,
+        vendorName: order.vendor.user.firstName,
+      });
     }
   }
 

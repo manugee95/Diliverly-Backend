@@ -114,17 +114,22 @@ export class EscrowService {
   }
 
   async refundToVendor(orderItemId: number, manager?: EntityManager) {
-    // Function to refund escrow funds to the vendor
     const runner = async (mgr: EntityManager) => {
       const oiRepo = mgr.getRepository(OrderItem);
       const escrowRepo = mgr.getRepository(Escrow);
       const walletRepo = mgr.getRepository(Wallet);
 
-      // Re-fetch OrderItem with pessimistic lock (prevents double refund concurrency)
+      // STEP 1: lock OrderItem row WITHOUT relations
+      const lockedOI = await oiRepo.findOne({
+        where: { id: orderItemId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!lockedOI) throw new NotFoundException('Order item not found');
+
+      // STEP 2: load graph WITHOUT lock
       const oi = await oiRepo.findOne({
         where: { id: orderItemId },
         relations: ['order', 'order.vendor', 'order.vendor.user'],
-        lock: { mode: 'pessimistic_write' },
       });
       if (!oi) throw new NotFoundException('Order item not found');
 
@@ -136,14 +141,19 @@ export class EscrowService {
       if (!escrow) throw new Error('Escrow not found');
       if (escrow.status !== EscrowStatus.HELD) return; // idempotent
 
-      // Lock vendor wallet
+      // Lock vendor wallet (this must be lock-or-create and lock safely)
+      const vendorUserId = oi.order?.vendor?.user?.id;
+      if (!vendorUserId) throw new Error('Vendor user not found');
+
       const vendorWallet = await this.walletService.lockWallet(
-        oi.order.vendor.user.id,
+        vendorUserId,
         mgr,
       );
 
       // Calculate fee and update balances
       const fee = Number(oi.cost);
+      if (!Number.isFinite(fee) || fee <= 0) throw new Error('Invalid fee');
+
       if (Number(vendorWallet.escrowBalance) < fee) {
         throw new Error('Vendor escrow insufficient');
       }
@@ -178,10 +188,7 @@ export class EscrowService {
       );
     };
 
-    // Execute within transaction
     if (manager) return runner(manager);
-
-    // No manager provided, create a new transaction
     return this.dataSource.transaction(runner);
   }
 }
