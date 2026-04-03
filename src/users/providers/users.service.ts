@@ -64,60 +64,6 @@ export class UsersService {
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Method to create a new user
-   */
-
-  // public async createUser(
-  //   createUserDto: CreateUserDto,
-  // ): Promise<{ message: string }> {
-  //   const { email, password, role, firstName } = createUserDto;
-
-  //   // Check if user already exists
-  //   const existingUser = await this.userRepository.findOne({
-  //     where: { email },
-  //   });
-  //   if (existingUser) throw new ConflictException('Email already exists');
-
-  //   // Hash password
-  //   const hashedPassword = await bcrypt.hash(password, 10);
-
-  //   // Generate 6-digit verification code
-  //   const verificationCode = Math.floor(
-  //     100000 + Math.random() * 900000,
-  //   ).toString();
-
-  //   // Determine initial capabilities
-  //   const isAgent = role === UserRole.AGENT;
-  //   const isVendor = role === UserRole.VENDOR;
-
-  //   // Store pending user data in cache (expires in 15 mins)
-  //   await this.cacheManager.set(
-  //     `pending_user:${email}`,
-  //     {
-  //       ...createUserDto,
-  //       password: hashedPassword,
-  //       verificationCode,
-  //       isAgent,
-  //       isVendor,
-  //     },
-  //     CacheTTL.UserSignup,
-  //   );
-
-  //   // Send verification email
-  //   await this.mailService.sendTemplate(
-  //     email,
-  //     'Verify your email',
-  //     'verify-email',
-  //     {
-  //       name: firstName,
-  //       code: verificationCode,
-  //     },
-  //   );
-
-  //   return { message: 'Verification code sent to your email.' };
-  // }
-
   public async createUser(
     createUserDto: CreateUserDto,
   ): Promise<{ message: string; errors?: Record<string, string[]> }> {
