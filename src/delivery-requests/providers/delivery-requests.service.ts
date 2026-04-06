@@ -129,7 +129,7 @@ export class DeliveryRequestService {
       return JSON.parse(cached);
     }
 
-    // extract names or codes depending on how your State entity stores value
+    // extract names of states covered by agent to filter requests by those states
     const states = agent.statesCovered;
 
     const deliveryRequests = await this.paginationProvider.paginateQuery(
@@ -155,6 +155,14 @@ export class DeliveryRequestService {
     );
 
     return deliveryRequests;
+  }
+
+  /**
+   * Method to clear cache for an agent (can be called after a quote is accepted or a request is closed to ensure agents see updated info)
+   */
+  async clearAgentCache(agentId: number) {
+    const cacheKey = `agent:${agentId}:requests`;
+    await this.cacheManager.del(cacheKey);
   }
 
   /**
@@ -237,5 +245,34 @@ export class DeliveryRequestService {
       totalAmount: acceptedQuote.subtotal,
       agent: acceptedQuote.agent.businessName,
     };
+  }
+
+  /**
+   * Method to get all delivery requests for a vendor with pagination
+   */
+  async getVendorRequests(
+    userId: number,
+    deliveryRequestQuery: GetDeliveryRequestsDto,
+  ): Promise<Paginated<DeliveryRequest>> {
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    const deliveryRequests = await this.paginationProvider.paginateQuery(
+      {
+        page: deliveryRequestQuery.page || 1,
+        limit: deliveryRequestQuery.limit || 10,
+      },
+      this.deliveryRequestRepo,
+      {
+        where: { vendor: { id: vendor.id } },
+        order: { createdAt: 'DESC' },
+      },
+    );
+
+    return deliveryRequests;
   }
 }

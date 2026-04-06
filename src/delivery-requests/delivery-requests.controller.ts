@@ -79,32 +79,6 @@ export class DeliveryRequestsController {
   }
 
   /**
-   * Endpoint to get a delivery request information
-   */
-  @ApiOperation({
-    summary: 'Get delivery request information',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Delivery request information retrieved successfully.',
-  })
-  @ApiParam({
-    name: 'requestId',
-    type: 'number',
-    required: true,
-    description: 'The Delivery Request Id',
-    example: 5,
-  })
-  @Get('/:requestId')
-  public async getRequestInfo(
-    @Req() req,
-    @Param('requestId') requestId: number,
-  ) {
-    const userId = req.user.id;
-    return await this.deliveryRequestService.getRequestInfo(requestId, userId);
-  }
-
-  /**
    * Endpoint to get an order summary
    */
   @ApiOperation({
@@ -129,5 +103,65 @@ export class DeliveryRequestsController {
   ) {
     const userId = req.user.id;
     return await this.deliveryRequestService.getOrderSummary(userId, requestId);
+  }
+
+  /**
+   * Endpoint to get all vendor requests
+   */
+  @ApiOperation({
+    summary: 'Get all delivery requests for a vendor',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vendor delivery requests retrieved successfully.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'The number of entries returned per query',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'The page number returned per query',
+    example: 1,
+  })
+  @UseGuards(VendorGuard)
+  @Get('vendor-requests')
+  public async getVendorRequests(
+    @Req() req,
+    @Query() dto: GetDeliveryRequestsDto,
+  ) {
+    const userId = req.user.id;
+    return await this.deliveryRequestService.getVendorRequests(userId, dto);
+  }
+  
+  /**
+   * Endpoint to get a delivery request information
+   */
+  @ApiOperation({
+    summary: 'Get delivery request information',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Delivery request information retrieved successfully.',
+  })
+  @ApiParam({
+    name: 'requestId',
+    type: 'number',
+    required: true,
+    description: 'The Delivery Request Id',
+    example: 5,
+  })
+  @Get('/:requestId')
+  public async getRequestInfo(
+    @Req() req,
+    @Param('requestId') requestId: number,
+  ) {
+    const userId = req.user.id;
+    return await this.deliveryRequestService.getRequestInfo(requestId, userId);
   }
 }
