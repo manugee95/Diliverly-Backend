@@ -34,7 +34,53 @@ export class VendorService {
      * Inject Pagination Provider
      */
     private readonly paginationProvider: PaginationProvider,
-  ) { }
+  ) {}
+
+  /**
+   * Method to create or update a vendor profile
+   */
+  async createOrUpdateVendorProfile(
+    userId: number,
+    dto: CreateVendorDto,
+  ): Promise<Vendor> {
+    const { businessName, address } = dto;
+    // Ensure user exists & is a vendor
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if vendor profile already exists
+    let vendor = await this.vendorRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (vendor) {
+      // Update existing profile
+      Object.assign(vendor, {
+        businessName: businessName || vendor.businessName,
+        address: address || vendor.address,
+      });
+    } else {
+      // Create new profile
+      vendor = this.vendorRepository.create({
+        user: { id: userId },
+        businessName,
+        address,
+      });
+    }
+
+    // Update user's isVendor if creating a new vendor profile
+    if (!vendor.id) {
+      user.isVendor = true;
+      await this.userRepository.save(user);
+    }
+
+    return await this.vendorRepository.save(vendor);
+  }
 
   /**
    * Method to get vendor profile by user ID

@@ -3,6 +3,5 @@ export interface ActiveUserData {
   email: string;
   isAgent: boolean;
   isVendor: boolean;
-  // future-proofing
-  // isAdmin?: boolean;
+  activeRole: 'agent' | 'vendor';
 }

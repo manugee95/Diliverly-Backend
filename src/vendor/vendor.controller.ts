@@ -26,10 +26,10 @@ export class VendorController {
   ) {}
 
   /**
-   * Endpoint to update a new vendor profile
+   * Endpoint to create or update a new vendor profile
    */
   @ApiOperation({
-    summary: 'Update vendor profile',
+    summary: 'Create or update vendor profile',
   })
   @ApiResponse({
     status: 201,
@@ -37,9 +37,9 @@ export class VendorController {
   })
   @UseGuards(VendorGuard)
   @Patch('/profile')
-  public updateVendorProfile(@Body() dto: CreateVendorDto, @Req() req) {
+  public createOrUpdateVendorProfile(@Body() dto: CreateVendorDto, @Req() req) {
     const userId = req.user.id;
-    return this.vendorService.updateVendorProfile(userId, dto);
+    return this.vendorService.createOrUpdateVendorProfile(userId, dto);
   }
 
   /**

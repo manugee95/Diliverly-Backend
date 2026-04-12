@@ -26,20 +26,19 @@ export class AgentController {
   ) {}
 
   /**
-   * Endpoint to update agent profile
+   * Endpoint to create and update agent profile
    */
   @ApiOperation({
-    summary: 'Update agent profile',
+    summary: 'Create or update agent profile',
   })
   @ApiResponse({
     status: 201,
     description: 'Agent profile updated successfully.',
   })
-  @UseGuards(AgentGuard)
-  @Patch('/profile')
-  public updateAgentProfile(@Body() dto: CreateAgentDto, @Req() req) {
+  @Post('/profile')
+  public createOrUpdateAgentProfile(@Body() dto: CreateAgentDto, @Req() req) {
     const userId = req.user.id;
-    return this.agentService.updateAgentProfile(userId, dto);
+    return this.agentService.createOrUpdateAgentProfile(userId, dto);
   }
 
   /**

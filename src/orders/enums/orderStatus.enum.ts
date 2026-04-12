@@ -5,6 +5,5 @@ export enum OrderStatus {
   COMPLETE = 'completed',
   PENDING = 'pending',
   ACTIVE = 'active',
-  PENDING_VENDOR_APPROVAL = 'pending_approval',
   DECLINED = 'declined'
 }

@@ -168,14 +168,11 @@ export class DeliveryRequestService {
   /**
    * Method to get detailed info about a specific delivery request
    */
-  async getRequestInfo(requestId: number, userId: number) {
-    const agent = await this.agentRepo.findOne({
-      where: { user: { id: userId } },
-    });
-    if (!agent) {
-      throw new NotFoundException('Agent not found');
-    }
-
+  async getRequestInfo(
+    requestId: number,
+    userId: number,
+    activeRole: 'agent' | 'vendor',
+  ) {
     const request = await this.deliveryRequestRepo.findOne({
       where: { id: requestId },
       relations: ['vendor', 'deliveries'],
@@ -185,15 +182,46 @@ export class DeliveryRequestService {
       throw new NotFoundException('Delivery request not found');
     }
 
-    // Security check — ensure agent covers that request’s state
-    if (!agent.statesCovered?.includes(request.state)) {
-      throw new ForbiddenException(
-        'You are not authorized to view this request',
-      );
+    // AGENT VIEW
+    if (activeRole === 'agent') {
+      const agent = await this.agentRepo.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!agent) {
+        throw new NotFoundException('Agent profile not found');
+      }
+
+      if (!agent.statesCovered?.includes(request.state)) {
+        throw new ForbiddenException(
+          'You are not authorized to view this request',
+        );
+      }
     }
 
-    // Simplify vendor info (hide full profile)
-    const vendor = {
+    // VENDOR VIEW
+    else if (activeRole === 'vendor') {
+      const vendor = await this.vendorRepo.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!vendor) {
+        throw new NotFoundException('Vendor profile not found');
+      }
+
+      if (request.vendor.id !== vendor.id) {
+        throw new ForbiddenException(
+          'You are not authorized to view this request',
+        );
+      }
+    }
+
+    // Safety fallback
+    else {
+      throw new ForbiddenException('Invalid role context');
+    }
+
+    const vendorInfo = {
       id: request.vendor.id,
       businessName: request.vendor.businessName,
     };
@@ -204,7 +232,7 @@ export class DeliveryRequestService {
       description: request.description,
       state: request.state,
       status: request.status,
-      vendor: vendor.businessName,
+      vendor: vendorInfo.businessName,
       deliveries: request.deliveries.map((delivery) => ({
         id: delivery.id,
         address: delivery.address,
@@ -248,8 +276,9 @@ export class DeliveryRequestService {
   }
 
   /**
-   * Method to get all delivery requests for a vendor with pagination
+   * Method to get all delivery requests for a vendor with pagination and also filtering by status
    */
+
   async getVendorRequests(
     userId: number,
     deliveryRequestQuery: GetDeliveryRequestsDto,
@@ -257,8 +286,18 @@ export class DeliveryRequestService {
     const vendor = await this.vendorRepo.findOne({
       where: { user: { id: userId } },
     });
+
     if (!vendor) {
       throw new NotFoundException('Vendor not found');
+    }
+
+    const where: any = {
+      vendor: { id: vendor.id },
+    };
+
+    // Apply status filter if provided
+    if (deliveryRequestQuery.status) {
+      where.status = deliveryRequestQuery.status;
     }
 
     const deliveryRequests = await this.paginationProvider.paginateQuery(
@@ -268,7 +307,7 @@ export class DeliveryRequestService {
       },
       this.deliveryRequestRepo,
       {
-        where: { vendor: { id: vendor.id } },
+        where,
         order: { createdAt: 'DESC' },
       },
     );

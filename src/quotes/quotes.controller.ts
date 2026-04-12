@@ -51,7 +51,7 @@ export class QuotesController {
    * Endpoint to get quotes for a delivery request
    */
   @ApiOperation({
-    summary: 'Get quotes for a delivery request',
+    summary: 'Get quotes for a delivery request by a vendor',
   })
   @ApiResponse({
     status: 200,
@@ -87,6 +87,46 @@ export class QuotesController {
   ) {
     const userId = req.user.id;
     return this.quotesService.getQuotesForRequest(userId, requestId, dto);
+  }
+
+  /**
+   * Endpoint to get quotes submitted by an agent
+   */
+   @ApiOperation({
+    summary: 'Get quotes submitted by an agent',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Quotes retrieved successfully.',
+  })
+  @ApiQuery({
+    name: 'status',
+    type: 'string',
+    required: false,
+    description: 'The status of the quotes to retrieve',
+    example: 'pending'
+  })
+  @UseGuards(AgentGuard)
+  @Get('/agent')
+  public async getQuotesForAgent(@Req() req, @Query() dto: GetQuoteDto) {
+    const userId = req.user.id;
+    return this.quotesService.getQuotesForAgent(userId, dto);
+  }
+
+  /**
+   * Endpoint to get a single quote by ID
+   */
+   @ApiOperation({
+    summary: 'Get a single quote by ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Quote retrieved successfully.',
+  })
+  @Get('/:quoteId')
+  public async getQuoteById(@Req() req, @Param('quoteId') quoteId: number) {
+    const userId = req.user.id;
+    return this.quotesService.getQuoteById(userId, quoteId);
   }
 
   /**

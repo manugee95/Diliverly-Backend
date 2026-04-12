@@ -14,6 +14,8 @@ import { GetDeliveryRequestsDto } from './dtos/get-delivery-requests.dto';
 import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
 import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { log } from 'console';
+import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
 
 @Controller('delivery-request')
 export class DeliveryRequestsController {
@@ -22,6 +24,8 @@ export class DeliveryRequestsController {
      * Injecting DeliveryRequest service
      */
     private readonly deliveryRequestService: DeliveryRequestService,
+
+    private readonly generateTokensProvider: GenerateTokensProvider,
   ) {}
 
   /**
@@ -129,6 +133,13 @@ export class DeliveryRequestsController {
     description: 'The page number returned per query',
     example: 1,
   })
+  @ApiQuery({
+    name: 'status',
+    type: 'string',
+    required: false,
+    description: 'The status of the delivery requests to retrieve',
+    example: 'open'
+  })
   @UseGuards(VendorGuard)
   @Get('vendor-requests')
   public async getVendorRequests(
@@ -138,7 +149,7 @@ export class DeliveryRequestsController {
     const userId = req.user.id;
     return await this.deliveryRequestService.getVendorRequests(userId, dto);
   }
-  
+
   /**
    * Endpoint to get a delivery request information
    */
@@ -161,7 +172,11 @@ export class DeliveryRequestsController {
     @Req() req,
     @Param('requestId') requestId: number,
   ) {
-    const userId = req.user.id;
-    return await this.deliveryRequestService.getRequestInfo(requestId, userId);
+
+    return await this.deliveryRequestService.getRequestInfo(
+      requestId, 
+      req.user.id,
+      req.user.activeRole,
+    );
   }
 }

@@ -291,25 +291,6 @@ export class UsersService {
     const tokens =
       await this.generateTokensProvider.generateTokens(createdUser);
 
-    /// Save tokens in cookies
-    // const isProduction = process.env.NODE_ENV === 'production';
-
-    // res.cookie('accessToken', tokens.accessToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: 'lax',
-    //   maxAge: tokens.accessTokenTtl * 1000,
-    //   path: '/',
-    // });
-
-    // res.cookie('refreshToken', tokens.refreshToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: 'lax',
-    //   maxAge: tokens.refreshTokenTtl * 1000,
-    //   path: '/',
-    // });
-
     await this.cacheManager.del(`pending_user:${email}`);
 
     // Send Welcome email

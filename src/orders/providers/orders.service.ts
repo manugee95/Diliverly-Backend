@@ -36,6 +36,7 @@ import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
 import { Escrow } from 'src/escrow/escrow.entity';
 import { EscrowService } from 'src/escrow/providers/escrow.service';
 import { MailerService } from 'src/mailer/providers/mailer.service';
+import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
 
 @Injectable()
 export class OrdersService {
@@ -738,12 +739,14 @@ export class OrdersService {
   /**
    * Method to automatically mark order as completed
    */
+
   private async autoCompleteOrder(orderId: number, manager: EntityManager) {
     const orderRepo = manager.getRepository(Order);
+    const deliveryRequestRepo = manager.getRepository(DeliveryRequest);
 
     const order = await orderRepo.findOne({
       where: { id: orderId },
-      relations: ['items', 'vendor', 'vendor.user'],
+      relations: ['items', 'vendor', 'vendor.user', 'request'], // 👈 include request
     });
 
     if (!order) return;
@@ -760,6 +763,16 @@ export class OrdersService {
       await orderRepo.save(order);
 
       console.log(`Order ${order.id} marked as COMPLETE automatically.`);
+
+      // Update Delivery Request status
+      if (order.request && order.request.status !== RequestStatus.CLOSED) {
+        order.request.status = RequestStatus.CLOSED;
+        await deliveryRequestRepo.save(order.request);
+
+        console.log(
+          `DeliveryRequest ${order.request.id} marked as CLOSED automatically.`,
+        );
+      }
 
       // Notify vendor of order completion
       await this.notifyVendorCompleted({

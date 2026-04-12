@@ -38,32 +38,71 @@ export class RefreshTokensProvider {
     private readonly generateTokensProvider: GenerateTokensProvider,
   ) {}
 
+  // public async refreshTokens(refreshToken: string) {
+  //   if (!refreshToken) {
+  //     throw new UnauthorizedException('Refresh token missing');
+  //   }
+
+  //   try {
+  //     // Verify refresh token
+  //     const payload = await this.jwtService.verifyAsync<
+  //       Pick<ActiveUserData, 'id'>
+  //     >(refreshToken, {
+  //       secret: this.jwtConfiguration.secret,
+  //       audience: this.jwtConfiguration.audience,
+  //       issuer: this.jwtConfiguration.issuer,
+  //     });
+
+  //     // Fetch user
+  //     const user = await this.userService.findOneById(payload.id);
+  //     if (!user) {
+  //       throw new UnauthorizedException('User not found');
+  //     }
+
+  //     // Generate new tokens
+  //     return await this.generateTokensProvider.generateTokens(user);
+  //   } catch {
+  //     throw new UnauthorizedException('Invalid or expired refresh token');
+  //   }
+  // }
+
   public async refreshTokens(refreshToken: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
 
     try {
-      // Verify refresh token
+      // Extract role too
       const payload = await this.jwtService.verifyAsync<
-        Pick<ActiveUserData, 'id'>
+        Pick<ActiveUserData, 'id' | 'activeRole'>
       >(refreshToken, {
         secret: this.jwtConfiguration.secret,
         audience: this.jwtConfiguration.audience,
         issuer: this.jwtConfiguration.issuer,
       });
 
-      // Fetch user
       const user = await this.userService.findOneById(payload.id);
+
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
-      // Generate new tokens
-      return await this.generateTokensProvider.generateTokens(user);
+      // Optional but STRONGLY recommended validation
+      if (payload.activeRole === 'agent' && !user.isAgent) {
+        throw new UnauthorizedException('Invalid role');
+      }
+
+      if (payload.activeRole === 'vendor' && !user.isVendor) {
+        throw new UnauthorizedException('Invalid role');
+      }
+
+      // Preserve role when regenerating tokens
+      return await this.generateTokensProvider.generateTokens(
+        user,
+        payload.activeRole,
+      );
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 }
-

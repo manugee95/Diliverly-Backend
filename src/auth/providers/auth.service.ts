@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { SignInProvider } from './sign-in.provider';
 import { RefreshTokensProvider } from './refresh-tokens.provider';
 import { SignInDto } from '../dtos/signin.dto';
-import { RefreshTokenDto } from '../dtos/refresh-token.dto';
 import { ForgotPasswordProvider } from './forgot-password.provider';
 import { ForgotPasswordDto } from '../dtos/forgot-password.dto';
 import { VerifyResetCodeDto } from '../dtos/verify-reset-code.dto';
@@ -37,10 +36,6 @@ export class AuthService {
   public async signin(signInDto: SignInDto) {
     return this.signInProvider.signin(signInDto);
   }
-
-  // public async refreshTokens(refreshTokenDto: RefreshTokenDto) {
-  //   return this.refreshTokensProvider.refreshTokens(refreshTokenDto);
-  // }
 
   public async forgotPassword(dto: ForgotPasswordDto) {
     return this.forgotPasswordProvider.forgotPassword(dto);

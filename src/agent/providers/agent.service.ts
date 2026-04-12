@@ -35,6 +35,56 @@ export class AgentService {
   ) {}
 
   /**
+   * Method to create or update an agent profile
+   */
+  async createOrUpdateAgentProfile(
+    userId: number,
+    dto: CreateAgentDto,
+  ): Promise<Agent> {
+    const { businessName, address, bio, statesCovered } = dto;
+    // Ensure user exists & is an agent
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if agent profile already exists
+    let agent = await this.agentRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (agent) {
+      // Update existing profile
+      Object.assign(agent, {
+        businessName: businessName || agent.businessName,
+        address: address || agent.address,
+        bio: bio || agent.bio,
+        statesCovered: statesCovered || agent.statesCovered,
+      });
+    } else {
+      // Create new profile
+      agent = this.agentRepository.create({
+        user: { id: userId },
+        businessName,
+        address,
+        bio,
+        statesCovered,
+      });
+    }
+
+    //Update user's isAgent if creating a new agent profile
+    if (!agent.id) {
+      user.isAgent = true;
+      await this.userRepository.save(user);
+    }
+
+    return await this.agentRepository.save(agent);
+  }
+
+  /**
    * Method to get agent profile by user ID
    */
   async getAgentProfile(userId: number): Promise<Agent> {
@@ -57,6 +107,7 @@ export class AgentService {
       try {
         agent = await this.agentRepository.findOne({
           where: { id: agentId },
+          relations: ['reviews'],
         });
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -86,45 +137,4 @@ export class AgentService {
     return agents;
   }
 
-  /**
-   * Method to update a profile
-   */
-  async updateAgentProfile(
-    userId: number,
-    dto: CreateAgentDto,
-  ): Promise<Agent> {
-    const { businessName, address, bio, statesCovered } = dto;
-
-    // Ensure user exists & is an agent
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (!user.isAgent) {
-      throw new BadRequestException('User is not registered as an agent');
-    }
-
-    // Fetch existing agent profile
-    const agent = await this.agentRepository.findOne({
-      where: { user: { id: userId } },
-    });
-
-    if (!agent) {
-      throw new NotFoundException('Agent profile not found');
-    }
-
-    // Update only provided fields
-    Object.assign(agent, {
-      ...(businessName && { businessName }),
-      ...(address && { address }),
-      ...(bio && { bio }),
-      ...(statesCovered && { statesCovered }),
-    });
-
-    return await this.agentRepository.save(agent);
-  }
 }

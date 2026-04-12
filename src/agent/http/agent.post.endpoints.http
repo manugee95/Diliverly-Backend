@@ -1,9 +1,9 @@
-POST http://localhost:3000/agent/create-profile
+POST http://localhost:3000/agent/profile
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEsImVtYWlsIjoibHlkaWFtY2dpbGwyMkBnbWFpbC5jb20iLCJyb2xlIjoiYWdlbnQiLCJpYXQiOjE3NjQwNjc2OTMsImV4cCI6MTc2NDA3MTI5MywiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.1CB85lHGcYdZY4zIMduPSZZNVDZG7ZwFCv9x4fUMaPY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6ZmFsc2UsImlzVmVuZG9yIjp0cnVlLCJhY3RpdmVSb2xlIjoidmVuZG9yIiwiaWF0IjoxNzc1OTM3NzIzLCJleHAiOjE3NzU5NDEzMjMsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.z42EGmApk_3Kb6uBD_gOU8MUjCeAg5RKRqaZc7CRxhY
 
 {
-    "businessName": "Benson Logistics",
+    "businessName": "Highcrown Logistics",
     "address": "123 Uniben school gate road, Benin city",
     "bio": "Experienced agent specializing in deliveries in the southern part of Nigeria",
     "statesCovered": ["imo", "edo", "delta"]

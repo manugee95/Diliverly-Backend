@@ -21,6 +21,7 @@ import { GenerateTokensProvider } from './providers/generate-tokens.provider';
 import { RefreshTokensProvider } from './providers/refresh-tokens.provider';
 import { Request } from 'express';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
+import { UsersService } from 'src/users/providers/users.service';
 
 @Controller('auth')
 export class AuthController {
@@ -29,6 +30,11 @@ export class AuthController {
      * Injecting authsService
      */
     private readonly authsService: AuthService,
+
+    /**
+     * Injecting userService
+     */
+    private readonly userService: UsersService,
 
     /**
      * Inject generateTokensProvider
@@ -59,27 +65,6 @@ export class AuthController {
 
     const tokens = await this.generateTokensProvider.generateTokens(user);
 
-    // Save tokens in cookies
-    // const isProduction = process.env.NODE_ENV === 'production';
-
-    // res.cookie('accessToken', tokens.accessToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: isProduction ? 'none' : 'lax',
-    //   maxAge: tokens.accessTokenTtl * 1000,
-    //   path: '/',
-    //   domain: process.env.CLIENT_DOMAIN,
-    // });
-
-    // res.cookie('refreshToken', tokens.refreshToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: isProduction ? 'none' : 'lax',
-    //   maxAge: tokens.refreshTokenTtl * 1000,
-    //   path: '/',
-    //   domain: process.env.CLIENT_DOMAIN,
-    // });
-
     return {
       message: 'Login successful',
       accessToken: tokens.accessToken,
@@ -97,9 +82,11 @@ export class AuthController {
   })
   @Post('refresh-tokens')
   public async refresh(
-    @Body() dto: RefreshTokenDto
-  ): Promise<{ message: string; refreshToken: string, accessToken: string }> {
-    const tokens = await this.refreshTokensProvider.refreshTokens(dto.refreshToken);
+    @Body() dto: RefreshTokenDto,
+  ): Promise<{ message: string; refreshToken: string; accessToken: string }> {
+    const tokens = await this.refreshTokensProvider.refreshTokens(
+      dto.refreshToken,
+    );
 
     return {
       message: 'Tokens refreshed successfully',
@@ -161,5 +148,29 @@ export class AuthController {
   public async changePassword(@Req() req, @Body() dto: ChangePasswordDto) {
     const userId = req.user.id;
     return this.authsService.changePassword(userId, dto);
+  }
+
+
+  @ApiOperation({
+    summary: 'Switch user profile role (agent/vendor)',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'profile switched successfully.',
+  })
+  @Post('/switch-role')
+  async switchRole(@Req() req, @Body('role') role: 'agent' | 'vendor') {
+    const user = await this.userService.findOneById(req.user.id);
+
+    const tokens = await this.generateTokensProvider.generateTokens(
+      user,
+      role,
+    );
+
+    return {
+      message: 'Role switched successfully',
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 }

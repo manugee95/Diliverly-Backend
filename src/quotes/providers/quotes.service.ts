@@ -196,6 +196,63 @@ export class QuotesService {
   }
 
   /**
+   * Method to get all quotes submitted by an agent
+   */
+  async getQuotesForAgent(userId: number, quoteQuery: GetQuoteDto) {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!agent) throw new NotFoundException('Agent not found');
+
+    // Dynamic filter
+    const where: any = {
+      agent: { id: agent.id },
+    };
+
+    if (quoteQuery.status) {
+      where.status = quoteQuery.status;
+    }
+
+    const quotes = await this.paginationProvider.paginateQuery(
+      {
+        page: quoteQuery.page || 1,
+        limit: quoteQuery.limit || 10,
+      },
+      this.quoteRepo,
+      {
+        where,
+        relations: ['request', 'request.vendor'],
+        order: { createdAt: 'ASC' },
+      },
+    );
+
+    return quotes;
+  }
+
+  /**
+   * Method to get a single quote by ID
+   */
+  async getQuoteById(userId: number, quoteId: number) {
+    const quote = await this.quoteRepo.findOne({
+      where: { id: quoteId },
+      relations: ['agent', 'agent.user', 'request', 'request.vendor'],
+    });
+
+    if (!quote) throw new NotFoundException('Quote not found');
+
+    // Ensure the user is either the agent who submitted the quote or the vendor who owns the request
+    if (
+      quote.agent.user.id !== userId &&
+      quote.request.vendor.user.id !== userId
+    ) {
+      throw new ForbiddenException('You are not the owner of this quote');
+    }
+
+    return quote;
+  }
+
+  /**
    * Method to accept a quote
    */
   async acceptQuote(userId: number, quoteId: number) {

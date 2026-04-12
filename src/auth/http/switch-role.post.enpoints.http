@@ -1,0 +1,7 @@
+POST http://localhost:3000/auth/switch-role
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJ2ZW5kb3IiLCJpYXQiOjE3NzU5Mzg2NDQsImV4cCI6MTc3NTk0MjI0NCwiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.jwHbR36MFb9kUHu723Inh_1b5VcSNd3LglposCxs2-E
+
+{
+    "role": "vendor"
+}

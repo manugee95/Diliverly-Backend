@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { DeliveryRequestsController } from './delivery-requests.controller';
 import { DeliveryRequestService } from './providers/delivery-requests.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,12 +10,14 @@ import { AgentModule } from 'src/agent/agent.module';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Agent } from 'src/agent/agent.entity';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   controllers: [DeliveryRequestsController],
   providers: [DeliveryRequestService],
   imports: [
     TypeOrmModule.forFeature([DeliveryRequest, Delivery, Vendor, Agent]),
+    forwardRef(() => AuthModule),
     VendorModule,
     AgentModule,
     PaginationModule,
