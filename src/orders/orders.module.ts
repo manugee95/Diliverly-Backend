@@ -14,6 +14,7 @@ import { ReferenceModule } from 'src/common/reference/reference.module';
 import { Agent } from 'src/agent/agent.entity';
 import { EscrowModule } from 'src/escrow/escrow.module';
 import { MailerModule } from 'src/mailer/mailer.module';
+import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
 
 @Module({
   controllers: [OrdersController],
@@ -32,6 +33,7 @@ import { MailerModule } from 'src/mailer/mailer.module';
     ReferenceModule,
     EscrowModule,
     MailerModule,
+    TrustScoreModule,
     CacheModule.register(),
   ],
 })

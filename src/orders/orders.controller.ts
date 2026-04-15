@@ -146,26 +146,6 @@ export class OrdersController {
   }
 
   /**
-   * Endpoint for vendor to approve cod
-   * 
-   */
-
-
-  // @ApiOperation({
-  //   summary: 'Vendor decision on COD order item',
-  // })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: 'Vendor decision recorded successfully.',
-  // })
-  // @UseGuards(VendorGuard)
-  // @Post('vendor-decision')
-  // async codVendorDecision(@Req() req, @Body() dto: VendorDecisionDto) {
-  //   const userId = req.user.id;
-  //   return this.ordersService.codVendorDecision(userId, dto);
-  // }
-
-  /**
    * Endpoint to cancel an order item
    */
   @ApiOperation({

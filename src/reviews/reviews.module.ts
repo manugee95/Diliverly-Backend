@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Review } from './review.entity';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { Agent } from 'src/agent/agent.entity';
+import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
 
 @Module({
   controllers: [ReviewsController],
@@ -14,6 +15,7 @@ import { Agent } from 'src/agent/agent.entity';
   imports: [
     TypeOrmModule.forFeature([Review, Agent, Order, Vendor]),
     PaginationModule,
+    TrustScoreModule,
   ],
 })
 export class ReviewsModule {}

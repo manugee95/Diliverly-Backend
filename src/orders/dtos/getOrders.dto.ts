@@ -1,4 +1,10 @@
-import { PartialType } from "@nestjs/mapped-types";
-import { PaginationQueryDto } from "src/common/pagination/dtos/pagination-query.dto";
+import { PartialType } from '@nestjs/mapped-types';
+import { PaginationQueryDto } from 'src/common/pagination/dtos/pagination-query.dto';
+import { OrderStatus } from '../enums/orderStatus.enum';
+import { IsEnum, IsOptional } from 'class-validator';
 
-export class GetOrdersDto extends PartialType(PaginationQueryDto) {}
+export class GetOrdersDto extends PartialType(PaginationQueryDto) {
+  @IsOptional()
+  @IsEnum(OrderStatus)
+  status?: OrderStatus;
+}

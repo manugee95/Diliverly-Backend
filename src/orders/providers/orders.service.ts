@@ -36,6 +36,7 @@ import { Escrow } from 'src/escrow/escrow.entity';
 import { EscrowService } from 'src/escrow/providers/escrow.service';
 import { MailerService } from 'src/mailer/providers/mailer.service';
 import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
+import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider';
 
 @Injectable()
 export class OrdersService {
@@ -70,12 +71,6 @@ export class OrdersService {
     private readonly agentRepo: Repository<Agent>,
 
     /**
-     * Inject Transaction Repository
-     */
-    @InjectRepository(Transaction)
-    private readonly transactionRepo: Repository<Transaction>,
-
-    /**
      * Injecting Pagination Provider
      */
     private readonly paginationProvider: PaginationProvider,
@@ -103,6 +98,11 @@ export class OrdersService {
      * Injecting mail service
      */
     private readonly mailService: MailerService,
+
+    /**
+     * Injecting Trust Score Provider
+     */
+    private readonly trustScoreProvider: TrustScoreProvider,
   ) {}
 
   /**
@@ -462,7 +462,7 @@ export class OrdersService {
 
       if (!oi) throw new Error('Order item not found');
 
-      // Prevent double increment if already delivered
+      // Prevent double increment
       if (oi.status === OrderStatus.DELIVERED) {
         return;
       }
@@ -471,9 +471,27 @@ export class OrdersService {
       oi.status = OrderStatus.DELIVERED;
       await oiRepo.save(oi);
 
-      // 4) Increment agent delivery count (atomic)
+      // 4) Increment + Recalculate Trust Score
       if (oi.agent?.id) {
+        // Increment deliveries (atomic)
         await agentRepo.increment({ id: oi.agent.id }, 'total_deliveries', 1);
+
+        // Fetch updated agent (IMPORTANT)
+        const updatedAgent = await agentRepo.findOne({
+          where: { id: oi.agent.id },
+        });
+
+        if (!updatedAgent) throw new Error('Agent not found');
+
+        // Calculate trust score
+        const trustScore =
+          this.trustScoreProvider.calculateTrustScore(updatedAgent);
+
+        // Persist trust score
+        await agentRepo.update(
+          { id: updatedAgent.id },
+          { trust_score: trustScore },
+        );
       }
 
       // 5) Release escrow
@@ -657,7 +675,25 @@ export class OrdersService {
 
       // Increment agent delivery count (atomic)
       if (oi.agent?.id) {
+        // Increment deliveries (atomic)
         await agentRepo.increment({ id: oi.agent.id }, 'total_deliveries', 1);
+
+        // Fetch updated agent (IMPORTANT)
+        const updatedAgent = await agentRepo.findOne({
+          where: { id: oi.agent.id },
+        });
+
+        if (!updatedAgent) throw new Error('Agent not found');
+
+        // Calculate trust score
+        const trustScore =
+          this.trustScoreProvider.calculateTrustScore(updatedAgent);
+
+        // Persist trust score
+        await agentRepo.update(
+          { id: updatedAgent.id },
+          { trust_score: trustScore },
+        );
       }
 
       // (3) Release delivery fee to agent
@@ -864,44 +900,56 @@ export class OrdersService {
    * Method to get orders assigned to an agent
    */
   async getOrdersAssignedToAgent(userId: number, ordersQuery: GetOrdersDto) {
-    //Find the agent
+    // Find the agent
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
     });
+
     if (!agent) throw new BadRequestException('Agent not found');
 
-    // Check cache first
-    const cacheKey = `agent:${agent.id}:orders`;
+    const page = ordersQuery.page || 1;
+    const limit = ordersQuery.limit || 10;
+    const status = ordersQuery.status || 'all';
+
+    // Include filters in cache key
+    const cacheKey = `agent:${agent.id}:orders:status=${status}:page=${page}:limit=${limit}`;
 
     const cached = await this.cacheManager.get<string>(cacheKey);
-
     if (cached) {
       return JSON.parse(cached);
     }
 
-    //If not in cache, fetch from DB
+    // Dynamic where clause
+    const where: any = {
+      request: {
+        quotes: {
+          agent: {
+            id: agent.id,
+          },
+        },
+      },
+    };
+
+    // Apply status filter if provided
+    if (ordersQuery.status) {
+      where.status = ordersQuery.status;
+    }
+
+    // Fetch from DB
     const orders = await this.paginationProvider.paginateQuery(
       {
-        page: ordersQuery.page || 1,
-        limit: ordersQuery.limit || 10,
+        page,
+        limit,
       },
       this.orderRepo,
       {
-        where: {
-          request: {
-            quotes: {
-              agent: {
-                id: agent.id,
-              },
-            },
-          },
-        },
+        where, // use dynamic where
         relations: ['request', 'vendor'],
         order: { createdAt: 'DESC' },
       },
     );
 
-    // Store in cache for future requests
+    // Store in cache
     await this.cacheManager.set(
       cacheKey,
       JSON.stringify(orders),
@@ -915,37 +963,49 @@ export class OrdersService {
    * Method to get orders made by a vendor
    */
   async getOrdersForVendor(userId: number, ordersQuery: GetOrdersDto) {
-    //Find the vendor
+    // Find the vendor
     const vendor = await this.vendorRepo.findOne({
       where: { user: { id: userId } },
     });
+
     if (!vendor) throw new BadRequestException('Vendor not found');
 
-    // Check cache first
-    const cacheKey = `vendor:${vendor.id}:orders`;
-    const cached = await this.cacheManager.get<string>(cacheKey);
+    const page = ordersQuery.page || 1;
+    const limit = ordersQuery.limit || 10;
+    const status = ordersQuery.status || 'all';
 
+    // Cache key must include filters
+    const cacheKey = `vendor:${vendor.id}:orders:status=${status}:page=${page}:limit=${limit}`;
+
+    const cached = await this.cacheManager.get<string>(cacheKey);
     if (cached) {
       return JSON.parse(cached);
     }
 
-    //If not in cache, fetch from DB
+    // Build dynamic where clause
+    const where: any = {
+      vendor: { id: vendor.id },
+    };
+
+    if (ordersQuery.status) {
+      where.status = ordersQuery.status;
+    }
+
+    // Fetch from DB
     const orders = await this.paginationProvider.paginateQuery(
       {
-        page: ordersQuery.page || 1,
-        limit: ordersQuery.limit || 10,
+        page,
+        limit,
       },
       this.orderRepo,
       {
-        where: {
-          vendor: { id: vendor.id },
-        },
+        where, // use the dynamic where here
         relations: ['request', 'vendor'],
         order: { createdAt: 'DESC' },
       },
     );
 
-    // Store in cache for future requests
+    // Store in cache
     await this.cacheManager.set(
       cacheKey,
       JSON.stringify(orders),

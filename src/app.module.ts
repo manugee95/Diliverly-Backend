@@ -32,6 +32,7 @@ import { BankAccountModule } from './bank-account/bank-account.module';
 import { WalletsModule } from './wallets/wallets.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { PaystackModule } from './paystack/paystack.module';
+import { TrustScoreModule } from './common/trust-score/trust-score.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -96,6 +97,7 @@ const ENV = process.env.NODE_ENV;
     WalletsModule,
     EscrowModule,
     PaystackModule,
+    TrustScoreModule,
   ],
   controllers: [AppController],
   providers: [

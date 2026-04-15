@@ -278,7 +278,6 @@ export class DeliveryRequestService {
   /**
    * Method to get all delivery requests for a vendor with pagination and also filtering by status
    */
-
   async getVendorRequests(
     userId: number,
     deliveryRequestQuery: GetDeliveryRequestsDto,
