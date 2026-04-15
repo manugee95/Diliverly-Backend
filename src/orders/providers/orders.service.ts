@@ -23,7 +23,6 @@ import { OrderStatus } from '../enums/orderStatus.enum';
 import { MarkDeliveredDto } from '../dtos/markDelivered.dto';
 import { User } from 'src/users/user.entity';
 import { DeliveryType } from 'src/delivery-requests/enums/deliveryType.enum';
-import { VendorDecisionDto } from '../dtos/vendorDecision.dto';
 import { CancelOrderItemDto } from '../dtos/cancelOrderItem.dto';
 import { Transaction } from 'src/transactions/transaction.entity';
 import { TransactionType } from 'src/transactions/enums/transactionType.enum';
@@ -377,12 +376,71 @@ export class OrdersService {
   /**
    * Method to Handle prepaid delivery
    */
+
+  // private async handlePrepaidDelivery(orderItem: OrderItem) {
+  //   // Execute within transaction
+  //   await this.dataSource.transaction(async (manager) => {
+  //     const oiRepo = manager.getRepository(OrderItem);
+
+  //     // 1) Lock OrderItem row WITHOUT relations (safe)
+  //     const lockedOI = await oiRepo.findOne({
+  //       where: { id: orderItem.id },
+  //       lock: { mode: 'pessimistic_write' },
+  //     });
+
+  //     if (!lockedOI) throw new Error('Order item not found');
+
+  //     // 2) Load orderItem graph WITHOUT lock (relations cause LEFT JOIN)
+  //     const oi = await oiRepo.findOne({
+  //       where: { id: orderItem.id },
+  //       relations: [
+  //         'order',
+  //         'order.vendor',
+  //         'order.vendor.user',
+  //         'agent',
+  //         'agent.user',
+  //       ],
+  //     });
+
+  //     if (!oi) throw new Error('Order item not found');
+
+  //     // Prevent double increment if already delivered
+  //     if (oi.status === OrderStatus.DELIVERED) {
+  //       return;
+  //     }
+
+  //     // Update status to DELIVERED
+  //     oi.status = OrderStatus.DELIVERED;
+  //     await oiRepo.save(oi);
+
+  //     // ✅ 4) Increment agent delivery count (atomic)
+  //     if (oi.agent?.id) {
+  //       await agentRepo.increment({ id: oi.agent.id }, 'total_deliveries', 1);
+  //     }
+
+  //     // Release escrow via EscrowService (uses same manager/tx)
+  //     await this.escrowService.releaseToAgent(oi.id, manager);
+
+  //     // Auto-complete order (if all items done)
+  //     await this.autoCompleteOrder(oi.order.id, manager);
+  //   });
+
+  //   // Notify vendor of item delivered
+  //   await this.notifyVendorDelivered({
+  //     vendorEmail: orderItem.order.vendor.user.email,
+  //     orderReference: orderItem.order.reference,
+  //     vendorName: orderItem.order.vendor.user.firstName,
+  //   });
+
+  //   return { message: 'Delivered successfully. Escrow released to agent.' };
+  // }
+
   private async handlePrepaidDelivery(orderItem: OrderItem) {
-    // Execute within transaction
     await this.dataSource.transaction(async (manager) => {
       const oiRepo = manager.getRepository(OrderItem);
+      const agentRepo = manager.getRepository(Agent);
 
-      // 1) Lock OrderItem row WITHOUT relations (safe)
+      // 1) Lock OrderItem row
       const lockedOI = await oiRepo.findOne({
         where: { id: orderItem.id },
         lock: { mode: 'pessimistic_write' },
@@ -390,7 +448,7 @@ export class OrdersService {
 
       if (!lockedOI) throw new Error('Order item not found');
 
-      // 2) Load orderItem graph WITHOUT lock (relations cause LEFT JOIN)
+      // 2) Load full graph
       const oi = await oiRepo.findOne({
         where: { id: orderItem.id },
         relations: [
@@ -404,18 +462,28 @@ export class OrdersService {
 
       if (!oi) throw new Error('Order item not found');
 
-      // Update status to DELIVERED
+      // Prevent double increment if already delivered
+      if (oi.status === OrderStatus.DELIVERED) {
+        return;
+      }
+
+      // 3) Update status
       oi.status = OrderStatus.DELIVERED;
       await oiRepo.save(oi);
 
-      // Release escrow via EscrowService (uses same manager/tx)
+      // 4) Increment agent delivery count (atomic)
+      if (oi.agent?.id) {
+        await agentRepo.increment({ id: oi.agent.id }, 'total_deliveries', 1);
+      }
+
+      // 5) Release escrow
       await this.escrowService.releaseToAgent(oi.id, manager);
 
-      // Auto-complete order (if all items done)
+      // 6) Auto-complete order
       await this.autoCompleteOrder(oi.order.id, manager);
     });
 
-    // Notify vendor of item delivered
+    // Notify vendor
     await this.notifyVendorDelivered({
       vendorEmail: orderItem.order.vendor.user.email,
       orderReference: orderItem.order.reference,
@@ -483,6 +551,7 @@ export class OrdersService {
       const walletRepo = manager.getRepository(Wallet);
       const userRepo = manager.getRepository(User);
       const escrowRepo = manager.getRepository(Escrow);
+      const agentRepo = manager.getRepository(Agent);
 
       // STEP 1: Lock OrderItem WITHOUT relations (avoids LEFT JOIN + FOR UPDATE)
       const lockedOI = await oiRepo.findOne({
@@ -577,9 +646,19 @@ export class OrdersService {
 
       await walletRepo.save([agentWallet, vendorWallet]);
 
+      // Prevent double increment if already delivered
+      if (oi.status === OrderStatus.DELIVERED) {
+        return;
+      }
+
       // (2) update status to delivered
       oi.status = OrderStatus.DELIVERED;
       await oiRepo.save(oi);
+
+      // Increment agent delivery count (atomic)
+      if (oi.agent?.id) {
+        await agentRepo.increment({ id: oi.agent.id }, 'total_deliveries', 1);
+      }
 
       // (3) Release delivery fee to agent
       await this.escrowService.releaseToAgent(oi.id, manager);
@@ -643,7 +722,6 @@ export class OrdersService {
   /**
    * Method to cancel an order Item
    */
-
   async cancelOrderItem(userId: number, dto: CancelOrderItemDto) {
     const { orderItemId } = dto;
 
@@ -739,7 +817,6 @@ export class OrdersService {
   /**
    * Method to automatically mark order as completed
    */
-
   private async autoCompleteOrder(orderId: number, manager: EntityManager) {
     const orderRepo = manager.getRepository(Order);
     const deliveryRequestRepo = manager.getRepository(DeliveryRequest);

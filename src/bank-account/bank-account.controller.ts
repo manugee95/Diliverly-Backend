@@ -32,7 +32,7 @@ export class BankAccountController {
    * Endpoint to get a user's bank account details
    */
   @ApiOperation({
-    summary: 'Get the user\'s bank account details',
+    summary: "Get the user's bank account details",
   })
   @ApiResponse({
     status: 201,
@@ -47,7 +47,7 @@ export class BankAccountController {
    * Endpoint to update a user's bank account details
    */
   @ApiOperation({
-    summary: 'Update the user\'s bank account details',
+    summary: "Update the user's bank account details",
   })
   @ApiResponse({
     status: 201,
@@ -71,5 +71,20 @@ export class BankAccountController {
   @Get('banks')
   async getAllBanks() {
     return this.bankAccountService.getAllBanks();
+  }
+
+  /**
+   * Endpoint to verify bank account details with Paystack
+   */
+  @ApiOperation({
+    summary: 'Verify bank account details with Paystack',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Bank account details verified successfully.',
+  })
+  @Post('verify')
+  async verifyBankAccount(@Body() dto: CreateBankAccountDto) {
+    return this.bankAccountService.verifyBankAccount(dto);
   }
 }

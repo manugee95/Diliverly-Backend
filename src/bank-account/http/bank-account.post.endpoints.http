@@ -22,3 +22,13 @@ Content-Type: application/json
 
 GET http://localhost:3000/bank-account/banks
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjI0ODczOSwiZXhwIjoxNzc2MjUyMzM5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.QrAe4W7p5U0MnzKMFx6neBGiOIMJGkCoPrk8HSno8nw
+
+
+POST http://localhost:3000/bank-account/verify
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjI1MzQ2MCwiZXhwIjoxNzc2MjU3MDYwLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.WjyiGf6S_KvXuZwrBVbs4d986Bw2yWMtciSTdflQrL8
+Content-Type: application/json
+
+{
+    "bankCode": "058",
+    "accountNumber": "0121899311"
+}

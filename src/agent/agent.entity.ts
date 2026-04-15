@@ -51,6 +51,9 @@ export class Agent {
   @Column({ type: 'int', default: 0 })
   rating_count: number;
 
+  @Column({ type: 'int', default: 0 })
+  total_deliveries: number;
+
   @Column({ default: false })
   isVerified: boolean;
 

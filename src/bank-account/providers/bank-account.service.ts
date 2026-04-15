@@ -231,4 +231,29 @@ export class BankAccountService {
       throw new BadRequestException('Could not fetch bank list');
     }
   }
+
+  /**
+   * Method to verify bank account details without saving (used for frontend validation)
+   */
+  async verifyBankAccount(
+    dto: CreateBankAccountDto,
+  ): Promise<{ accountName: string; bankName: string }> {
+    const { bankCode, accountNumber } = dto;
+    try {
+      const res = await axios.get(
+        `https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        },
+      );
+      return {
+        accountName: res.data.data.account_name,
+        bankName: res.data.data.bank_name,
+      };
+    } catch (error) {
+      throw new BadRequestException('Bank verification failed');
+    }
+  }
 }
