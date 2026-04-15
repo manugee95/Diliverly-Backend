@@ -212,4 +212,23 @@ export class BankAccountService {
 
     return this.bankRepository.save(existingBankAccount);
   }
+
+  /**
+   * Method to get a list of all banks supported by Paystack
+   */
+  async getAllBanks(): Promise<{ name: string; code: string }[]> {
+    try {
+      const res = await axios.get('https://api.paystack.co/bank', {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      });
+      return res.data.data.map((bank) => ({
+        name: bank.name,
+        code: bank.code,
+      }));
+    } catch (error) {
+      throw new BadRequestException('Could not fetch bank list');
+    }
+  }
 }

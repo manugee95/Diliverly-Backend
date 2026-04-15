@@ -18,3 +18,7 @@ Content-Type: application/json
     "bankCode": "999991",
     "accountNumber": "9030381626"
 }
+
+
+GET http://localhost:3000/bank-account/banks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjI0ODczOSwiZXhwIjoxNzc2MjUyMzM5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.QrAe4W7p5U0MnzKMFx6neBGiOIMJGkCoPrk8HSno8nw

@@ -57,4 +57,19 @@ export class BankAccountController {
   async updateBankAccount(@Req() req, @Body() dto: PatchBankAccountDto) {
     return this.bankAccountService.updateBankAccount(req.user.id, dto);
   }
+
+  /**
+   * Endpoint to get all banks supported by Paystack
+   */
+  @ApiOperation({
+    summary: 'Get all banks supported by Paystack',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'List of supported banks retrieved successfully.',
+  })
+  @Get('banks')
+  async getAllBanks() {
+    return this.bankAccountService.getAllBanks();
+  }
 }
