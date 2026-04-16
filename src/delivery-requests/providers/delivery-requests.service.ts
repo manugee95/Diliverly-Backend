@@ -20,6 +20,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from 'src/common/providers/cache.service';
 import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { Agent } from 'src/agent/agent.entity';
+import { MailerService } from 'src/mailer/providers/mailer.service';
+import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
 
 @Injectable()
 export class DeliveryRequestService {
@@ -49,6 +51,12 @@ export class DeliveryRequestService {
     private readonly agentRepo: Repository<Agent>,
 
     /**
+     * Injecting FavoriteAgent repository
+     */
+    @InjectRepository(FavoriteAgent)
+    private readonly favoriteAgentRepo: Repository<FavoriteAgent>,
+
+    /**
      * Injecting Pagination Provider
      */
     private readonly paginationProvider: PaginationProvider,
@@ -58,7 +66,36 @@ export class DeliveryRequestService {
      */
     @Inject(CACHE_MANAGER)
     private cacheManager: CacheService,
+
+    /**
+     * Injecting mail service
+     */
+    private readonly mailService: MailerService,
   ) {}
+
+  /**
+   * Method to notify agent of new request
+   */
+  private async notifyAgent(payload: {
+    agentEmail: string;
+    agentName: string;
+    vendorName: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.agentEmail,
+        'New Delivery Request Received',
+        'agent-delivery-request',
+        {
+          agentName: payload.agentName,
+          vendorName: payload.vendorName,
+          requestUrl: `${process.env.FRONTEND_URL}/agent/requests`,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send agent email:', error);
+    }
+  }
 
   /**
    * Method to create a delivery request
@@ -83,6 +120,7 @@ export class DeliveryRequestService {
       description,
       state,
       status: RequestStatus.OPEN,
+      isDirect: false,
     });
 
     const savedDeliveryRequest =
@@ -106,8 +144,139 @@ export class DeliveryRequestService {
   }
 
   /**
+   * Method to send an agent a delivery request directly
+   */
+  async sendDirectRequest(
+    userId: number,
+    agentId: number,
+    dto: CreateDeliveryRequestDto,
+  ) {
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!vendor) throw new NotFoundException('Vendor not found');
+
+    const agent = await this.agentRepo.findOne({
+      where: { id: agentId },
+      relations: ['user'],
+    });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    // Ensure agent is favorited
+    const isFavorite = await this.favoriteAgentRepo.findOne({
+      where: {
+        vendor: { id: vendor.id },
+        agent: { id: agent.id },
+      },
+    });
+
+    if (!isFavorite) {
+      throw new BadRequestException(
+        'You can only send direct requests to favorited agents',
+      );
+    }
+
+    // Validate coverage
+    if (!agent.statesCovered?.includes(dto.state)) {
+      throw new BadRequestException(
+        'Agent does not cover the state for this delivery request',
+      );
+    }
+
+    const { title, description, state, addresses } = dto;
+
+    // Create DIRECT request
+    const deliveryRequest = this.deliveryRequestRepo.create({
+      vendor,
+      title,
+      description,
+      state,
+      status: RequestStatus.OPEN,
+      isDirect: true,
+      assignedAgent: agent,
+    });
+
+    const savedRequest = await this.deliveryRequestRepo.save(deliveryRequest);
+
+    // Create deliveries
+    const deliveries = addresses.map((address) =>
+      this.deliveryRepo.create({
+        request: savedRequest,
+        address: address.address,
+        deliveryType: address.deliveryType,
+      }),
+    );
+
+    savedRequest.deliveries = deliveries;
+
+    const finalRequest = await this.deliveryRequestRepo.save(savedRequest);
+
+    // Notify agent
+    await this.notifyAgent({
+      agentEmail: agent.user.email,
+      agentName: agent.businessName || 'Agent',
+      vendorName: vendor.businessName || 'Vendor',
+    });
+
+    return finalRequest;
+  }
+
+  /**
    * Method to get available delivery requests for an agent
    */
+
+  // async getAvailableRequests(
+  //   userId: number,
+  //   deliveryRequestQuery: GetDeliveryRequestsDto,
+  // ): Promise<Paginated<DeliveryRequest>> {
+  //   const agent = await this.agentRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+
+  //   if (!agent?.statesCovered || agent.statesCovered.length === 0) {
+  //     throw new BadRequestException('No states covered by this agent');
+  //   }
+
+  //   // Check cache first
+  //   const cacheKey = `agent:${agent.id}:requests`;
+
+  //   const cached = await this.cacheManager.get<string>(cacheKey);
+
+  //   if (cached) {
+  //     return JSON.parse(cached);
+  //   }
+
+  //   // extract names of states covered by agent to filter requests by those states
+  //   const states = agent.statesCovered;
+
+  //   const deliveryRequests = await this.paginationProvider.paginateQuery(
+  //     {
+  //       page: deliveryRequestQuery.page || 1,
+  //       limit: deliveryRequestQuery.limit || 10,
+  //     },
+  //     this.deliveryRequestRepo,
+  //     {
+  //       where: {
+  //         state: In(states),
+  //         status: RequestStatus.OPEN,
+  //       },
+  //       order: { createdAt: 'DESC' },
+  //     },
+  //   );
+
+  //   // Store in cache for future requests
+  //   await this.cacheManager.set(
+  //     cacheKey,
+  //     JSON.stringify(deliveryRequests),
+  //     CacheTTL.AgentOrders,
+  //   );
+
+  //   return deliveryRequests;
+  // }
+
   async getAvailableRequests(
     userId: number,
     deliveryRequestQuery: GetDeliveryRequestsDto,
@@ -116,38 +285,47 @@ export class DeliveryRequestService {
       where: { user: { id: userId } },
     });
 
-    if (!agent?.statesCovered || agent.statesCovered.length === 0) {
+    if (!agent?.statesCovered?.length) {
       throw new BadRequestException('No states covered by this agent');
     }
 
-    // Check cache first
-    const cacheKey = `agent:${agent.id}:requests`;
+    const page = deliveryRequestQuery.page || 1;
+    const limit = deliveryRequestQuery.limit || 10;
+
+    const cacheKey = `agent:${agent.id}:requests:page=${page}:limit=${limit}`;
 
     const cached = await this.cacheManager.get<string>(cacheKey);
-
     if (cached) {
       return JSON.parse(cached);
     }
 
-    // extract names of states covered by agent to filter requests by those states
     const states = agent.statesCovered;
 
     const deliveryRequests = await this.paginationProvider.paginateQuery(
-      {
-        page: deliveryRequestQuery.page || 1,
-        limit: deliveryRequestQuery.limit || 10,
-      },
+      { page, limit },
       this.deliveryRequestRepo,
       {
-        where: {
-          state: In(states),
-          status: RequestStatus.OPEN,
-        },
+        where: [
+          // General requests (visible to all)
+          {
+            state: In(states),
+            status: RequestStatus.OPEN,
+            isDirect: false,
+          },
+
+          // 🔒 Direct requests ONLY for this agent
+          {
+            state: In(states),
+            status: RequestStatus.OPEN,
+            isDirect: true,
+            assignedAgent: { id: agent.id },
+          },
+        ],
+        relations: ['vendor', 'assignedAgent'],
         order: { createdAt: 'DESC' },
       },
     );
 
-    // Store in cache for future requests
     await this.cacheManager.set(
       cacheKey,
       JSON.stringify(deliveryRequests),

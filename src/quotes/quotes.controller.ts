@@ -159,10 +159,17 @@ export class QuotesController {
   @ApiOperation({
     summary: 'Make payment for an accepted quote',
   })
+  @ApiParam({
+    name: 'id',
+    type: 'number',
+    required: false,
+    description: 'The ID of the request associated with the accepted quote',
+    example: 5,
+  })
   @UseGuards(VendorGuard)
-  @Post('/:quoteId/pay')
-  public async payAcceptedQuote(@Req() req, @Param('quoteId') quoteId: number) {
+  @Post('/:requestId/pay')
+  public async payAcceptedQuote(@Req() req, @Param('requestId') requestId: number) {
     const userId = req.user.id;
-    return this.quotePaymentService.payAcceptedQuoteWithWallet(userId, quoteId);
+    return this.quotePaymentService.payAcceptedQuoteWithWallet(userId, requestId);
   }
 }

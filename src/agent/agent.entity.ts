@@ -12,6 +12,7 @@ import {
 import { Quote } from 'src/quotes/entities/quote.entity';
 import { Review } from 'src/reviews/review.entity';
 import { OrderItem } from 'src/orders/entities/orderItem.entity';
+import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
 
 @Entity()
 export class Agent {
@@ -62,6 +63,9 @@ export class Agent {
 
   @OneToMany(() => Review, (review) => review.agent)
   reviews: Review[];
+
+  @OneToMany(() => FavoriteAgent, (fav) => fav.agent)
+  favoriteByVendors: FavoriteAgent[];
 
   @CreateDateColumn()
   createdAt: Date;

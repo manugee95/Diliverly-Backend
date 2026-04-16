@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Quote } from '../entities/quote.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
 import { CreateQuoteDto } from '../dtos/create-quote.dto';
@@ -69,18 +69,81 @@ export class QuotesService {
      * Injecting mail service
      */
     private readonly mailService: MailerService,
+
+    /**
+     * Injecting data source for transactions
+     */
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
    * Method to create a quote for a delivery request
    */
+
+  // async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
+  //   const { requestId, deliveryCosts } = dto;
+
+  //   const agent = await this.agentRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+
+  //   if (!agent) throw new NotFoundException('Agent not found');
+
+  //   const request = await this.deliveryRequestRepo.findOne({
+  //     where: { id: requestId },
+  //     relations: ['deliveries'],
+  //   });
+  //   if (!request) throw new NotFoundException('Delivery request not found');
+
+  //   // Prevent duplicate quote by same agent
+  //   const existingQuote = await this.quoteRepo.findOne({
+  //     where: {
+  //       agent: { id: agent.id },
+  //       request: { id: request.id },
+  //     },
+  //   });
+
+  //   if (existingQuote) {
+  //     throw new BadRequestException(
+  //       'You have already submitted a quote for this delivery request',
+  //     );
+  //   }
+
+  //   // Validate deliveries belong to this request
+  //   const validDeliveryIds = request.deliveries.map((d) => d.id);
+  //   for (const { deliveryId } of deliveryCosts) {
+  //     if (!validDeliveryIds.includes(deliveryId)) {
+  //       throw new BadRequestException(
+  //         `Delivery ${deliveryId} does not belong to this request`,
+  //       );
+  //     }
+  //   }
+
+  //   // Calculate subtotal
+  //   const subtotal = deliveryCosts.reduce((sum, d) => sum + Number(d.cost), 0);
+
+  //   // Create Agent Quote
+  //   const quote = this.quoteRepo.create({
+  //     agent,
+  //     request,
+  //     subtotal,
+  //     deliveryCost: deliveryCosts.map((item) => ({
+  //       delivery: { id: item.deliveryId },
+  //       cost: item.cost,
+  //     })),
+  //   });
+
+  //   const savedQuote = await this.quoteRepo.save(quote);
+
+  //   return savedQuote;
+  // }
+
   async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
     const { requestId, deliveryCosts } = dto;
 
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
     });
-
     if (!agent) throw new NotFoundException('Agent not found');
 
     const request = await this.deliveryRequestRepo.findOne({
@@ -89,7 +152,6 @@ export class QuotesService {
     });
     if (!request) throw new NotFoundException('Delivery request not found');
 
-    // Prevent duplicate quote by same agent
     const existingQuote = await this.quoteRepo.findOne({
       where: {
         agent: { id: agent.id },
@@ -103,8 +165,8 @@ export class QuotesService {
       );
     }
 
-    // Validate deliveries belong to this request
     const validDeliveryIds = request.deliveries.map((d) => d.id);
+
     for (const { deliveryId } of deliveryCosts) {
       if (!validDeliveryIds.includes(deliveryId)) {
         throw new BadRequestException(
@@ -113,23 +175,22 @@ export class QuotesService {
       }
     }
 
-    // Calculate subtotal
     const subtotal = deliveryCosts.reduce((sum, d) => sum + Number(d.cost), 0);
 
-    // Create Agent Quote
+    // Map real delivery entities
+    const deliveriesMap = new Map(request.deliveries.map((d) => [d.id, d]));
+
     const quote = this.quoteRepo.create({
       agent,
       request,
       subtotal,
       deliveryCost: deliveryCosts.map((item) => ({
-        delivery: { id: item.deliveryId },
+        delivery: deliveriesMap.get(item.deliveryId), // ✅ FIXED
         cost: item.cost,
       })),
     });
 
-    const savedQuote = await this.quoteRepo.save(quote);
-
-    return savedQuote;
+    return await this.quoteRepo.save(quote);
   }
 
   /**
@@ -255,45 +316,129 @@ export class QuotesService {
   /**
    * Method to accept a quote
    */
+
+  // async acceptQuote(userId: number, quoteId: number) {
+  //   const quote = await this.quoteRepo.findOne({
+  //     where: { id: quoteId },
+  //     relations: ['request', 'request.vendor', 'agent', 'agent.user'],
+  //   });
+
+  //   if (!quote) throw new BadRequestException('Quote not found');
+
+  //   if (quote.request.vendor.user.id !== userId) {
+  //     throw new ForbiddenException('You cannot accept this quote');
+  //   }
+
+  //   // 1) Set this quote to ACCEPTED
+  //   quote.status = QuoteStatus.ACCEPTED;
+  //   await this.quoteRepo.save(quote);
+
+  //   // 2) Decline all other quotes for this request
+  //   await this.quoteRepo.update(
+  //     {
+  //       request: { id: quote.request.id },
+  //       id: Not(quote.id),
+  //     },
+  //     { status: QuoteStatus.DECLINED },
+  //   );
+
+  //   // Notify agent by email
+  //   await this.mailService.sendTemplate(
+  //     quote.agent.user.email,
+  //     'Your delivery quote has been accepted',
+  //     'vendor-accepts-quote',
+  //     {
+  //       agentName: quote.agent.businessName || quote.agent.user.firstName,
+  //       vendorName:
+  //         quote.request.vendor.businessName ||
+  //         quote.request.vendor.user.firstName,
+  //       deliveryTitle: quote.request.title,
+  //     },
+  //   );
+
+  //   return { message: 'Quote accepted successfully' };
+  // }
+
   async acceptQuote(userId: number, quoteId: number) {
-    const quote = await this.quoteRepo.findOne({
-      where: { id: quoteId },
-      relations: ['request', 'request.vendor', 'agent', 'agent.user'],
-    });
+    return this.dataSource
+      .transaction(async (manager) => {
+        const quoteRepo = manager.getRepository(Quote);
+        const requestRepo = manager.getRepository(DeliveryRequest);
 
-    if (!quote) throw new BadRequestException('Quote not found');
+        const quote = await quoteRepo.findOne({
+          where: { id: quoteId },
+          relations: ['request'], 
+        });
 
-    if (quote.request.vendor.user.id !== userId) {
-      throw new ForbiddenException('You cannot accept this quote');
-    }
+        if (!quote) throw new BadRequestException('Quote not found');
 
-    // 1) Set this quote to ACCEPTED
-    quote.status = QuoteStatus.ACCEPTED;
-    await this.quoteRepo.save(quote);
+        // 2. Lock request
+        const request = await requestRepo.findOne({
+          where: { id: quote.request.id },
+          lock: { mode: 'pessimistic_write' },
+        });
 
-    // 2) Decline all other quotes for this request
-    await this.quoteRepo.update(
-      {
-        request: { id: quote.request.id },
-        id: Not(quote.id),
-      },
-      { status: QuoteStatus.DECLINED },
-    );
+        if (!request) throw new BadRequestException('Request not found');
 
-    // Notify agent by email
-    await this.mailService.sendTemplate(
-      quote.agent.user.email,
-      'Your delivery quote has been accepted',
-      'vendor-accepts-quote',
-      {
-        agentName: quote.agent.businessName || quote.agent.user.firstName,
-        vendorName:
-          quote.request.vendor.businessName ||
-          quote.request.vendor.user.firstName,
-        deliveryTitle: quote.request.title,
-      },
-    );
+        // 3. Load relations AFTER lock
+        const fullQuote = await quoteRepo.findOne({
+          where: { id: quoteId },
+          relations: ['request', 'request.vendor', 'agent', 'agent.user'],
+        });
 
-    return { message: 'Quote accepted successfully' };
+        if (!fullQuote) throw new BadRequestException('Quote not found');
+
+        // Ownership check
+        if (fullQuote.request.vendor.user.id !== userId) {
+          throw new ForbiddenException('You cannot accept this quote');
+        }
+
+        // Prevent double acceptance
+        const existingAccepted = await quoteRepo.findOne({
+          where: {
+            request: { id: request.id },
+            status: QuoteStatus.ACCEPTED,
+          },
+        });
+
+        if (existingAccepted) {
+          throw new BadRequestException('A quote has already been accepted');
+        }
+
+        // Reject all quotes
+        await quoteRepo.update(
+          { request: { id: request.id } },
+          { status: QuoteStatus.DECLINED },
+        );
+
+        // Accept this one
+        quote.status = QuoteStatus.ACCEPTED;
+        await quoteRepo.save(quote);
+
+        return {
+          agentEmail: fullQuote.agent.user.email,
+          agentName:
+            fullQuote.agent.businessName || fullQuote.agent.user.firstName,
+          vendorName:
+            fullQuote.request.vendor.businessName ||
+            fullQuote.request.vendor.user.firstName,
+          deliveryTitle: fullQuote.request.title,
+        };
+      })
+      .then(async (result) => {
+        // Outside transaction
+        await this.mailService.sendTemplate(
+          result.agentEmail,
+          'Your delivery quote has been accepted',
+          'vendor-accepts-quote',
+          {
+            agentName: result.agentName,
+            vendorName: result.vendorName,
+            deliveryTitle: result.deliveryTitle,
+          },
+        );
+
+        return { message: 'Quote accepted successfully' };
+      });
   }
 }

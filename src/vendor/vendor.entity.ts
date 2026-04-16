@@ -1,4 +1,5 @@
 import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
+import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Review } from 'src/reviews/review.entity';
 import { User } from 'src/users/user.entity';
@@ -28,7 +29,7 @@ export class Vendor {
   @OneToMany(() => DeliveryRequest, (request) => request.vendor)
   delivery_request: DeliveryRequest[];
 
-  @OneToMany(()=> Order, (order) => order.vendor)
+  @OneToMany(() => Order, (order) => order.vendor)
   orders: Order[];
 
   @Column({ nullable: true })
@@ -39,6 +40,9 @@ export class Vendor {
 
   @OneToMany(() => Review, (review) => review.vendor)
   reviews: Review[];
+
+  @OneToMany(() => FavoriteAgent, (fav) => fav.vendor)
+  favoriteAgents: FavoriteAgent[];
 
   @CreateDateColumn()
   createdAt: Date;

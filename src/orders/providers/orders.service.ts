@@ -377,64 +377,6 @@ export class OrdersService {
    * Method to Handle prepaid delivery
    */
 
-  // private async handlePrepaidDelivery(orderItem: OrderItem) {
-  //   // Execute within transaction
-  //   await this.dataSource.transaction(async (manager) => {
-  //     const oiRepo = manager.getRepository(OrderItem);
-
-  //     // 1) Lock OrderItem row WITHOUT relations (safe)
-  //     const lockedOI = await oiRepo.findOne({
-  //       where: { id: orderItem.id },
-  //       lock: { mode: 'pessimistic_write' },
-  //     });
-
-  //     if (!lockedOI) throw new Error('Order item not found');
-
-  //     // 2) Load orderItem graph WITHOUT lock (relations cause LEFT JOIN)
-  //     const oi = await oiRepo.findOne({
-  //       where: { id: orderItem.id },
-  //       relations: [
-  //         'order',
-  //         'order.vendor',
-  //         'order.vendor.user',
-  //         'agent',
-  //         'agent.user',
-  //       ],
-  //     });
-
-  //     if (!oi) throw new Error('Order item not found');
-
-  //     // Prevent double increment if already delivered
-  //     if (oi.status === OrderStatus.DELIVERED) {
-  //       return;
-  //     }
-
-  //     // Update status to DELIVERED
-  //     oi.status = OrderStatus.DELIVERED;
-  //     await oiRepo.save(oi);
-
-  //     // ✅ 4) Increment agent delivery count (atomic)
-  //     if (oi.agent?.id) {
-  //       await agentRepo.increment({ id: oi.agent.id }, 'total_deliveries', 1);
-  //     }
-
-  //     // Release escrow via EscrowService (uses same manager/tx)
-  //     await this.escrowService.releaseToAgent(oi.id, manager);
-
-  //     // Auto-complete order (if all items done)
-  //     await this.autoCompleteOrder(oi.order.id, manager);
-  //   });
-
-  //   // Notify vendor of item delivered
-  //   await this.notifyVendorDelivered({
-  //     vendorEmail: orderItem.order.vendor.user.email,
-  //     orderReference: orderItem.order.reference,
-  //     vendorName: orderItem.order.vendor.user.firstName,
-  //   });
-
-  //   return { message: 'Delivered successfully. Escrow released to agent.' };
-  // }
-
   private async handlePrepaidDelivery(orderItem: OrderItem) {
     await this.dataSource.transaction(async (manager) => {
       const oiRepo = manager.getRepository(OrderItem);

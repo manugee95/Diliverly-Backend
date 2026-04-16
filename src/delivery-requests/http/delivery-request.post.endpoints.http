@@ -13,3 +13,20 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
         { "address": "28, Isaac John stree, Ikeja GRA Edo", "deliveryType": "cod" }
     ]
 }
+
+
+POST http://localhost:3000/delivery-request/direct/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjM0Nzc0NywiZXhwIjoxNzc2MzUxMzQ3LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.80JBvfm-XJh25BFfnO4SnKDp10lppNMfVQFrr32JfD8
+Content-Type: application/json
+
+{
+    "title": "Delta Delivery Agent Needed",
+    "description": "I need a reliable delivery agent in Delta for multiple deliveries",
+    "state": "delta",
+    "addresses": [
+        { "address": "Lekki Phase 1, admiralty way Delta", "deliveryType": "prepaid" },
+        { "address": "26, Isaac John stree, Ikeja GRA Delta", "deliveryType": "cod" },
+        { "address": "27, Isaac John stree, Ikeja GRA Delta", "deliveryType": "cod" },
+        { "address": "28, Isaac John stree, Ikeja GRA Delta", "deliveryType": "cod" }
+    ]
+}

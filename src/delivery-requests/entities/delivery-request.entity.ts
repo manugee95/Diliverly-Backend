@@ -13,6 +13,7 @@ import { Delivery } from './delivery.entity';
 import { Exclude } from 'class-transformer';
 import { Quote } from 'src/quotes/entities/quote.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { Agent } from 'src/agent/agent.entity';
 
 @Entity()
 export class DeliveryRequest {
@@ -53,6 +54,12 @@ export class DeliveryRequest {
     cascade: ['insert'],
   })
   deliveries: Delivery[];
+
+  @ManyToOne(() => Agent, { nullable: true, onDelete: 'SET NULL' })
+  assignedAgent: Agent;
+
+  @Column({ default: false })
+  isDirect: boolean;
 
   @OneToMany(() => Quote, (quote) => quote.request)
   quotes: Quote[];

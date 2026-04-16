@@ -1,32 +1,32 @@
 POST http://localhost:3000/quotes
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiaWF0IjoxNzcxMzQ2MTQyLCJleHAiOjE3NzEzNDk3NDIsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.99P7RT6_8sUK4dsbecfrs5drnzx8HWSmlhFzvjNgdk0
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc2MzQ3OTE2LCJleHAiOjE3NzYzNTE1MTYsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.0Apex3WEx24xOCJK8dPDSlJ2G4YlEjqCr-IaJQA3QN4 
 
 {
-    "requestId": 4,
+    "requestId": 14,
     "deliveryCosts": [
         {
-            "deliveryId":7,
-            "cost": 2500
+            "deliveryId":37,
+            "cost": 1500
         },
         {
-            "deliveryId": 8,
+            "deliveryId": 38,
+            "cost": 1200
+        },
+        {
+            "deliveryId": 39,
             "cost": 2000
         },
         {
-            "deliveryId": 9,
-            "cost": 3000
-        },
-        {
-            "deliveryId": 10,
-            "cost": 3500
+            "deliveryId": 40,
+            "cost": 2500
         }
     ]
 }
 
 
-POST http://localhost:3000/quotes/4
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6ZmFsc2UsImlzVmVuZG9yIjp0cnVlLCJpYXQiOjE3NzEzNDU4NjMsImV4cCI6MTc3MTM0OTQ2MywiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.rshe-kNJoAbTMHnj0JJgxLJ9h-EmPs8G1x4_5fCU8mM
+POST http://localhost:3000/quotes/9
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjM0Nzc0NywiZXhwIjoxNzc2MzUxMzQ3LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.80JBvfm-XJh25BFfnO4SnKDp10lppNMfVQFrr32JfD8
 
-POST http://localhost:3000/quotes/4/pay
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6ZmFsc2UsImlzVmVuZG9yIjp0cnVlLCJpYXQiOjE3NzEzNDU4NjMsImV4cCI6MTc3MTM0OTQ2MywiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.rshe-kNJoAbTMHnj0JJgxLJ9h-EmPs8G1x4_5fCU8mM
+POST http://localhost:3000/quotes/14/pay
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjM0Nzc0NywiZXhwIjoxNzc2MzUxMzQ3LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.80JBvfm-XJh25BFfnO4SnKDp10lppNMfVQFrr32JfD8

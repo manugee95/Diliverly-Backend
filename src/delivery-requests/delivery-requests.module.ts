@@ -11,16 +11,19 @@ import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Agent } from 'src/agent/agent.entity';
 import { AuthModule } from 'src/auth/auth.module';
+import { MailerModule } from 'src/mailer/mailer.module';
+import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
 
 @Module({
   controllers: [DeliveryRequestsController],
   providers: [DeliveryRequestService],
   imports: [
-    TypeOrmModule.forFeature([DeliveryRequest, Delivery, Vendor, Agent]),
+    TypeOrmModule.forFeature([DeliveryRequest, Delivery, Vendor, Agent, FavoriteAgent]),
     forwardRef(() => AuthModule),
     VendorModule,
     AgentModule,
     PaginationModule,
+    MailerModule,
     CacheModule.register()
   ],
 })

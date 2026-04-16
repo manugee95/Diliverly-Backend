@@ -33,6 +33,7 @@ import { WalletsModule } from './wallets/wallets.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { PaystackModule } from './paystack/paystack.module';
 import { TrustScoreModule } from './common/trust-score/trust-score.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -98,6 +99,7 @@ const ENV = process.env.NODE_ENV;
     EscrowModule,
     PaystackModule,
     TrustScoreModule,
+    FavoritesModule,
   ],
   controllers: [AppController],
   providers: [

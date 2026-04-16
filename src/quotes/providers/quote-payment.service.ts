@@ -16,6 +16,11 @@ import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
 import { TransactionType } from 'src/transactions/enums/transactionType.enum';
 import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
 import { MailerService } from 'src/mailer/providers/mailer.service';
+import { Quote } from '../entities/quote.entity';
+import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
+import { Agent } from 'src/agent/agent.entity';
+import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
+import { DeliveryCost } from '../entities/deliveryCost.entity';
 
 @Injectable()
 export class QuotePaymentService {
@@ -28,6 +33,9 @@ export class QuotePaymentService {
 
     @InjectRepository(Vendor)
     private readonly vendorRepo: Repository<Vendor>,
+
+    @InjectRepository(Quote)
+    private readonly quoteRepo: Repository<Quote>,
 
     @InjectRepository(DeliveryRequest)
     private readonly requestRepo: Repository<DeliveryRequest>,
@@ -62,182 +70,186 @@ export class QuotePaymentService {
     }
   }
 
-  async payAcceptedQuoteWithWallet(vendorUserId: number, requestId: number) {
-    // Fetch vendor by user ID
-    const vendor = await this.vendorRepo.findOne({
-      where: { user: { id: vendorUserId } },
-      relations: ['user'],
-    });
-    if (!vendor) throw new BadRequestException('Vendor not found');
-
-    // Fetch delivery request with related quotes and deliveries
-    const request = await this.requestRepo.findOne({
-      where: { id: requestId, vendor: { id: vendor.id } },
-      relations: [
-        'vendor',
-        'vendor.user',
-        'deliveries',
-        'quotes',
-        'quotes.agent',
-        'quotes.agent.user',
-        'quotes.deliveryCost',
-        'quotes.deliveryCost.delivery',
-      ],
-    });
-    if (!request) throw new BadRequestException('Request not found');
-
-    // Find the accepted quote
-    const acceptedQuote = request.quotes.find(
-      (q) => q.status === QuoteStatus.ACCEPTED,
-    );
-    if (!acceptedQuote)
-      throw new BadRequestException('No accepted quote found');
-
-    const total = Number(acceptedQuote.subtotal);
-    if (!total || total <= 0)
-      throw new BadRequestException('Invalid quote total');
-
-    // Ensure vendor has a wallet
-    await this.walletService.getOrCreateWallet(vendor.user.id);
-
-    // Payment reference
-    const paymentRef = `QUOTE-${request.id}`;
-
-    // Use this variable so we can email after transaction succeeds
-    let createdOrder: Order | undefined;
-
-    // Start transaction
-    const result = await this.dataSource.transaction(async (manager) => {
+  private async processPayment(input: {
+    vendor: Vendor;
+    requestId: number;
+    quoteId: number;
+  }) {
+    return this.dataSource.transaction('READ COMMITTED', async (manager) => {
       const walletRepo = manager.getRepository(Wallet);
+      const requestRepo = manager.getRepository(DeliveryRequest);
+      const quoteRepo = manager.getRepository(Quote);
       const orderRepo = manager.getRepository(Order);
       const orderItemRepo = manager.getRepository(OrderItem);
       const escrowRepo = manager.getRepository(Escrow);
 
-      // Lock vendor wallet
-      const vendorWallet = await this.walletService.lockWallet(
-        vendor.user.id,
-        manager,
-      );
+      // 1. Lock request
+      const request = await requestRepo.findOne({
+        where: { id: input.requestId },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-      if (Number(vendorWallet.availableBalance) < total) {
-        throw new BadRequestException('Insufficient wallet balance');
+      if (!request) throw new BadRequestException('Request not found');
+
+      if (request.status === RequestStatus.ASSIGNED) {
+        throw new BadRequestException('Already paid');
       }
 
-      // Move total: vendor available -> vendor escrow
-      vendorWallet.availableBalance = (
-        Number(vendorWallet.availableBalance) - total
+      // 2. Find quote
+      const quote = await quoteRepo.findOne({
+        where: { id: input.quoteId, status: QuoteStatus.ACCEPTED },
+        relations: ['agent', 'agent.user'],
+      });
+
+      if (!quote) throw new BadRequestException('Invalid quote');
+
+      const total = Number(quote.subtotal);
+
+      // 3. Lock wallet
+      const wallet = await walletRepo.findOne({
+        where: { user: { id: input.vendor.user.id } },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!wallet) throw new BadRequestException('Wallet not found');
+
+      if (Number(wallet.availableBalance) < total) {
+        throw new BadRequestException('Insufficient balance');
+      }
+
+      // 4. Move funds
+      wallet.availableBalance = (
+        Number(wallet.availableBalance) - total
       ).toFixed(2);
 
-      vendorWallet.escrowBalance = (
-        Number(vendorWallet.escrowBalance) + total
-      ).toFixed(2);
+      wallet.escrowBalance = (Number(wallet.escrowBalance) + total).toFixed(2);
 
-      await walletRepo.save(vendorWallet);
+      await walletRepo.save(wallet);
 
-      // Create order
+      // 5. Idempotency check
+      const existingOrder = await orderRepo.findOne({
+        where: { request: { id: request.id } },
+      });
+
+      if (existingOrder) {
+        return {
+          orderId: existingOrder.id,
+          deliveryTitle: request.title,
+        };
+      }
+
+      // 6. Create order
       const order = await orderRepo.save(
         orderRepo.create({
           reference: this.reference.generateOrderRef(),
-          vendor: { id: vendor.id },
+          vendor: { id: input.vendor.id },
           request: { id: request.id },
           totalAmount: total,
-          status: OrderStatus.PENDING, // waiting vendor to supply item info
+          status: OrderStatus.PENDING,
         }),
       );
 
-      createdOrder = order;
+      // 7. Load deliveries (NO LOCK)
+      const deliveries = await manager.getRepository(Delivery).find({
+        where: { request: { id: request.id } },
+      });
 
-      // =========================
-      // Create order items using your CURRENT structure:
-      // Loop request.deliveries and map each to acceptedQuote.deliveryCost
-      // =========================
-      const itemsToSave: OrderItem[] = [];
+      // 8. Load delivery costs
+      const costs = await manager.getRepository(DeliveryCost).find({
+        where: { quote: { id: quote.id } },
+        relations: ['delivery'],
+      });
 
-      for (let i = 0; i < request.deliveries.length; i++) {
-        const delivery = request.deliveries[i];
+      // 9. Create order items
+      const items = deliveries.map((delivery) => {
+        const dc = costs.find((c) => c.delivery.id === delivery.id);
 
-        const dcEntry = acceptedQuote.deliveryCost.find(
-          (dc) => dc.delivery.id === delivery.id,
-        );
-
-        if (!dcEntry) {
+        if (!dc) {
           throw new BadRequestException(
-            `No cost found for delivery ${delivery.id}`,
+            `Missing cost for delivery ${delivery.id}`,
           );
         }
 
-        // Placeholder values (vendor will update later)
-        const orderItem = orderItemRepo.create({
+        return orderItemRepo.create({
           order: { id: order.id },
           delivery: { id: delivery.id },
-          agent: { id: acceptedQuote.agent.id },
-
+          agent: { id: quote.agent.id },
           itemName: '', // placeholder
           quantity: 0, // placeholder
           buyerName: '', // placeholder
           buyerPhone: '', // placeholder
-
           deliveryType: delivery.deliveryType,
-          cost: dcEntry.cost, // keep as decimal from db
           codAmount: 0, // vendor will set later for COD
+          cost: dc.cost,
           status: OrderStatus.PENDING,
         });
+      });
 
-        itemsToSave.push(orderItem);
-      }
+      const savedItems = await orderItemRepo.save(items);
 
-      const createdItems = await orderItemRepo.save(itemsToSave);
-
-      // Create escrow per item (split escrow)
-      for (const oi of createdItems) {
-        const escrowRef = `ESCROW-OI-${oi.id}`;
-
-        await escrowRepo.save(
+      // 10. Create escrow
+      await escrowRepo.save(
+        savedItems.map((item) =>
           escrowRepo.create({
-            reference: escrowRef,
+            reference: `ESCROW-OI-${item.id}`,
             order: { id: order.id },
-            orderItem: { id: oi.id },
-            vendor: { id: vendor.id },
-            agent: { id: acceptedQuote.agent.id },
-            amount: Number(oi.cost).toFixed(2),
+            orderItem: { id: item.id },
+            vendor: { id: input.vendor.id },
+            agent: { id: quote.agent.id },
+            amount: Number(item.cost).toFixed(2),
             status: EscrowStatus.HELD,
           }),
-        );
-      }
-
-      // Ledger log: vendor paid (debit available)
-      await this.txService.logTransaction(
-        {
-          user: vendor.user,
-          type: TransactionType.DEBIT,
-          amount: total,
-          description: `Paid ₦${total} for request #${request.id}. Funds held in escrow across ${createdItems.length} items.`,
-          reference: paymentRef,
-          status: TransactionStatus.SUCCESSFUL,
-          order,
-        },
-        manager,
+        ),
       );
 
+      // 11. Mark request completed
+      request.status = RequestStatus.ASSIGNED;
+      await requestRepo.save(request);
+
       return {
-        message: 'Payment confirmed. Order created.',
-        orderRef: order.reference,
+        orderId: order.id,
+        deliveryTitle: request.title,
       };
     });
+  }
 
-    // Notify agent AFTER transaction succeeds (do not do this inside tx)
-    if (createdOrder) {
-      await this.notifyAgent({
-        agentEmail: acceptedQuote.agent.user.email,
-        agentName:
-          acceptedQuote.agent.businessName ??
-          acceptedQuote.agent.user.firstName ??
-          'Agent',
-        vendorName: vendor.businessName ?? vendor.user.firstName ?? 'Vendor',
-        deliveryTitle: request.title,
-        orderId: createdOrder?.id,
-      });
+  async payAcceptedQuoteWithWallet(vendorUserId: number, requestId: number) {
+    // 1. Validate vendor
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: vendorUserId } },
+      relations: ['user'],
+    });
+
+    if (!vendor) throw new BadRequestException('Vendor not found');
+
+    // 2. Fetch accepted quote (NO LOCK)
+    const acceptedQuote = await this.quoteRepo.findOne({
+      where: {
+        request: { id: requestId },
+        status: QuoteStatus.ACCEPTED,
+      },
+      relations: ['agent', 'agent.user'],
+    });
+
+    if (!acceptedQuote) {
+      throw new BadRequestException('No accepted quote found');
     }
+
+    // 3. Execute atomic transaction
+    const result = await this.processPayment({
+      vendor,
+      requestId,
+      quoteId: acceptedQuote.id,
+    });
+
+    // 4. Side effects (AFTER COMMIT)
+    await this.notifyAgent({
+      agentEmail: acceptedQuote.agent.user.email,
+      agentName: acceptedQuote.agent.businessName || 'Agent',
+      vendorName: vendor.businessName || 'Vendor',
+      deliveryTitle: result.deliveryTitle,
+      orderId: result.orderId,
+    });
 
     return result;
   }

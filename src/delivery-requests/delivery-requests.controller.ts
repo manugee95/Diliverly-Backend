@@ -16,6 +16,7 @@ import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { log } from 'console';
 import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
+import { agent } from 'supertest';
 
 @Controller('delivery-request')
 export class DeliveryRequestsController {
@@ -46,6 +47,34 @@ export class DeliveryRequestsController {
   ) {
     const userId = req.user.id;
     return await this.deliveryRequestService.createDeliveryRequest(userId, dto);
+  }
+
+  /**
+   * Endpoint to send a direct delivery request to an agent
+   */
+  @ApiOperation({
+    summary: 'Send a direct delivery request to an agent',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Direct delivery request sent successfully.',
+  })
+  @ApiParam({
+    name: 'agentId',
+    type: 'number',
+    required: true,
+    description: 'The Agent Id to send the direct request to',
+    example: 5,
+  })
+  @UseGuards(VendorGuard)
+  @Post('direct/:agentId')
+  public async sendDirectRequest(
+    @Req() req,
+    @Param('agentId') agentId: number,
+    @Body() dto: CreateDeliveryRequestDto,
+  ) {
+    const userId = req.user.id;
+    return await this.deliveryRequestService.sendDirectRequest(userId, agentId, dto);
   }
 
   /**
