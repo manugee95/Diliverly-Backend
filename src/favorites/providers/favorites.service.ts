@@ -11,6 +11,7 @@ import { Agent } from 'src/agent/agent.entity';
 import { GetFavoritesDto } from '../dtos/get-favorite.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { FavoritesCacheProvider } from './favorites.provider';
 
 @Injectable()
 export class FavoritesService {
@@ -28,6 +29,11 @@ export class FavoritesService {
      * Injecting Pagination Provider
      */
     private readonly paginationProvider: PaginationProvider,
+
+    /**
+     * Injecting Favorites Cache Provider
+     */
+    private readonly favoritesCacheProvider: FavoritesCacheProvider,
   ) {}
 
   // Add agent to favorites
@@ -51,6 +57,9 @@ export class FavoritesService {
     }
 
     const fav = this.favRepo.create({ vendor, agent });
+
+    await this.favoritesCacheProvider.invalidateVendorFavorites(vendor.id);
+
     return this.favRepo.save(fav);
   }
 
@@ -71,10 +80,38 @@ export class FavoritesService {
 
     await this.favRepo.remove(fav);
 
+    await this.favoritesCacheProvider.invalidateVendorFavorites(vendor.id);
+
     return { message: 'Agent removed from favorites' };
   }
 
   // Get all favorite agents (for quick request sending) USING Pagination
+
+  // async getFavorites(
+  //   userId: number,
+  //   dto: GetFavoritesDto,
+  // ): Promise<Paginated<FavoriteAgent>> {
+  //   const vendor = await this.vendorRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+  //   if (!vendor) throw new NotFoundException('Vendor not found');
+
+  //   const favorites = await this.paginationProvider.paginateQuery(
+  //     {
+  //       page: dto.page || 1,
+  //       limit: dto.limit || 10,
+  //     },
+  //     this.favRepo,
+  //     {
+  //       where: { vendor: { id: vendor.id } },
+  //       relations: ['agent', 'agent.user'],
+  //       order: { createdAt: 'DESC' },
+  //     },
+  //   );
+
+  //   return favorites;
+  // }
+
   async getFavorites(
     userId: number,
     dto: GetFavoritesDto,
@@ -82,19 +119,38 @@ export class FavoritesService {
     const vendor = await this.vendorRepo.findOne({
       where: { user: { id: userId } },
     });
+
     if (!vendor) throw new NotFoundException('Vendor not found');
 
+    const page = dto.page || 1;
+    const limit = dto.limit || 10;
+
+    // Try cache
+    const cached = await this.favoritesCacheProvider.getVendorFavorites(
+      vendor.id,
+      page,
+      limit,
+    );
+
+    if (cached) return cached as Paginated<FavoriteAgent>;
+
+    // Fetch from DB
     const favorites = await this.paginationProvider.paginateQuery(
-      {
-        page: dto.page || 1,
-        limit: dto.limit || 10,
-      },
+      { page, limit },
       this.favRepo,
       {
         where: { vendor: { id: vendor.id } },
         relations: ['agent', 'agent.user'],
         order: { createdAt: 'DESC' },
       },
+    );
+
+    // Cache result
+    await this.favoritesCacheProvider.setVendorFavorites(
+      vendor.id,
+      page,
+      limit,
+      favorites,
     );
 
     return favorites;

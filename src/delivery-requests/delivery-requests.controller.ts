@@ -74,7 +74,11 @@ export class DeliveryRequestsController {
     @Body() dto: CreateDeliveryRequestDto,
   ) {
     const userId = req.user.id;
-    return await this.deliveryRequestService.sendDirectRequest(userId, agentId, dto);
+    return await this.deliveryRequestService.sendDirectRequest(
+      userId,
+      agentId,
+      dto,
+    );
   }
 
   /**
@@ -167,7 +171,7 @@ export class DeliveryRequestsController {
     type: 'string',
     required: false,
     description: 'The status of the delivery requests to retrieve',
-    example: 'open'
+    example: 'open',
   })
   @UseGuards(VendorGuard)
   @Get('vendor-requests')
@@ -201,11 +205,93 @@ export class DeliveryRequestsController {
     @Req() req,
     @Param('requestId') requestId: number,
   ) {
-
     return await this.deliveryRequestService.getRequestInfo(
-      requestId, 
+      requestId,
       req.user.id,
       req.user.activeRole,
+    );
+  }
+
+  /**
+   * Endpoint to get all assigned requests for an agent
+   */
+  @ApiOperation({
+    summary: 'Get all direct delivery requests for an agent',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Direct delivery requests retrieved successfully.',
+  })
+  @UseGuards(AgentGuard)
+  @Get('agent/direct-requests')
+  public async getAgentDirectRequests(
+    @Req() req,
+    @Query() dto: GetDeliveryRequestsDto,
+  ) {
+    const userId = req.user.id;
+    return await this.deliveryRequestService.getAgentAssignedRequests(
+      userId,
+      dto,
+    );
+  }
+
+  /**
+   * Endpoint to cancel a delivery request
+   */
+  @ApiOperation({
+    summary: 'Vendor Cancel a delivery request',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Delivery request cancelled successfully.',
+  })
+  @ApiParam({
+    name: 'requestId',
+    type: 'number',
+    required: true,
+    description: 'The Delivery Request Id',
+    example: 5,
+  })
+  @UseGuards(VendorGuard)
+  @Post('cancel/:requestId')
+  public async cancelDeliveryRequest(
+    @Req() req,
+    @Param('requestId') requestId: number,
+  ) {
+    const userId = req.user.id;
+    return await this.deliveryRequestService.cancelRequest(
+      userId,
+      requestId,
+    );
+  }
+
+  /**
+   * Endpoint to decline a delivery request
+   */
+  @ApiOperation({
+    summary: 'Agent Decline a delivery request',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Delivery request declined successfully.',
+  })
+  @ApiParam({
+    name: 'requestId',
+    type: 'number',
+    required: true,
+    description: 'The Delivery Request Id',
+    example: 5,
+  })
+  @UseGuards(AgentGuard)
+  @Post('decline/:requestId')
+  public async declineDeliveryRequest(
+    @Req() req,
+    @Param('requestId') requestId: number,
+  ) {
+    const userId = req.user.id;
+    return await this.deliveryRequestService.declineDirectRequest(
+      userId,
+      requestId,
     );
   }
 }

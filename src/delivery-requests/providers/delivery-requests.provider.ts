@@ -80,4 +80,35 @@ export class DeliveryRequestsCacheProvider {
       await this.redis.del(keys);
     }
   }
+
+  getAgentAssignedRequestsKey(agentId: number, page: number, limit: number) {
+    return `agent:${agentId}:assigned-requests:page=${page}:limit=${limit}`;
+  }
+
+  async getAgentAssignedRequests(agentId: number, page: number, limit: number) {
+    return this.cacheManager.get(
+      this.getAgentAssignedRequestsKey(agentId, page, limit),
+    );
+  }
+
+  async setAgentAssignedRequests(
+    agentId: number,
+    page: number,
+    limit: number,
+    data: any,
+  ) {
+    return this.cacheManager.set(
+      this.getAgentAssignedRequestsKey(agentId, page, limit),
+      data,
+      CacheTTL.AgentOrders,
+    );
+  }
+
+  async invalidateAgentAssignedRequests(agentId: number) {
+    const keys = await this.redis.keys(`agent:${agentId}:assigned-requests:*`);
+
+    if (keys.length) {
+      await this.redis.del(keys);
+    }
+  }
 }

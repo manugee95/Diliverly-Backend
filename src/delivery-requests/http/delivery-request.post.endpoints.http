@@ -16,13 +16,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
 
 
 POST http://localhost:3000/delivery-request/direct/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjY4MDI5OSwiZXhwIjoxNzc2NjgzODk5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.OSKOeOkv3_3lZppMb8ZSMVGVgJWow8ljQI6EURKF_0k
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjcwNjM4OCwiZXhwIjoxNzc2NzA5OTg4LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.aQjB33Gh_x1B8eXEYzc8yWMkDA4M0xmyTtsjlNIGHUE
 Content-Type: application/json
 
 {
     "title": "Imo Delivery Agent Needed",
     "description": "I need a reliable delivery agent in Imo for multiple deliveries",
     "state": "imo",
+    "pickUpAddress": "Lekki Phase 1, admiralty way Imo",
     "addresses": [
         { "address": "Lekki Phase 1, admiralty way Imo", "deliveryType": "prepaid" },
         { "address": "26, Isaac John stree, Ikeja GRA Imo", "deliveryType": "cod" },
@@ -30,3 +31,10 @@ Content-Type: application/json
         { "address": "28, Isaac John stree, Ikeja GRA Imo", "deliveryType": "cod" }
     ]
 }
+
+POST http://localhost:3000/delivery-request/cancel/19
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjcwNjM4OCwiZXhwIjoxNzc2NzA5OTg4LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.aQjB33Gh_x1B8eXEYzc8yWMkDA4M0xmyTtsjlNIGHUE
+
+
+POST http://localhost:3000/delivery-request/decline/23
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc2NzA4MzUyLCJleHAiOjE3NzY3MTE5NTIsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.7eQsab41e-skMble9raEE2BNMmfJiazdrE2s1rjVB1M

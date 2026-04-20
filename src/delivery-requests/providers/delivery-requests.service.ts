@@ -237,71 +237,16 @@ export class DeliveryRequestService {
 
     await this.deliveryRequestCacheService.invalidateVendor(vendor.id);
 
+    await this.deliveryRequestCacheService.invalidateAgentAssignedRequests(
+      agent.id,
+    );
+
     return finalRequest;
   }
 
   /**
    * Method to get available delivery requests for an agent
    */
-
-  // async getAvailableRequests(
-  //   userId: number,
-  //   deliveryRequestQuery: GetDeliveryRequestsDto,
-  // ): Promise<Paginated<DeliveryRequest>> {
-  //   const agent = await this.agentRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!agent?.statesCovered?.length) {
-  //     throw new BadRequestException('No states covered by this agent');
-  //   }
-
-  //   const page = deliveryRequestQuery.page || 1;
-  //   const limit = deliveryRequestQuery.limit || 10;
-
-  //   const cacheKey = `agent:${agent.id}:requests:page=${page}:limit=${limit}`;
-
-  //   const cached = await this.cacheManager.get<string>(cacheKey);
-  //   if (cached) {
-  //     return JSON.parse(cached);
-  //   }
-
-  //   const states = agent.statesCovered;
-
-  //   const deliveryRequests = await this.paginationProvider.paginateQuery(
-  //     { page, limit },
-  //     this.deliveryRequestRepo,
-  //     {
-  //       where: [
-  //         // General requests (visible to all)
-  //         {
-  //           state: In(states),
-  //           status: RequestStatus.OPEN,
-  //           isDirect: false,
-  //         },
-
-  //         // 🔒 Direct requests ONLY for this agent
-  //         {
-  //           state: In(states),
-  //           status: RequestStatus.OPEN,
-  //           isDirect: true,
-  //           assignedAgent: { id: agent.id },
-  //         },
-  //       ],
-  //       relations: ['vendor', 'assignedAgent'],
-  //       order: { createdAt: 'DESC' },
-  //     },
-  //   );
-
-  //   await this.cacheManager.set(
-  //     cacheKey,
-  //     JSON.stringify(deliveryRequests),
-  //     CacheTTL.AgentOrders,
-  //   );
-
-  //   return deliveryRequests;
-  // }
-
   private async buildAvailableRequestsForAgent(
     agent: Agent,
     deliveryRequestQuery: GetDeliveryRequestsDto,
@@ -551,5 +496,149 @@ export class DeliveryRequestService {
     );
 
     return data;
+  }
+
+  /**
+   * Method to cancel a delivery request - only if it's still open and not yet accepted by any agent
+   */
+  async cancelRequest(userId: number, requestId: number) {
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!vendor) throw new NotFoundException('Vendor not found');
+
+    const request = await this.deliveryRequestRepo.findOne({
+      where: { id: requestId, vendor: { id: vendor.id } },
+      relations: ['quotes', 'assignedAgent'],
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+
+    if (request.status !== RequestStatus.OPEN) {
+      throw new BadRequestException(
+        'Only open requests can be cancelled. This request is already being processed.',
+      );
+    }
+
+    request.status = RequestStatus.CANCELLED;
+
+    const finalRequest = await this.deliveryRequestRepo.save(request);
+
+    await this.deliveryRequestCacheService.invalidateAgentAssignedRequests(
+      request.assignedAgent?.id,
+    );
+
+    // Notify assigned agent if it was a direct request
+    // if (request.isDirect && request.assignedAgent) {
+    //   await this.notifyAgent({
+    //     agentEmail: request.assignedAgent.user.email,
+    //     agentName: request.assignedAgent.businessName || 'Agent',
+    //     request: finalRequest,
+    //   });
+    // }
+
+    return finalRequest;
+  }
+
+  /**
+   * Method to decline a direct request - only the assigned agent can decline and only if it's still open
+   */
+  async declineDirectRequest(userId: number, requestId: number) {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!agent) throw new NotFoundException('Agent not found');
+
+    const request = await this.deliveryRequestRepo.findOne({
+      where: { id: requestId, assignedAgent: { id: agent.id } },
+      relations: ['vendor'],
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+
+    if (!request.isDirect) {
+      throw new BadRequestException('Only direct requests can be declined');
+    }
+
+    if (request.status !== RequestStatus.OPEN) {
+      throw new BadRequestException(
+        'Only open requests can be declined. This request is already being processed.',
+      );
+    }
+
+    request.status = RequestStatus.DECLINED;
+
+    const finalRequest = await this.deliveryRequestRepo.save(request);
+
+    await this.deliveryRequestCacheService.invalidateAgentAssignedRequests(
+      agent.id,
+    );
+
+    // Notify vendor
+    // await this.mailService.sendTemplate(
+    //   request.vendor.user.email,
+    //   'Your Direct Delivery Request Was Declined',
+    //   'vendor-direct-request-declined',
+    //   {
+    //     vendorName: request.vendor.businessName || 'Vendor',
+    //     agentName: agent.businessName || 'Agent',
+    //     requestUrl: `${process.env.FRONTEND_URL}/vendor/requests`,
+    //   },
+    // );
+
+    return finalRequest;
+  }
+
+  /**
+   * Method to get all delivery requests assigned to an agent with pagination and also filtering by status
+   */
+  async getAgentAssignedRequests(
+    userId: number,
+    deliveryRequestQuery: GetDeliveryRequestsDto,
+  ): Promise<Paginated<DeliveryRequest>> {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!agent) {
+      throw new BadRequestException('Agent not found');
+    }
+
+    const page = deliveryRequestQuery.page || 1;
+    const limit = deliveryRequestQuery.limit || 10;
+
+    // Try cache
+    const cached =
+      await this.deliveryRequestCacheService.getAgentAssignedRequests(
+        agent.id,
+        page,
+        limit,
+      );
+
+    if (cached) return cached as Paginated<DeliveryRequest>;
+
+    // Query DB
+    const requests = await this.paginationProvider.paginateQuery(
+      { page, limit },
+      this.deliveryRequestRepo,
+      {
+        where: {
+          assignedAgent: { id: agent.id },
+          status: RequestStatus.OPEN,
+        },
+        relations: ['vendor', 'deliveries'],
+        order: { createdAt: 'DESC' },
+      },
+    );
+
+    // Cache result
+    await this.deliveryRequestCacheService.setAgentAssignedRequests(
+      agent.id,
+      page,
+      limit,
+      requests,
+    );
+
+    return requests;
   }
 }
