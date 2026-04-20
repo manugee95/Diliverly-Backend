@@ -46,6 +46,14 @@ export class CreateDeliveryRequestDto {
   state: string;
 
   @ApiProperty({
+    description: 'pickup address for the delivery',
+    example: '123 Main St, Lagos, Nigeria',
+  })
+  @IsNotEmpty()
+  @IsString()
+  pickUpAddress: string;
+
+  @ApiProperty({
     description: 'list of delivery addresses',
     example:
       '[{ address: "123 Main St, Lagos, Nigeria", deliveryType: "prepaid" }, { address: "456 Elm St, Abuja, Nigeria", deliveryType: "cod" }]',

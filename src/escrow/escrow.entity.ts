@@ -1,7 +1,7 @@
-import { Agent } from 'src/agent/agent.entity';
-import { Order } from 'src/orders/entities/order.entity';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Agent } from '../agent/agent.entity';
+import { Order } from '../orders/entities/order.entity';
+import { OrderItem } from '../orders/entities/orderItem.entity';
+import { Vendor } from '../vendor/vendor.entity';
 import {
   Entity,
   Column,

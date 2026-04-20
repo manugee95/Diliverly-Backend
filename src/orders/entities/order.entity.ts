@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, Index, JoinColumn, OneToOne } from 'typeorm';
 import {
   PrimaryGeneratedColumn,
   ManyToOne,
@@ -7,13 +7,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Vendor } from 'src/vendor/vendor.entity';
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
+import { Vendor } from '../../vendor/vendor.entity';
+import { DeliveryRequest } from '../../delivery-requests/entities/delivery-request.entity';
 import { OrderStatus } from '../enums/orderStatus.enum';
 import { OrderItem } from './orderItem.entity';
-import { Review } from 'src/reviews/review.entity';
+import { Review } from '../../reviews/review.entity';
 
 @Entity()
+@Index('idx_order_vendor_status', ['vendor', 'status'])
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;

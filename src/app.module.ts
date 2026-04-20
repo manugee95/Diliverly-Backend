@@ -6,7 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import appConfig from './config/app.config';
-import databaseConfig from './config/database.config';
 import { PaginationModule } from './common/pagination/pagination.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthenticationGuard } from './auth/guards/authentication/authentication.guard';
@@ -34,49 +33,67 @@ import { EscrowModule } from './escrow/escrow.module';
 import { PaystackModule } from './paystack/paystack.module';
 import { TrustScoreModule } from './common/trust-score/trust-score.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { DashboardOverviewModule } from './dashboard-overview/dashboard-overview.module';
 
-const ENV = process.env.NODE_ENV;
+// const ENV = process.env.NODE_ENV;
 
 @Module({
   imports: [
     AuthModule,
+    // ConfigModule.forRoot({
+    //   isGlobal: true,
+    //   envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+    //   load: [appConfig, databaseConfig],
+    // }),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-      load: [appConfig, databaseConfig],
+      envFilePath: '.env.development',
+      load: [appConfig],
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const isProd = configService.get<boolean>('appConfig.isProduction');
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DATABASE_HOST,
+      port: Number(process.env.DATABASE_PORT),
+      username: process.env.DATABASE_USER,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_NAME,
 
-        return {
-          type: 'postgres',
-          autoLoadEntities: true,
-          synchronize: !isProd,
-          logging: false,
-
-          host: configService.get('database.host'),
-          port: configService.get<number>('database.port'),
-          username: configService.get('database.user'),
-          password: configService.get('database.password'),
-          database: configService.get('database.name'),
-
-          extra: {
-            max: 10,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 5000,
-            keepAlive: true,
-          },
-
-          retryAttempts: 5,
-          retryDelay: 3000,
-
-          ssl: isProd ? { rejectUnauthorized: false } : false,
-        };
-      },
+      autoLoadEntities: true,
+      synchronize: false,
+      ssl: false,
     }),
+    // TypeOrmModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (configService: ConfigService) => {
+    //     const isProd = configService.get<boolean>('appConfig.isProduction');
+
+    //     return {
+    //       type: 'postgres',
+    //       autoLoadEntities: true,
+    //       synchronize: !isProd,
+    //       logging: false,
+
+    //       host: configService.get('database.host'),
+    //       port: configService.get<number>('database.port'),
+    //       username: configService.get('database.user'),
+    //       password: configService.get('database.password'),
+    //       database: configService.get('database.name'),
+
+    //       extra: {
+    //         max: 10,
+    //         idleTimeoutMillis: 30000,
+    //         connectionTimeoutMillis: 5000,
+    //         keepAlive: true,
+    //       },
+
+    //       retryAttempts: 5,
+    //       retryDelay: 3000,
+
+    //       ssl: isProd ? { rejectUnauthorized: false } : false,
+    //     };
+    //   },
+    // }),
     UsersModule,
     PaginationModule,
     ConfigModule.forFeature(jwtConfig),
@@ -100,6 +117,7 @@ const ENV = process.env.NODE_ENV;
     PaystackModule,
     TrustScoreModule,
     FavoritesModule,
+    DashboardOverviewModule,
   ],
   controllers: [AppController],
   providers: [

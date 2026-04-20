@@ -1,4 +1,4 @@
-import { User } from 'src/users/user.entity';
+import { User } from '../users/user.entity';
 import {
   Column,
   CreateDateColumn,
@@ -9,9 +9,9 @@ import {
 } from 'typeorm';
 import { TransactionType } from './enums/transactionType.enum';
 import { TransactionStatus } from './enums/transactionStatus.enum';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
-import { Withdrawal } from 'src/withdrawals/withdrawal.entity';
-import { Order } from 'src/orders/entities/order.entity';
+import { OrderItem } from '../orders/entities/orderItem.entity';
+import { Withdrawal } from '../withdrawals/withdrawal.entity';
+import { Order } from '../orders/entities/order.entity';
 
 @Entity()
 export class Transaction {

@@ -9,8 +9,7 @@ import {
 } from 'typeorm';
 import { DeliveryRequest } from './delivery-request.entity';
 import { DeliveryType } from '../enums/deliveryType.enum';
-import { DeliveryStatus } from '../enums/deliveryStatus.enum';
-import { DeliveryCost } from 'src/quotes/entities/deliveryCost.entity';
+import { DeliveryCost } from '../../quotes/entities/deliveryCost.entity';
 
 @Entity()
 export class Delivery {

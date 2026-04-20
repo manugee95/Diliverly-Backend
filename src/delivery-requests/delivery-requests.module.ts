@@ -13,10 +13,13 @@ import { Agent } from 'src/agent/agent.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { MailerModule } from 'src/mailer/mailer.module';
 import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
+import { DashboardOverviewModule } from 'src/dashboard-overview/dashboard-overview.module';
+import { DeliveryRequestsCacheProvider } from './providers/delivery-requests.provider';
+import { redisProvider } from 'src/common/providers/redis.provider';
 
 @Module({
   controllers: [DeliveryRequestsController],
-  providers: [DeliveryRequestService],
+  providers: [DeliveryRequestService, DeliveryRequestsCacheProvider, redisProvider],
   imports: [
     TypeOrmModule.forFeature([DeliveryRequest, Delivery, Vendor, Agent, FavoriteAgent]),
     forwardRef(() => AuthModule),
@@ -24,7 +27,9 @@ import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
     AgentModule,
     PaginationModule,
     MailerModule,
+    DashboardOverviewModule,
     CacheModule.register()
   ],
+  exports: [DeliveryRequestService, DeliveryRequestsCacheProvider],
 })
 export class DeliveryRequestsModule {}

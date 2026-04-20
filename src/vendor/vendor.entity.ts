@@ -1,8 +1,8 @@
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
-import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
-import { Order } from 'src/orders/entities/order.entity';
-import { Review } from 'src/reviews/review.entity';
-import { User } from 'src/users/user.entity';
+import { DeliveryRequest } from '../delivery-requests/entities/delivery-request.entity';
+import { FavoriteAgent } from '../favorites/favorite-agent.entity';
+import { Order } from '../orders/entities/order.entity';
+import { Review } from '../reviews/review.entity';
+import { User } from '../users/user.entity';
 import {
   Column,
   CreateDateColumn,

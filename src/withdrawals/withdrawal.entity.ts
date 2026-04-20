@@ -1,4 +1,4 @@
-import { User } from 'src/users/user.entity';
+import { User } from '../users/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,7 +9,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import { WithdrawalStatus } from './enums/withdrawalStatus.enum';
-import { Transaction } from 'src/transactions/transaction.entity';
+import { Transaction } from '../transactions/transaction.entity';
 
 @Entity()
 export class Withdrawal {

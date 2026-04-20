@@ -15,10 +15,13 @@ import { Agent } from 'src/agent/agent.entity';
 import { EscrowModule } from 'src/escrow/escrow.module';
 import { MailerModule } from 'src/mailer/mailer.module';
 import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
+import { DashboardOverviewModule } from 'src/dashboard-overview/dashboard-overview.module';
+import { OrdersCacheProvider } from './providers/orders.provider';
+import { redisProvider } from 'src/common/providers/redis.provider';
 
 @Module({
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, OrdersCacheProvider, redisProvider],
   imports: [
     TypeOrmModule.forFeature([
       Order,
@@ -34,6 +37,7 @@ import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
     EscrowModule,
     MailerModule,
     TrustScoreModule,
+    DashboardOverviewModule,
     CacheModule.register(),
   ],
 })

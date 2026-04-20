@@ -1,4 +1,4 @@
-import { User } from 'src/users/user.entity';
+import { User } from '../users/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -9,10 +9,10 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Quote } from 'src/quotes/entities/quote.entity';
-import { Review } from 'src/reviews/review.entity';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
-import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
+import { Quote } from '../quotes/entities/quote.entity';
+import { Review } from '../reviews/review.entity';
+import { OrderItem } from '../orders/entities/orderItem.entity';
+import { FavoriteAgent } from '../favorites/favorite-agent.entity';
 
 @Entity()
 export class Agent {
@@ -21,7 +21,6 @@ export class Agent {
 
   @OneToOne(() => User, (user) => user.agent, {
     onDelete: 'CASCADE',
-    eager: true,
   })
   @JoinColumn()
   user: User;

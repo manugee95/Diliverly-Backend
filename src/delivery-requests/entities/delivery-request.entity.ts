@@ -1,8 +1,9 @@
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Vendor } from '../../vendor/vendor.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -11,11 +12,14 @@ import {
 import { RequestStatus } from '../enums/requestStatus.enum';
 import { Delivery } from './delivery.entity';
 import { Exclude } from 'class-transformer';
-import { Quote } from 'src/quotes/entities/quote.entity';
-import { Order } from 'src/orders/entities/order.entity';
-import { Agent } from 'src/agent/agent.entity';
+import { Quote } from '../../quotes/entities/quote.entity';
+import { Order } from '../../orders/entities/order.entity';
+import { Agent } from '../../agent/agent.entity';
 
 @Entity()
+@Index('idx_delivery_request_vendor', ['vendor'])
+@Index('idx_delivery_request_status', ['status'])
+@Index('idx_delivery_request_assigned_agent', ['assignedAgent'])
 export class DeliveryRequest {
   @PrimaryGeneratedColumn()
   id: number;
@@ -54,6 +58,9 @@ export class DeliveryRequest {
     cascade: ['insert'],
   })
   deliveries: Delivery[];
+
+  @Column({ type: 'varchar', length: 512, default: 'a' }) 
+  pickUpAddress: string;
 
   @ManyToOne(() => Agent, { nullable: true, onDelete: 'SET NULL' })
   assignedAgent: Agent;

@@ -12,7 +12,7 @@ export class MailerService {
   constructor(private readonly configService: ConfigService) {
     this.resend = new Resend(this.configService.get('RESEND_API_KEY'));
     this.from =
-      this.configService.get('MAIL_FROM') ?? 'Diliverly <no-reply@diliverly.com>';
+      this.configService.get('MAIL_FROM') ?? 'Dilivaly <no-reply@dilivaly.com>';
   }
 
   async sendTemplate(

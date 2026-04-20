@@ -1,6 +1,6 @@
 POST http://localhost:3000/delivery-request
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6ZmFsc2UsImlzVmVuZG9yIjp0cnVlLCJpYXQiOjE3NzUyMTYyODgsImV4cCI6MTc3NTIxOTg4OCwiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.lE4b0W8ZsSQmYfug47ORmA2Fkb45KIhUhfy2SW_Sg2Y
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjU0MTU0MSwiZXhwIjoxNzc2NTQ1MTQxLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.LDs_qeY68G3GCHnEh4QJ7k9rip-7A5IiGb8WQiadUbE
 
 {
     "title": "Edo Delivery Agent Needed",
@@ -16,17 +16,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
 
 
 POST http://localhost:3000/delivery-request/direct/1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjM0Nzc0NywiZXhwIjoxNzc2MzUxMzQ3LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.80JBvfm-XJh25BFfnO4SnKDp10lppNMfVQFrr32JfD8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjY4MDI5OSwiZXhwIjoxNzc2NjgzODk5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.OSKOeOkv3_3lZppMb8ZSMVGVgJWow8ljQI6EURKF_0k
 Content-Type: application/json
 
 {
-    "title": "Delta Delivery Agent Needed",
-    "description": "I need a reliable delivery agent in Delta for multiple deliveries",
-    "state": "delta",
+    "title": "Imo Delivery Agent Needed",
+    "description": "I need a reliable delivery agent in Imo for multiple deliveries",
+    "state": "imo",
     "addresses": [
-        { "address": "Lekki Phase 1, admiralty way Delta", "deliveryType": "prepaid" },
-        { "address": "26, Isaac John stree, Ikeja GRA Delta", "deliveryType": "cod" },
-        { "address": "27, Isaac John stree, Ikeja GRA Delta", "deliveryType": "cod" },
-        { "address": "28, Isaac John stree, Ikeja GRA Delta", "deliveryType": "cod" }
+        { "address": "Lekki Phase 1, admiralty way Imo", "deliveryType": "prepaid" },
+        { "address": "26, Isaac John stree, Ikeja GRA Imo", "deliveryType": "cod" },
+        { "address": "27, Isaac John stree, Ikeja GRA Imo", "deliveryType": "cod" },
+        { "address": "28, Isaac John stree, Ikeja GRA Imo", "deliveryType": "cod" }
     ]
 }

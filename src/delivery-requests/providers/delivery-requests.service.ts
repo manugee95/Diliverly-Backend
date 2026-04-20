@@ -16,12 +16,11 @@ import { GetDeliveryRequestsDto } from '../dtos/get-delivery-requests.dto';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { CacheService } from 'src/common/providers/cache.service';
-import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { Agent } from 'src/agent/agent.entity';
 import { MailerService } from 'src/mailer/providers/mailer.service';
 import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
+import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
+import { DeliveryRequestsCacheProvider } from './delivery-requests.provider';
 
 @Injectable()
 export class DeliveryRequestService {
@@ -62,15 +61,19 @@ export class DeliveryRequestService {
     private readonly paginationProvider: PaginationProvider,
 
     /**
-     * Injecting Cache Service
-     */
-    @Inject(CACHE_MANAGER)
-    private cacheManager: CacheService,
-
-    /**
      * Injecting mail service
      */
     private readonly mailService: MailerService,
+
+    /**
+     * Injecting Dashboard Cache Provider
+     */
+    private readonly dashboardCacheProvider: DashboardCacheProvider,
+
+    /**
+     * Injecting Delivery Requests Cache Provider
+     */
+    private readonly deliveryRequestCacheService: DeliveryRequestsCacheProvider,
   ) {}
 
   /**
@@ -111,7 +114,7 @@ export class DeliveryRequestService {
       throw new NotFoundException('Vendor not found');
     }
 
-    const { title, description, state, addresses } = dto;
+    const { title, description, state, addresses, pickUpAddress } = dto;
 
     // Create the base request
     const deliveryRequest = this.deliveryRequestRepo.create({
@@ -119,6 +122,7 @@ export class DeliveryRequestService {
       title,
       description,
       state,
+      pickUpAddress,
       status: RequestStatus.OPEN,
       isDirect: false,
     });
@@ -140,6 +144,11 @@ export class DeliveryRequestService {
     // Save everything
     const savedRequest =
       await this.deliveryRequestRepo.save(savedDeliveryRequest);
+
+    await this.dashboardCacheProvider.invalidateVendor(vendor.id);
+
+    await this.deliveryRequestCacheService.invalidateVendor(vendor.id);
+
     return savedRequest;
   }
 
@@ -186,7 +195,7 @@ export class DeliveryRequestService {
       );
     }
 
-    const { title, description, state, addresses } = dto;
+    const { title, description, state, addresses, pickUpAddress } = dto;
 
     // Create DIRECT request
     const deliveryRequest = this.deliveryRequestRepo.create({
@@ -194,6 +203,7 @@ export class DeliveryRequestService {
       title,
       description,
       state,
+      pickUpAddress,
       status: RequestStatus.OPEN,
       isDirect: true,
       assignedAgent: agent,
@@ -221,6 +231,12 @@ export class DeliveryRequestService {
       vendorName: vendor.businessName || 'Vendor',
     });
 
+    await this.dashboardCacheProvider.invalidateVendor(vendor.id);
+
+    await this.deliveryRequestCacheService.invalidateAgent(agent.id);
+
+    await this.deliveryRequestCacheService.invalidateVendor(vendor.id);
+
     return finalRequest;
   }
 
@@ -236,38 +252,47 @@ export class DeliveryRequestService {
   //     where: { user: { id: userId } },
   //   });
 
-  //   if (!agent?.statesCovered || agent.statesCovered.length === 0) {
+  //   if (!agent?.statesCovered?.length) {
   //     throw new BadRequestException('No states covered by this agent');
   //   }
 
-  //   // Check cache first
-  //   const cacheKey = `agent:${agent.id}:requests`;
+  //   const page = deliveryRequestQuery.page || 1;
+  //   const limit = deliveryRequestQuery.limit || 10;
+
+  //   const cacheKey = `agent:${agent.id}:requests:page=${page}:limit=${limit}`;
 
   //   const cached = await this.cacheManager.get<string>(cacheKey);
-
   //   if (cached) {
   //     return JSON.parse(cached);
   //   }
 
-  //   // extract names of states covered by agent to filter requests by those states
   //   const states = agent.statesCovered;
 
   //   const deliveryRequests = await this.paginationProvider.paginateQuery(
-  //     {
-  //       page: deliveryRequestQuery.page || 1,
-  //       limit: deliveryRequestQuery.limit || 10,
-  //     },
+  //     { page, limit },
   //     this.deliveryRequestRepo,
   //     {
-  //       where: {
-  //         state: In(states),
-  //         status: RequestStatus.OPEN,
-  //       },
+  //       where: [
+  //         // General requests (visible to all)
+  //         {
+  //           state: In(states),
+  //           status: RequestStatus.OPEN,
+  //           isDirect: false,
+  //         },
+
+  //         // 🔒 Direct requests ONLY for this agent
+  //         {
+  //           state: In(states),
+  //           status: RequestStatus.OPEN,
+  //           isDirect: true,
+  //           assignedAgent: { id: agent.id },
+  //         },
+  //       ],
+  //       relations: ['vendor', 'assignedAgent'],
   //       order: { createdAt: 'DESC' },
   //     },
   //   );
 
-  //   // Store in cache for future requests
   //   await this.cacheManager.set(
   //     cacheKey,
   //     JSON.stringify(deliveryRequests),
@@ -277,14 +302,10 @@ export class DeliveryRequestService {
   //   return deliveryRequests;
   // }
 
-  async getAvailableRequests(
-    userId: number,
+  private async buildAvailableRequestsForAgent(
+    agent: Agent,
     deliveryRequestQuery: GetDeliveryRequestsDto,
   ): Promise<Paginated<DeliveryRequest>> {
-    const agent = await this.agentRepo.findOne({
-      where: { user: { id: userId } },
-    });
-
     if (!agent?.statesCovered?.length) {
       throw new BadRequestException('No states covered by this agent');
     }
@@ -292,28 +313,18 @@ export class DeliveryRequestService {
     const page = deliveryRequestQuery.page || 1;
     const limit = deliveryRequestQuery.limit || 10;
 
-    const cacheKey = `agent:${agent.id}:requests:page=${page}:limit=${limit}`;
-
-    const cached = await this.cacheManager.get<string>(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-
     const states = agent.statesCovered;
 
-    const deliveryRequests = await this.paginationProvider.paginateQuery(
+    return this.paginationProvider.paginateQuery(
       { page, limit },
       this.deliveryRequestRepo,
       {
         where: [
-          // General requests (visible to all)
           {
             state: In(states),
             status: RequestStatus.OPEN,
             isDirect: false,
           },
-
-          // 🔒 Direct requests ONLY for this agent
           {
             state: In(states),
             status: RequestStatus.OPEN,
@@ -325,22 +336,44 @@ export class DeliveryRequestService {
         order: { createdAt: 'DESC' },
       },
     );
-
-    await this.cacheManager.set(
-      cacheKey,
-      JSON.stringify(deliveryRequests),
-      CacheTTL.AgentOrders,
-    );
-
-    return deliveryRequests;
   }
 
-  /**
-   * Method to clear cache for an agent (can be called after a quote is accepted or a request is closed to ensure agents see updated info)
-   */
-  async clearAgentCache(agentId: number) {
-    const cacheKey = `agent:${agentId}:requests`;
-    await this.cacheManager.del(cacheKey);
+  async getAvailableRequests(
+    userId: number,
+    deliveryRequestQuery: GetDeliveryRequestsDto,
+  ) {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    const page = deliveryRequestQuery.page || 1;
+    const limit = deliveryRequestQuery.limit || 10;
+
+    const cached = await this.deliveryRequestCacheService.getRequests(
+      agent.id,
+      page,
+      limit,
+    );
+
+    if (cached) return cached;
+
+    const data = await this.buildAvailableRequestsForAgent(
+      agent,
+      deliveryRequestQuery,
+    );
+
+    await this.deliveryRequestCacheService.setRequests(
+      agent.id,
+      page,
+      limit,
+      data,
+    );
+
+    return data;
   }
 
   /**
@@ -456,6 +489,32 @@ export class DeliveryRequestService {
   /**
    * Method to get all delivery requests for a vendor with pagination and also filtering by status
    */
+  private async buildVendorRequests(
+    vendor: Vendor,
+    deliveryRequestQuery: GetDeliveryRequestsDto,
+  ): Promise<Paginated<DeliveryRequest>> {
+    const page = deliveryRequestQuery.page || 1;
+    const limit = deliveryRequestQuery.limit || 10;
+
+    const where: any = {
+      vendor: { id: vendor.id },
+    };
+
+    // Apply status filter if provided
+    if (deliveryRequestQuery.status) {
+      where.status = deliveryRequestQuery.status;
+    }
+
+    return this.paginationProvider.paginateQuery(
+      { page, limit },
+      this.deliveryRequestRepo,
+      {
+        where,
+        order: { createdAt: 'DESC' },
+      },
+    );
+  }
+
   async getVendorRequests(
     userId: number,
     deliveryRequestQuery: GetDeliveryRequestsDto,
@@ -468,27 +527,29 @@ export class DeliveryRequestService {
       throw new NotFoundException('Vendor not found');
     }
 
-    const where: any = {
-      vendor: { id: vendor.id },
-    };
+    const page = deliveryRequestQuery.page || 1;
+    const limit = deliveryRequestQuery.limit || 10;
+    const status = deliveryRequestQuery.status || 'all';
 
-    // Apply status filter if provided
-    if (deliveryRequestQuery.status) {
-      where.status = deliveryRequestQuery.status;
-    }
-
-    const deliveryRequests = await this.paginationProvider.paginateQuery(
-      {
-        page: deliveryRequestQuery.page || 1,
-        limit: deliveryRequestQuery.limit || 10,
-      },
-      this.deliveryRequestRepo,
-      {
-        where,
-        order: { createdAt: 'DESC' },
-      },
+    const cached = await this.deliveryRequestCacheService.getVendorRequests(
+      vendor.id,
+      page,
+      limit,
+      status,
     );
 
-    return deliveryRequests;
+    if (cached) return cached as Paginated<DeliveryRequest>;
+
+    const data = await this.buildVendorRequests(vendor, deliveryRequestQuery);
+
+    await this.deliveryRequestCacheService.setVendorRequests(
+      vendor.id,
+      page,
+      limit,
+      status,
+      data,
+    );
+
+    return data;
   }
 }

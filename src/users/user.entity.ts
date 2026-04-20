@@ -10,11 +10,11 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserStatus } from './enums/userStatus.enum';
-import { Vendor } from 'src/vendor/vendor.entity';
-import { Transaction } from 'src/transactions/transaction.entity';
-import { Bank_Account } from 'src/bank-account/bank-account.entity';
-import { Agent } from 'src/agent/agent.entity';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
+import { Vendor } from '../vendor/vendor.entity';
+import { Transaction } from '../transactions/transaction.entity';
+import { Bank_Account } from '../bank-account/bank-account.entity';
+import { Agent } from '../agent/agent.entity';
+import { Wallet } from '../wallets/entities/wallet.entity';
 
 @Entity()
 export class User {

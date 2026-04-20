@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Quote } from './quote.entity';
-import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
+import { Delivery } from '../../delivery-requests/entities/delivery.entity';
 
 
 @Entity('delivery_cost')

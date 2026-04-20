@@ -5,14 +5,17 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Order } from './order.entity';
-import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
-import { DeliveryType } from 'src/delivery-requests/enums/deliveryType.enum';
+import { Delivery } from '../../delivery-requests/entities/delivery.entity';
+import { DeliveryType } from '../../delivery-requests/enums/deliveryType.enum';
 import { OrderStatus } from '../enums/orderStatus.enum';
-import { Agent } from 'src/agent/agent.entity';
+import { Agent } from '../../agent/agent.entity';
 
 @Entity()
+@Index('idx_order_item_agent_status', ['agent', 'status'])
+@Index('idx_order_item_agent', ['agent'])
 export class OrderItem {
   @PrimaryGeneratedColumn()
   id: number;

@@ -17,10 +17,13 @@ import { QuotePaymentService } from './providers/quote-payment.service';
 import { WalletsModule } from 'src/wallets/wallets.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { ReferenceModule } from 'src/common/reference/reference.module';
+import { DashboardOverviewModule } from 'src/dashboard-overview/dashboard-overview.module';
+import { QuotesCacheProvider } from './providers/quotes.provider';
+import { redisProvider } from 'src/common/providers/redis.provider';
 
 @Module({
   controllers: [QuotesController],
-  providers: [QuotesService, QuotePaymentService],
+  providers: [QuotesService, QuotePaymentService, QuotesCacheProvider, redisProvider],
   imports: [
     TypeOrmModule.forFeature([
       Quote,
@@ -37,6 +40,8 @@ import { ReferenceModule } from 'src/common/reference/reference.module';
     WalletsModule,
     TransactionsModule,
     ReferenceModule,
+    DashboardOverviewModule,
+    DeliveryRequestsModule,
     CacheModule.register()
   ],
 })

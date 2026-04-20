@@ -37,6 +37,9 @@ import { EscrowService } from 'src/escrow/providers/escrow.service';
 import { MailerService } from 'src/mailer/providers/mailer.service';
 import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
 import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider';
+import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
+import { OrdersCacheProvider } from './orders.provider';
+import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 
 @Injectable()
 export class OrdersService {
@@ -103,6 +106,16 @@ export class OrdersService {
      * Injecting Trust Score Provider
      */
     private readonly trustScoreProvider: TrustScoreProvider,
+
+    /**
+     * Injecting Dashboard Cache Provider
+     */
+    private readonly dashboardCacheProvider: DashboardCacheProvider,
+
+    /**
+     * Injecting Orders Cache Provider
+     */
+    private readonly ordersCacheProvider: OrdersCacheProvider,
   ) {}
 
   /**
@@ -203,7 +216,7 @@ export class OrdersService {
   }
 
   /**
-   * Method to notify vendor of item cancelled
+   * Method to notify vendor of COD Payment received
    */
   private async notifyVendorCodPayment(payload: {
     vendorEmail: string;
@@ -280,6 +293,12 @@ export class OrdersService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!order) throw new BadRequestException('Order not found');
+
+      //Load order with relations to ensure correct locking (important for step 4)
+      const orderWithRelations = await orderRepo.findOne({
+        where: { id: order.id },
+        relations: ['vendor', 'request'],
+      });
 
       // 4) Load existing placeholder items (NO lock; order row is already locked)
       const existingItems = await orderItemRepo.find({
@@ -358,6 +377,24 @@ export class OrdersService {
 
       // Mark order ACTIVE after vendor completes details
       await orderRepo.update(order.id, { status: OrderStatus.ACTIVE });
+
+      // Clear cache for vendor and agent dashboards
+      if (orderWithRelations?.vendor?.id) {
+        await this.dashboardCacheProvider.invalidateBoth(
+          orderWithRelations.vendor.id,
+          request.quotes[0].agent.id,
+        );
+
+        // Clear orders cache for vendor
+        await this.ordersCacheProvider.invalidateVendor(
+          orderWithRelations.vendor.id,
+        );
+      }
+
+      // Clear orders cache for agent
+      await this.ordersCacheProvider.invalidateAgent(
+        request.quotes[0].agent.id,
+      );
 
       // Notify agent of new order assignment
       await this.notifyAgent({
@@ -442,6 +479,12 @@ export class OrdersService {
       // 6) Auto-complete order
       await this.autoCompleteOrder(oi.order.id, manager);
     });
+
+    // Delete cache for agent dashboards
+    await this.dashboardCacheProvider.invalidateAgent(orderItem.agent?.id);
+
+    // Delete cache for orderitems
+    await this.ordersCacheProvider.invalidateOrderItems(orderItem.id);
 
     // Notify vendor
     await this.notifyVendorDelivered({
@@ -683,6 +726,12 @@ export class OrdersService {
       }
     });
 
+    // Delete cache for agent dashboards
+    await this.dashboardCacheProvider.invalidateAgent(orderItem.agent?.id);
+
+    // Delete cache for orderitems
+    await this.ordersCacheProvider.invalidateOrderItems(orderItem.id);
+
     // Notify vendor of COD payment
     await this.notifyVendorCodPayment({
       vendorEmail: orderItem.order.vendor.user.email,
@@ -801,7 +850,15 @@ export class OrdersService {
 
     const order = await orderRepo.findOne({
       where: { id: orderId },
-      relations: ['items', 'vendor', 'vendor.user', 'request'], // 👈 include request
+      relations: [
+        'items',
+        'vendor',
+        'vendor.user',
+        'request',
+        'request.quotes',
+        'request.quotes.agent',
+        'request.quotes.agent.user',
+      ],
     });
 
     if (!order) return;
@@ -817,17 +874,22 @@ export class OrdersService {
       order.completedAt = new Date();
       await orderRepo.save(order);
 
-      console.log(`Order ${order.id} marked as COMPLETE automatically.`);
-
       // Update Delivery Request status
       if (order.request && order.request.status !== RequestStatus.CLOSED) {
         order.request.status = RequestStatus.CLOSED;
         await deliveryRequestRepo.save(order.request);
-
-        console.log(
-          `DeliveryRequest ${order.request.id} marked as CLOSED automatically.`,
-        );
       }
+
+      // Clear cache for vendor and agent dashboards
+      await this.dashboardCacheProvider.invalidateVendor(order.vendor.id);
+
+      // Clear orders cache for vendor
+      await this.ordersCacheProvider.invalidateVendor(order.vendor.id);
+
+      // Clear orders cache for agent
+      await this.ordersCacheProvider.invalidateAgent(
+        order.request.quotes[0].agent.id,
+      );
 
       // Notify vendor of order completion
       await this.notifyVendorCompleted({
@@ -841,8 +903,68 @@ export class OrdersService {
   /**
    * Method to get orders assigned to an agent
    */
+
+  // async getOrdersAssignedToAgent(userId: number, ordersQuery: GetOrdersDto) {
+  //   // Find the agent
+  //   const agent = await this.agentRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+
+  //   if (!agent) throw new BadRequestException('Agent not found');
+
+  //   const page = ordersQuery.page || 1;
+  //   const limit = ordersQuery.limit || 10;
+  //   const status = ordersQuery.status || 'all';
+
+  //   // Include filters in cache key
+  //   const cacheKey = `agent:${agent.id}:orders:status=${status}:page=${page}:limit=${limit}`;
+
+  //   const cached = await this.cacheManager.get<string>(cacheKey);
+  //   if (cached) {
+  //     return JSON.parse(cached);
+  //   }
+
+  //   // Dynamic where clause
+  //   const where: any = {
+  //     request: {
+  //       quotes: {
+  //         agent: {
+  //           id: agent.id,
+  //         },
+  //       },
+  //     },
+  //   };
+
+  //   // Apply status filter if provided
+  //   if (ordersQuery.status) {
+  //     where.status = ordersQuery.status;
+  //   }
+
+  //   // Fetch from DB
+  //   const orders = await this.paginationProvider.paginateQuery(
+  //     {
+  //       page,
+  //       limit,
+  //     },
+  //     this.orderRepo,
+  //     {
+  //       where, // use dynamic where
+  //       relations: ['request', 'vendor'],
+  //       order: { createdAt: 'DESC' },
+  //     },
+  //   );
+
+  //   // Store in cache
+  //   await this.cacheManager.set(
+  //     cacheKey,
+  //     JSON.stringify(orders),
+  //     CacheTTL.AgentOrders,
+  //   );
+
+  //   return orders;
+  // }
+
   async getOrdersAssignedToAgent(userId: number, ordersQuery: GetOrdersDto) {
-    // Find the agent
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
     });
@@ -853,49 +975,46 @@ export class OrdersService {
     const limit = ordersQuery.limit || 10;
     const status = ordersQuery.status || 'all';
 
-    // Include filters in cache key
-    const cacheKey = `agent:${agent.id}:orders:status=${status}:page=${page}:limit=${limit}`;
+    // Use provider directly
+    const cached = await this.ordersCacheProvider.getAgentOrders(
+      agent.id,
+      page,
+      limit,
+      status,
+    );
 
-    const cached = await this.cacheManager.get<string>(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
+    if (cached) return cached;
 
-    // Dynamic where clause
+    // Build query
     const where: any = {
       request: {
         quotes: {
-          agent: {
-            id: agent.id,
-          },
+          agent: { id: agent.id },
         },
       },
     };
 
-    // Apply status filter if provided
     if (ordersQuery.status) {
       where.status = ordersQuery.status;
     }
 
-    // Fetch from DB
     const orders = await this.paginationProvider.paginateQuery(
-      {
-        page,
-        limit,
-      },
+      { page, limit },
       this.orderRepo,
       {
-        where, // use dynamic where
+        where,
         relations: ['request', 'vendor'],
         order: { createdAt: 'DESC' },
       },
     );
 
-    // Store in cache
-    await this.cacheManager.set(
-      cacheKey,
-      JSON.stringify(orders),
-      CacheTTL.AgentOrders,
+    // Cache via provider
+    await this.ordersCacheProvider.setAgentOrders(
+      agent.id,
+      page,
+      limit,
+      status,
+      orders,
     );
 
     return orders;
@@ -904,8 +1023,61 @@ export class OrdersService {
   /**
    * Method to get orders made by a vendor
    */
+
+  // async getOrdersForVendor(userId: number, ordersQuery: GetOrdersDto) {
+  //   // Find the vendor
+  //   const vendor = await this.vendorRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+
+  //   if (!vendor) throw new BadRequestException('Vendor not found');
+
+  //   const page = ordersQuery.page || 1;
+  //   const limit = ordersQuery.limit || 10;
+  //   const status = ordersQuery.status || 'all';
+
+  //   // Cache key must include filters
+  //   const cacheKey = `vendor:${vendor.id}:orders:status=${status}:page=${page}:limit=${limit}`;
+
+  //   const cached = await this.cacheManager.get<string>(cacheKey);
+  //   if (cached) {
+  //     return JSON.parse(cached);
+  //   }
+
+  //   // Build dynamic where clause
+  //   const where: any = {
+  //     vendor: { id: vendor.id },
+  //   };
+
+  //   if (ordersQuery.status) {
+  //     where.status = ordersQuery.status;
+  //   }
+
+  //   // Fetch from DB
+  //   const orders = await this.paginationProvider.paginateQuery(
+  //     {
+  //       page,
+  //       limit,
+  //     },
+  //     this.orderRepo,
+  //     {
+  //       where, // use the dynamic where here
+  //       relations: ['request', 'vendor'],
+  //       order: { createdAt: 'DESC' },
+  //     },
+  //   );
+
+  //   // Store in cache
+  //   await this.cacheManager.set(
+  //     cacheKey,
+  //     JSON.stringify(orders),
+  //     CacheTTL.VendorOrders,
+  //   );
+
+  //   return orders;
+  // }
+
   async getOrdersForVendor(userId: number, ordersQuery: GetOrdersDto) {
-    // Find the vendor
     const vendor = await this.vendorRepo.findOne({
       where: { user: { id: userId } },
     });
@@ -916,15 +1088,16 @@ export class OrdersService {
     const limit = ordersQuery.limit || 10;
     const status = ordersQuery.status || 'all';
 
-    // Cache key must include filters
-    const cacheKey = `vendor:${vendor.id}:orders:status=${status}:page=${page}:limit=${limit}`;
+    // Try cache
+    const cached = await this.ordersCacheProvider.getVendorOrders(
+      vendor.id,
+      page,
+      limit,
+      status,
+    );
 
-    const cached = await this.cacheManager.get<string>(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
+    if (cached) return cached;
 
-    // Build dynamic where clause
     const where: any = {
       vendor: { id: vendor.id },
     };
@@ -933,25 +1106,23 @@ export class OrdersService {
       where.status = ordersQuery.status;
     }
 
-    // Fetch from DB
     const orders = await this.paginationProvider.paginateQuery(
-      {
-        page,
-        limit,
-      },
+      { page, limit },
       this.orderRepo,
       {
-        where, // use the dynamic where here
+        where,
         relations: ['request', 'vendor'],
         order: { createdAt: 'DESC' },
       },
     );
 
-    // Store in cache
-    await this.cacheManager.set(
-      cacheKey,
-      JSON.stringify(orders),
-      CacheTTL.VendorOrders,
+    // Cache
+    await this.ordersCacheProvider.setVendorOrders(
+      vendor.id,
+      page,
+      limit,
+      status,
+      orders,
     );
 
     return orders;
@@ -960,26 +1131,40 @@ export class OrdersService {
   /**
    * Method to get order Items for an order
    */
+
+  // async getOrderItems(orderId: number) {
+  //   const cacheKey = `order:${orderId}:items`;
+
+  //   // Check cache first
+  //   const cached = await this.cacheManager.get<string>(cacheKey);
+  //   if (cached) {
+  //     return JSON.parse(cached);
+  //   }
+
+  //   // Fetch from DB
+  //   const items = await this.orderItemRepo.find({
+  //     where: { order: { id: orderId } },
+  //   });
+
+  //   // Store in cache for future requests
+  //   await this.cacheManager.set(
+  //     cacheKey,
+  //     JSON.stringify(items),
+  //     CacheTTL.VendorOrders,
+  //   );
+
+  //   return items;
+  // }
+
   async getOrderItems(orderId: number) {
-    const cacheKey = `order:${orderId}:items`;
+    const cached = await this.ordersCacheProvider.getOrderItems(orderId);
+    if (cached) return cached;
 
-    // Check cache first
-    const cached = await this.cacheManager.get<string>(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-
-    // Fetch from DB
     const items = await this.orderItemRepo.find({
       where: { order: { id: orderId } },
     });
 
-    // Store in cache for future requests
-    await this.cacheManager.set(
-      cacheKey,
-      JSON.stringify(items),
-      CacheTTL.VendorOrders,
-    );
+    await this.ordersCacheProvider.setOrderItems(orderId, items);
 
     return items;
   }

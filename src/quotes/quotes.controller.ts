@@ -24,7 +24,7 @@ export class QuotesController {
      */
     private readonly quotesService: QuotesService,
 
-    /** 
+    /**
      * Inject Quote Payment Service
      */
     private readonly quotePaymentService: QuotePaymentService,
@@ -45,6 +45,30 @@ export class QuotesController {
   public async sendQuote(@Req() req, @Body() dto: CreateQuoteDto) {
     const userId = req.user.id;
     return this.quotesService.createQuote(userId, dto);
+  }
+
+  /**
+   * Endpoint to get quotes submitted by an agent
+   */
+  @ApiOperation({
+    summary: 'Get quotes submitted by an agent',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Quotes retrieved successfully.',
+  })
+  @ApiQuery({
+    name: 'status',
+    type: 'string',
+    required: false,
+    description: 'The status of the quotes to retrieve',
+    example: 'pending',
+  })
+  @UseGuards(AgentGuard)
+  @Get('/agent')
+  public async getQuotesForAgent(@Req() req, @Query() dto: GetQuoteDto) {
+    const userId = req.user.id;
+    return this.quotesService.getQuotesForAgent(userId, dto);
   }
 
   /**
@@ -90,33 +114,9 @@ export class QuotesController {
   }
 
   /**
-   * Endpoint to get quotes submitted by an agent
-   */
-   @ApiOperation({
-    summary: 'Get quotes submitted by an agent',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Quotes retrieved successfully.',
-  })
-  @ApiQuery({
-    name: 'status',
-    type: 'string',
-    required: false,
-    description: 'The status of the quotes to retrieve',
-    example: 'pending'
-  })
-  @UseGuards(AgentGuard)
-  @Get('/agent')
-  public async getQuotesForAgent(@Req() req, @Query() dto: GetQuoteDto) {
-    const userId = req.user.id;
-    return this.quotesService.getQuotesForAgent(userId, dto);
-  }
-
-  /**
    * Endpoint to get a single quote by ID
    */
-   @ApiOperation({
+  @ApiOperation({
     summary: 'Get a single quote by ID',
   })
   @ApiResponse({
@@ -153,7 +153,7 @@ export class QuotesController {
     return this.quotesService.acceptQuote(userId, quoteId);
   }
 
-  /** 
+  /**
    * Endpoint to make payment for accepted quote
    */
   @ApiOperation({
@@ -168,8 +168,14 @@ export class QuotesController {
   })
   @UseGuards(VendorGuard)
   @Post('/:requestId/pay')
-  public async payAcceptedQuote(@Req() req, @Param('requestId') requestId: number) {
+  public async payAcceptedQuote(
+    @Req() req,
+    @Param('requestId') requestId: number,
+  ) {
     const userId = req.user.id;
-    return this.quotePaymentService.payAcceptedQuoteWithWallet(userId, requestId);
+    return this.quotePaymentService.payAcceptedQuoteWithWallet(
+      userId,
+      requestId,
+    );
   }
 }
