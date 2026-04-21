@@ -111,7 +111,7 @@ export class QuotePaymentService {
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!wallet) throw new BadRequestException('Wallet not found');
+      if (!wallet) throw new BadRequestException('Wallet not funded yet');
 
       if (Number(wallet.availableBalance) < total) {
         throw new BadRequestException('Insufficient balance');
