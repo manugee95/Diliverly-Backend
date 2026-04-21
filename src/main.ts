@@ -14,7 +14,11 @@ async function bootstrap() {
 
   // ---- CORS Configuration ----
   app.enableCors({
-    origin: ['https://localhost:3000', 'http://localhost:3000'], // add your real frontend domain(s) too
+    origin: [
+      'https://localhost:3000',
+      'http://localhost:3000',
+      'https://diliverly-frontend.vercel.app',
+    ], // add your real frontend domain(s) too
     credentials: true, // only if you use cookies/auth
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
