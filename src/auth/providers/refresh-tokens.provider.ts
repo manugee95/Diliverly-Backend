@@ -38,34 +38,6 @@ export class RefreshTokensProvider {
     private readonly generateTokensProvider: GenerateTokensProvider,
   ) {}
 
-  // public async refreshTokens(refreshToken: string) {
-  //   if (!refreshToken) {
-  //     throw new UnauthorizedException('Refresh token missing');
-  //   }
-
-  //   try {
-  //     // Verify refresh token
-  //     const payload = await this.jwtService.verifyAsync<
-  //       Pick<ActiveUserData, 'id'>
-  //     >(refreshToken, {
-  //       secret: this.jwtConfiguration.secret,
-  //       audience: this.jwtConfiguration.audience,
-  //       issuer: this.jwtConfiguration.issuer,
-  //     });
-
-  //     // Fetch user
-  //     const user = await this.userService.findOneById(payload.id);
-  //     if (!user) {
-  //       throw new UnauthorizedException('User not found');
-  //     }
-
-  //     // Generate new tokens
-  //     return await this.generateTokensProvider.generateTokens(user);
-  //   } catch {
-  //     throw new UnauthorizedException('Invalid or expired refresh token');
-  //   }
-  // }
-
   public async refreshTokens(refreshToken: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
