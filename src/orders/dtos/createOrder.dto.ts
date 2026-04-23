@@ -14,7 +14,7 @@ export class CreateOrderDto {
   @ApiProperty({
     description: 'list of items in the order',
     example:
-      '[{"itemName": "Wireless Mouse","quantity": 2,"buyerName": "John Doe","buyerPhone": "+1234567890"}]',
+      '[{"deliveryId": 3,itemName": "Wireless Mouse","quantity": 2,"buyerName": "John Doe","buyerPhone": "+1234567890", "codAmount":25000}]',
   })
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
