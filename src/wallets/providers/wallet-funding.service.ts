@@ -130,7 +130,7 @@ export class WalletFundingService {
       email: user.email,
       amountNaira: amount,
       reference,
-      callback_url: `${this.config.get('APP_URL')}/api/payments/paystack/verify`,
+      callback_url: `${this.config.get('APP_URL')}`,
       metadata: { userId },
     });
 

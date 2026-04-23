@@ -14,20 +14,6 @@ export class PaystackController {
   /**
    * Endpoint to verify a payment
    */
-  @ApiOperation({
-    summary: 'Verify a payment by its reference',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Payment verified successfully.',
-  })
-  @ApiQuery({
-    name: 'reference',
-    type: 'string',
-    required: true,
-    description: 'The reference of the payment to verify',
-    example: 'ref123456',
-  })
   @Get('verify')
   public async verfifyPayment(@Query('reference') reference: string) {
     return await this.paystack.verifyTransaction(reference);

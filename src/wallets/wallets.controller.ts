@@ -85,7 +85,8 @@ export class WalletsController {
       "Retrieves the user's wallet or creates one if it doesn't exist.",
   })
   @Get()
-  public async getOrCreateWallet(userId: number) {
+  public async getOrCreateWallet(@Req() req) {
+    const userId = req.user.id;
     return await this.walletsService.getOrCreateWallet(userId);
   }
 }
