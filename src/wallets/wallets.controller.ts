@@ -101,12 +101,12 @@ export class WalletsController {
     try {
       const secret = process.env.PAYSTACK_SECRET_KEY;
 
+      console.log('Webhook hit');
+      console.log('Signature:', signature);
+
       if (!signature || !secret) {
         return;
       }
-
-      console.log('Webhook hit');
-      console.log('Signature:', signature);
 
       /**
        * IMPORTANT: requires rawBody (configured in main.ts)
