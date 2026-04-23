@@ -32,13 +32,6 @@ export class WithdrawalsController {
     return this.withdrawalService.manualWithdrawal(req.user.id, dto.amount);
   }
 
-  @ApiOperation({
-    summary: 'Handle Paystack Webhook',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Webhook received successfully.',
-  })
   @Post('webhook/paystack')
   @HttpCode(200)
   handlePaystackWebhook(@Req() req, @Res() res) {

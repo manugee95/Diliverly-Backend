@@ -33,9 +33,6 @@ async function bootstrap() {
     }),
   );
 
-  // ---- Body Parser Configuration ----
-  app.use(express.json());
-
   // ---- Validation Pipes ----
   app.useGlobalPipes(
     new ValidationPipe({

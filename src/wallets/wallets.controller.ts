@@ -105,6 +105,9 @@ export class WalletsController {
         return;
       }
 
+      console.log('Webhook hit');
+      console.log('Signature:', signature);
+
       /**
        * IMPORTANT: requires rawBody (configured in main.ts)
        */
@@ -112,6 +115,8 @@ export class WalletsController {
         .createHmac('sha512', secret)
         .update(req.rawBody)
         .digest('hex');
+
+      console.log('Generated hash:', hash);
 
       if (hash !== signature) {
         return;
@@ -145,10 +150,10 @@ export class WalletsController {
     const wallet = await this.walletsService.getOrCreateWallet(userId);
 
     return {
-    id: wallet.id,
-    availableBalance: this.currencyConvert.toNaira(wallet.availableBalance),
-    escrowBalance: this.currencyConvert.toNaira(wallet.escrowBalance),
-    currency: wallet.currency,
-  };
+      id: wallet.id,
+      availableBalance: this.currencyConvert.toNaira(wallet.availableBalance),
+      escrowBalance: this.currencyConvert.toNaira(wallet.escrowBalance),
+      currency: wallet.currency,
+    };
   }
 }

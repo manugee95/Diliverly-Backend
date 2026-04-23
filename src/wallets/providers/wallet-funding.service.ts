@@ -43,66 +43,6 @@ export class WalletFundingService {
    * Core logic to finalize funding after Paystack verification.
    */
 
-  // private async finalizeFunding(
-  //   reference: string,
-  //   amountPaidNaira: number,
-  //   rawPayload: any,
-  // ) {
-  //   await this.dataSource.transaction(async (manager) => {
-  //     const fundingRepo = manager.getRepository(WalletFunding);
-  //     const walletRepo = manager.getRepository(Wallet);
-  //     const userRepo = manager.getRepository(User);
-
-  //     // 1) Lock funding row WITHOUT relations (avoid LEFT JOIN + FOR UPDATE)
-  //     const funding = await fundingRepo.findOne({
-  //       where: { reference },
-  //       lock: { mode: 'pessimistic_write' },
-  //     });
-
-  //     if (!funding) return;
-  //     if (funding.status === FundingStatus.SUCCESS) return;
-
-  //     // 2) Use funding.userId directly (make sure your entity has userId column)
-  //     const userId = funding.userId ?? funding.user?.id;
-  //     if (!userId) throw new Error('Funding record has no userId');
-
-  //     // 3) Lock wallet row separately
-  //     const wallet = await walletRepo.findOne({
-  //       where: { userId },
-  //       lock: { mode: 'pessimistic_write' },
-  //     });
-  //     if (!wallet) throw new Error('Wallet not found');
-
-  //     // Credit wallet (numeric)
-  //     const newBalance = Number(wallet.availableBalance ?? 0) + amountPaidNaira;
-  //     wallet.availableBalance = newBalance.toFixed(2);
-
-  //     await walletRepo.save(wallet);
-
-  //     // Update funding record
-  //     funding.status = FundingStatus.SUCCESS;
-  //     funding.paystackReference = reference;
-  //     funding.raw = rawPayload;
-  //     await fundingRepo.save(funding);
-
-  //     // Log transaction
-  //     const user = await userRepo.findOne({ where: { id: userId } });
-  //     if (user) {
-  //       await this.txService.logTransaction(
-  //         {
-  //           user,
-  //           type: TransactionType.CREDIT,
-  //           amount: amountPaidNaira,
-  //           description: 'Wallet funding via Paystack',
-  //           reference,
-  //           status: TransactionStatus.SUCCESSFUL,
-  //         },
-  //         manager,
-  //       );
-  //     }
-  //   });
-  // }
-
   private async finalizeFunding(
     reference: string,
     amountPaidNaira: number,
