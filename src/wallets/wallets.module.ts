@@ -9,10 +9,11 @@ import { ReferenceModule } from 'src/common/reference/reference.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
 import { User } from 'src/users/user.entity';
 import { WalletFunding } from './entities/walletFunding.entity';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Module({
   controllers: [WalletsController],
-  providers: [WalletsService, WalletFundingService],
+  providers: [WalletsService, WalletFundingService, CurrencyConvertProvider],
   imports: [
     TypeOrmModule.forFeature([Wallet, User, WalletFunding]),
     PaystackModule,

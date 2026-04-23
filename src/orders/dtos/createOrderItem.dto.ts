@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateOrderItemDto {
+  @ApiProperty({
+    description: 'delivery location id for this order',
+    example: 12,
+  })
+  @IsNumber()
+  deliveryId: number;
+
   @ApiProperty({
     description: 'name of the item to be delivered',
     example: 'Laptop',

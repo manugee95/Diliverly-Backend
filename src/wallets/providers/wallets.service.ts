@@ -11,7 +11,7 @@ export class WalletsService {
       ? manager.getRepository(Wallet)
       : this.dataSource.getRepository(Wallet);
     let wallet = await repo.findOne({
-      where: { user: { id: userId } },
+      where: { userId },
       relations: ['user'],
     });
     if (!wallet) {

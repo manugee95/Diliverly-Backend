@@ -279,6 +279,7 @@ export class OrdersService {
           'quotes.deliveryCost',
           'quotes.deliveryCost.delivery',
           'quotes.agent',
+          'quotes.agent.user',
         ],
       });
       if (!request) throw new BadRequestException('Request not found');
@@ -344,30 +345,60 @@ export class OrdersService {
         );
       }
 
+      // 🔥 Build input map by deliveryId
+      const inputByDeliveryId = new Map<number, (typeof dto.items)[0]>();
+
+      for (const item of dto.items) {
+        if (!item.deliveryId) {
+          throw new BadRequestException('deliveryId is required for each item');
+        }
+
+        if (inputByDeliveryId.has(item.deliveryId)) {
+          throw new BadRequestException(
+            `Duplicate deliveryId ${item.deliveryId} in payload`,
+          );
+        }
+
+        inputByDeliveryId.set(item.deliveryId, item);
+      }
+
+      if (inputByDeliveryId.size !== request.deliveries.length) {
+        throw new BadRequestException(
+          `All deliveries must be provided. Expected ${request.deliveries.length}, got ${inputByDeliveryId.size}`,
+        );
+      }
+
       const toSave: OrderItem[] = [];
 
-      for (let i = 0; i < request.deliveries.length; i++) {
-        const delivery = request.deliveries[i];
-        const input = dto.items[i];
+      for (const delivery of request.deliveries) {
+        const input = inputByDeliveryId.get(delivery.id);
+
+        if (!input) {
+          throw new BadRequestException(
+            `Missing item for delivery ${delivery.id}`,
+          );
+        }
 
         const target = existingByDeliveryId.get(delivery.id);
+
         if (!target) {
           throw new BadRequestException(
             `Missing placeholder order item for delivery ${delivery.id}`,
           );
         }
 
-        // Optional: ensure cost exists for this delivery in the accepted quote
+        // Validate cost exists
         const dcEntry = acceptedQuote.deliveryCost.find(
           (dc) => dc.delivery.id === delivery.id,
         );
+
         if (!dcEntry) {
           throw new BadRequestException(
             `No cost found for delivery ${delivery.id}`,
           );
         }
 
-        // Vendor fills correct info
+        // ✅ Assign values correctly
         target.itemName = input.itemName;
         target.quantity = input.quantity;
         target.buyerName = input.buyerName;
@@ -752,7 +783,7 @@ export class OrdersService {
 
     // Notify vendor of COD payment
     await this.notifyVendorCodPayment({
-      vendorEmail: orderItem.order.vendor.user.email, 
+      vendorEmail: orderItem.order.vendor.user.email,
       orderReference: orderItem.order.reference,
       vendorName: orderItem.order.vendor.user.firstName,
       amountPaid: orderItem.codAmount,

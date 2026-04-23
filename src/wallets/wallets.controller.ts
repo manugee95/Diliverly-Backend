@@ -13,6 +13,7 @@ import { WalletFundingService } from './providers/wallet-funding.service';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { WalletsService } from './providers/wallets.service';
 import * as crypto from 'crypto';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Controller('wallets')
 export class WalletsController {
@@ -22,6 +23,7 @@ export class WalletsController {
      */
     private readonly walletFundingService: WalletFundingService,
     private readonly walletsService: WalletsService,
+    private readonly currencyConvert: CurrencyConvertProvider,
   ) {}
 
   /**
@@ -140,6 +142,13 @@ export class WalletsController {
   @Get()
   public async getOrCreateWallet(@Req() req) {
     const userId = req.user.id;
-    return await this.walletsService.getOrCreateWallet(userId);
+    const wallet = await this.walletsService.getOrCreateWallet(userId);
+
+    return {
+    id: wallet.id,
+    availableBalance: this.currencyConvert.toNaira(wallet.availableBalance),
+    escrowBalance: this.currencyConvert.toNaira(wallet.escrowBalance),
+    currency: wallet.currency,
+  };
   }
 }

@@ -12,6 +12,7 @@ import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum
 import { ReferenceProvider } from 'src/common/reference/reference.provider';
 import { PaystackService } from 'src/paystack/providers/paystack.service';
 import { ConfigService } from '@nestjs/config';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Injectable()
 export class WalletFundingService {
@@ -21,6 +22,7 @@ export class WalletFundingService {
     private readonly reference: ReferenceProvider,
     private readonly walletService: WalletsService,
     private readonly txService: TransactionsService,
+    private readonly currencyConvert: CurrencyConvertProvider,
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
@@ -101,7 +103,6 @@ export class WalletFundingService {
   //   });
   // }
 
-  
   private async finalizeFunding(
     reference: string,
     amountPaidNaira: number,
@@ -146,21 +147,21 @@ export class WalletFundingService {
       if (!wallet) return;
 
       // Use KOBO (integer)
-      const amountPaidKobo = Math.round(amountPaidNaira * 100);
+      const amountPaidKobo = this.currencyConvert.toKobo(amountPaidNaira);
       const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
       const newBalanceKobo = currentBalanceKobo + amountPaidKobo;
 
       wallet.availableBalance = newBalanceKobo;
       await walletRepo.save(wallet);
 
-      // ✅ Mark success
+      // Mark success
       funding.status = FundingStatus.SUCCESS;
       funding.paystackReference = reference;
       funding.raw = rawPayload;
 
       await fundingRepo.save(funding);
 
-      // ✅ Log transaction
+      // Log transaction
       await this.txService.logTransaction(
         {
           user: { id: userId } as User,

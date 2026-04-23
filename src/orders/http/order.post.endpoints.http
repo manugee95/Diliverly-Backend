@@ -1,17 +1,19 @@
 POST http://localhost:3000/orders/create-order-items
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NjY4NDA3NCwiZXhwIjoxNzc2Njg3Njc0LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.zCKSf8p2wOisJX2aKPLVNJ_sW4RhGPQqLHtsKImaCVY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3Njk1MTc5OSwiZXhwIjoxNzc2OTU1Mzk5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.LqarSf2tspiBa8_2W9scx8SZpDIMPFHPne9IyMS22U8
 
 {
-    "requestId": 18,
+    "requestId": 26,
     "items": [
         {
+            "deliveryId": 79,
             "itemName": "Wireless Mouse",
             "quantity": 2,
             "buyerName": "John Doe",
             "buyerPhone": "+1234567890"
         },
         {
+            "deliveryId": 80,
             "itemName": "Keyboard",
             "quantity": 1,
             "buyerName": "Jane Smith",
@@ -19,18 +21,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
             "codAmount": 1000
         },
         {
+            "deliveryId": 81,
             "itemName": "USB-C Cable",
             "quantity": 3,
             "buyerName": "Alice Johnson",
             "buyerPhone": "+1122334455",
             "codAmount": 1500
-        },
-        {
-            "itemName": "Laptop Stand",
-            "quantity": 1,
-            "buyerName": "Bob Brown",
-            "buyerPhone": "+5566778899",
-            "codAmount": 1000
         }
     ]
 }
