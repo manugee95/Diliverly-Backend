@@ -64,7 +64,7 @@ async function bootstrap() {
 
   //Swagger Configuration
   const config = new DocumentBuilder()
-    .setTitle('DILIVERLY API')
+    .setTitle('DILIVALY API')
     .setDescription(
       'Use the base API URL as https://diliverly-backend.onrender.com',
     )

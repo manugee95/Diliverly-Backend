@@ -103,7 +103,7 @@ export class WalletFundingService {
   /** Initiates wallet funding with Paystack */
   async initiateFunding(userId: number, amount: number) {
     // Validate amount
-    if (amount <= 0) throw new BadRequestException('Invalid amount');
+    if (amount <= 999) throw new BadRequestException('Minimum funding amount is 1000 Naira');
 
     // Fetch user
     const user = await this.userRepo.findOne({ where: { id: userId } });

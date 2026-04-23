@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import { WalletFundingService } from './providers/wallet-funding.service';
+import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { WalletsService } from './providers/wallets.service';
 
 @Controller('wallets')
 export class WalletsController {
@@ -8,11 +10,33 @@ export class WalletsController {
      * Inject WalletsService
      */
     private readonly walletFundingService: WalletFundingService,
+    private readonly walletsService: WalletsService,
   ) {}
 
   /**
    * Endpoint to initiate wallet funding
    */
+  @ApiOperation({
+    summary:
+      'Initiates wallet funding by generating a Paystack authorization URL for the specified amount.',
+  })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Initiates wallet funding and returns Paystack authorization URL.',
+    schema: {
+      example: {
+        authorizationUrl: 'https://paystack.com/pay/abc123',
+      },
+    },
+  })
+  @ApiParam({
+    name: 'amount',
+    type: 'number',
+    required: true,
+    description: 'The amount to fund the wallet with (in Naira).',
+    example: 5000,
+  })
   @Post('fund')
   async fundWallet(@Req() req, @Body() body: { amount: number }) {
     const user = req.user.id;
@@ -22,8 +46,46 @@ export class WalletsController {
   /**
    * Endpoint to verify and fund wallet after Paystack callback
    */
+  @ApiOperation({
+    summary:
+      "Verifies Paystack payment and funds the user's wallet accordingly.",
+  })
+  @ApiResponse({
+    status: 201,
+    description:
+      "Verifies Paystack payment and funds the user's wallet accordingly.",
+    schema: {
+      example: {
+        authorizationUrl: 'https://paystack.com/pay/abc123',
+      },
+    },
+  })
+  @ApiQuery({
+    name: 'reference',
+    type: 'string',
+    required: true,
+    description:
+      'The unique payment reference returned by Paystack after payment.',
+    example: 'abc123',
+  })
   @Get('verify')
-  public async verfifyPayment(@Query('reference') reference: string) {
+  public async verifyPayment(@Query('reference') reference: string) {
     return await this.walletFundingService.verifyAndFundWallet(reference);
+  }
+
+  /**
+   * Method to get or create a wallet for a user.
+   */
+  @ApiOperation({
+    summary: "Retrieves the user's wallet or creates one if it doesn't exist.",
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      "Retrieves the user's wallet or creates one if it doesn't exist.",
+  })
+  @Get()
+  public async getOrCreateWallet(userId: number) {
+    return await this.walletsService.getOrCreateWallet(userId);
   }
 }
