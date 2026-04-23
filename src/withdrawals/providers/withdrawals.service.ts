@@ -19,6 +19,7 @@ import * as crypto from 'crypto';
 import { Agent } from 'src/agent/agent.entity';
 import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { MailerService } from 'src/mailer/providers/mailer.service';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Injectable()
 export class WithdrawalsService {
@@ -54,6 +55,11 @@ export class WithdrawalsService {
      * Injecting Reference Provider
      */
     private readonly reference: ReferenceProvider,
+
+    /**
+     * Inject currency conversion provider
+     */
+    private readonly currencyConvert: CurrencyConvertProvider,
 
     /**
      * Injecting mail service
@@ -125,9 +131,13 @@ export class WithdrawalsService {
       }
 
       // Deduct immediately
-      wallet.availableBalance = (
-        Number(wallet.availableBalance) - amount
-      ).toFixed(2);
+      const amountKobo = this.currencyConvert.toKobo(amount);
+
+      if (wallet.availableBalance < amountKobo) {
+        throw new BadRequestException('Insufficient wallet balance');
+      }
+
+      wallet.availableBalance -= amountKobo;
 
       await walletRepo.save(wallet);
 
@@ -302,8 +312,8 @@ export class WithdrawalsService {
     await this.withdrawalRepo.save(withdrawal);
 
     // Refund wallet
-    withdrawal.user.wallet.availableBalance = String(
-      Number(withdrawal.user.wallet.availableBalance) + withdrawal.amount,
+    withdrawal.user.wallet.availableBalance += this.currencyConvert.toKobo(
+      withdrawal.amount,
     );
 
     await this.userRepo.save(withdrawal.user);
@@ -320,8 +330,8 @@ export class WithdrawalsService {
     await this.withdrawalRepo.save(withdrawal);
 
     // Refund wallet
-    withdrawal.user.wallet.availableBalance = String(
-      Number(withdrawal.user.wallet.availableBalance) + withdrawal.amount,
+    withdrawal.user.wallet.availableBalance += this.currencyConvert.toKobo(
+      withdrawal.amount,
     );
 
     await this.userRepo.save(withdrawal.user);

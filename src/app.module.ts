@@ -34,6 +34,7 @@ import { PaystackModule } from './paystack/paystack.module';
 import { TrustScoreModule } from './common/trust-score/trust-score.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { DashboardOverviewModule } from './dashboard-overview/dashboard-overview.module';
+import { CurrencyConvertProvider } from './common/providers/currency-convert.provider';
 
 // const ENV = process.env.NODE_ENV;
 
@@ -126,6 +127,7 @@ import { DashboardOverviewModule } from './dashboard-overview/dashboard-overview
     AccessTokenGuard,
     redisProvider,
     CacheService,
+    CurrencyConvertProvider,
   ],
   exports: [CacheService, redisProvider],
 })

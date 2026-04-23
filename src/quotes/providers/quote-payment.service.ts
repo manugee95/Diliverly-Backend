@@ -21,6 +21,7 @@ import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
 import { Agent } from 'src/agent/agent.entity';
 import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Injectable()
 export class QuotePaymentService {
@@ -30,6 +31,7 @@ export class QuotePaymentService {
     private readonly walletService: WalletsService,
     private readonly txService: TransactionsService,
     private readonly reference: ReferenceProvider,
+    private readonly currencyConvert: CurrencyConvertProvider,
 
     @InjectRepository(Vendor)
     private readonly vendorRepo: Repository<Vendor>,
@@ -118,11 +120,14 @@ export class QuotePaymentService {
       }
 
       // 4. Move funds
-      wallet.availableBalance = (
-        Number(wallet.availableBalance) - total
-      ).toFixed(2);
+      const totalKobo = this.currencyConvert.toKobo(Number(quote.subtotal));
 
-      wallet.escrowBalance = (Number(wallet.escrowBalance) + total).toFixed(2);
+      if (wallet.availableBalance < totalKobo) {
+        throw new BadRequestException('Insufficient balance');
+      }
+
+      wallet.availableBalance -= totalKobo;
+      wallet.escrowBalance += totalKobo;
 
       await walletRepo.save(wallet);
 
@@ -196,7 +201,7 @@ export class QuotePaymentService {
             orderItem: { id: item.id },
             vendor: { id: input.vendor.id },
             agent: { id: quote.agent.id },
-            amount: Number(item.cost).toFixed(2),
+            amount: this.currencyConvert.toKobo(Number(item.cost)),
             status: EscrowStatus.HELD,
           }),
         ),

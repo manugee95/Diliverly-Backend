@@ -18,14 +18,19 @@ export class Wallet {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
+  @Column({ unique: true })
   userId: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  availableBalance: string;
+  // Store in KOBO (integer)
+  @Column({ type: 'bigint', default: 0 })
+  availableBalance: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  escrowBalance: string;
+  @Column({ type: 'bigint', default: 0 })
+  escrowBalance: number;
+
+  // Currency support
+  @Column({ default: 'NGN' })
+  currency: string;
 
   @CreateDateColumn()
   createdAt: Date;

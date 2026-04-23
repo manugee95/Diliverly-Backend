@@ -20,10 +20,17 @@ import { ReferenceModule } from 'src/common/reference/reference.module';
 import { DashboardOverviewModule } from 'src/dashboard-overview/dashboard-overview.module';
 import { QuotesCacheProvider } from './providers/quotes.provider';
 import { redisProvider } from 'src/common/providers/redis.provider';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Module({
   controllers: [QuotesController],
-  providers: [QuotesService, QuotePaymentService, QuotesCacheProvider, redisProvider],
+  providers: [
+    QuotesService,
+    QuotePaymentService,
+    QuotesCacheProvider,
+    redisProvider,
+    CurrencyConvertProvider,
+  ],
   imports: [
     TypeOrmModule.forFeature([
       Quote,
@@ -42,7 +49,7 @@ import { redisProvider } from 'src/common/providers/redis.provider';
     ReferenceModule,
     DashboardOverviewModule,
     DeliveryRequestsModule,
-    CacheModule.register()
+    CacheModule.register(),
   ],
 })
 export class QuotesModule {}

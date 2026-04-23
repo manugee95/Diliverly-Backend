@@ -1,7 +1,18 @@
-import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { WalletFundingService } from './providers/wallet-funding.service';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { WalletsService } from './providers/wallets.service';
+import * as crypto from 'crypto';
 
 @Controller('wallets')
 export class WalletsController {
@@ -74,7 +85,49 @@ export class WalletsController {
   }
 
   /**
-   * Method to get or create a wallet for a user.
+   * Endpoint to handle Paystack webhook events.
+   */
+  @ApiOperation({
+    summary: 'Handles Paystack webhook events for wallet funding.',
+  })
+  @Post('webhook/paystack')
+  @HttpCode(HttpStatus.OK)
+  public async handlePaystackWebhook(
+    @Req() req,
+    @Headers('x-paystack-signature') signature: string,
+  ) {
+    try {
+      const secret = process.env.PAYSTACK_SECRET_KEY;
+
+      if (!signature || !secret) {
+        return;
+      }
+
+      /**
+       * IMPORTANT: requires rawBody (configured in main.ts)
+       */
+      const hash = crypto
+        .createHmac('sha512', secret)
+        .update(req.rawBody)
+        .digest('hex');
+
+      if (hash !== signature) {
+        return;
+      }
+
+      const event = req.body;
+
+      await this.walletFundingService.handlePaystackWebhook(event);
+
+      return;
+    } catch (error) {
+      // NEVER throw in webhook
+      return;
+    }
+  }
+
+  /**
+   * Endpoint to get or create a wallet for a user.
    */
   @ApiOperation({
     summary: "Retrieves the user's wallet or creates one if it doesn't exist.",

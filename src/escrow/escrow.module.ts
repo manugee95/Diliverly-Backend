@@ -4,9 +4,10 @@ import { Escrow } from './escrow.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WalletsModule } from 'src/wallets/wallets.module';
 import { TransactionsModule } from 'src/transactions/transactions.module';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Module({
-  providers: [EscrowService],
+  providers: [EscrowService, CurrencyConvertProvider],
   imports: [
     TypeOrmModule.forFeature([Escrow]),
     WalletsModule,

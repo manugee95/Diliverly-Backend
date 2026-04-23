@@ -37,8 +37,8 @@ export class Escrow {
   @ManyToOne(() => Agent)
   agent: Agent;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
-  amount: string; // equals orderItem.cost
+  @Column({ type: 'bigint', default: 0 })
+  amount: number;
 
   @Column({ type: 'enum', enum: EscrowStatus, default: EscrowStatus.HELD })
   status: EscrowStatus;

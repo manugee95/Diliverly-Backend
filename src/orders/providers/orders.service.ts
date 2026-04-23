@@ -40,6 +40,7 @@ import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider'
 import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
 import { OrdersCacheProvider } from './orders.provider';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Injectable()
 export class OrdersService {
@@ -116,6 +117,11 @@ export class OrdersService {
      * Injecting Orders Cache Provider
      */
     private readonly ordersCacheProvider: OrdersCacheProvider,
+
+    /**
+     * Injecting currency convert provider
+     */
+    private readonly currencyConvert: CurrencyConvertProvider,
   ) {}
 
   /**
@@ -639,13 +645,26 @@ export class OrdersService {
       }
 
       // (1) COD settlement: agent -> vendor
-      agentWallet.availableBalance = (
-        Number(agentWallet.availableBalance) - codAmount
-      ).toFixed(2);
 
-      vendorWallet.availableBalance = (
-        Number(vendorWallet.availableBalance) + codAmount
-      ).toFixed(2);
+      // agentWallet.availableBalance = (
+      //   Number(agentWallet.availableBalance) - codAmount
+      // ).toFixed(2);
+
+      // vendorWallet.availableBalance = (
+      //   Number(vendorWallet.availableBalance) + codAmount
+      // ).toFixed(2);
+
+      // await walletRepo.save([agentWallet, vendorWallet]);
+
+      const codAmountKobo = this.currencyConvert.toKobo(Number(oi.codAmount));
+
+      if (agentWallet.availableBalance < codAmountKobo) {
+        throw new BadRequestException('Insufficient wallet balance');
+      }
+
+      // Agent pays vendor
+      agentWallet.availableBalance -= codAmountKobo;
+      vendorWallet.availableBalance += codAmountKobo;
 
       await walletRepo.save([agentWallet, vendorWallet]);
 
@@ -700,9 +719,8 @@ export class OrdersService {
           {
             user: agentUserEntity,
             type: TransactionType.DEBIT,
-            amount: codAmount,
-            description: `COD paid to vendor for order #${oi.order.reference}, item #${oi.id}`,
-            orderItem: oi,
+            amount: this.currencyConvert.toNaira(codAmountKobo),
+            description: `COD paid to vendor...`,
             reference: this.reference.generateTransactionRef(),
             status: TransactionStatus.SUCCESSFUL,
           },
@@ -715,7 +733,7 @@ export class OrdersService {
           {
             user: vendorUserEntity,
             type: TransactionType.CREDIT,
-            amount: codAmount,
+            amount: this.currencyConvert.toNaira(codAmountKobo),
             description: `COD received from agent for order #${oi.order.reference}, item #${oi.id}`,
             orderItem: oi,
             reference: this.reference.generateTransactionRef(),
@@ -734,7 +752,7 @@ export class OrdersService {
 
     // Notify vendor of COD payment
     await this.notifyVendorCodPayment({
-      vendorEmail: orderItem.order.vendor.user.email,
+      vendorEmail: orderItem.order.vendor.user.email, 
       orderReference: orderItem.order.reference,
       vendorName: orderItem.order.vendor.user.firstName,
       amountPaid: orderItem.codAmount,
@@ -904,66 +922,6 @@ export class OrdersService {
    * Method to get orders assigned to an agent
    */
 
-  // async getOrdersAssignedToAgent(userId: number, ordersQuery: GetOrdersDto) {
-  //   // Find the agent
-  //   const agent = await this.agentRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!agent) throw new BadRequestException('Agent not found');
-
-  //   const page = ordersQuery.page || 1;
-  //   const limit = ordersQuery.limit || 10;
-  //   const status = ordersQuery.status || 'all';
-
-  //   // Include filters in cache key
-  //   const cacheKey = `agent:${agent.id}:orders:status=${status}:page=${page}:limit=${limit}`;
-
-  //   const cached = await this.cacheManager.get<string>(cacheKey);
-  //   if (cached) {
-  //     return JSON.parse(cached);
-  //   }
-
-  //   // Dynamic where clause
-  //   const where: any = {
-  //     request: {
-  //       quotes: {
-  //         agent: {
-  //           id: agent.id,
-  //         },
-  //       },
-  //     },
-  //   };
-
-  //   // Apply status filter if provided
-  //   if (ordersQuery.status) {
-  //     where.status = ordersQuery.status;
-  //   }
-
-  //   // Fetch from DB
-  //   const orders = await this.paginationProvider.paginateQuery(
-  //     {
-  //       page,
-  //       limit,
-  //     },
-  //     this.orderRepo,
-  //     {
-  //       where, // use dynamic where
-  //       relations: ['request', 'vendor'],
-  //       order: { createdAt: 'DESC' },
-  //     },
-  //   );
-
-  //   // Store in cache
-  //   await this.cacheManager.set(
-  //     cacheKey,
-  //     JSON.stringify(orders),
-  //     CacheTTL.AgentOrders,
-  //   );
-
-  //   return orders;
-  // }
-
   async getOrdersAssignedToAgent(userId: number, ordersQuery: GetOrdersDto) {
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
@@ -1024,59 +982,6 @@ export class OrdersService {
    * Method to get orders made by a vendor
    */
 
-  // async getOrdersForVendor(userId: number, ordersQuery: GetOrdersDto) {
-  //   // Find the vendor
-  //   const vendor = await this.vendorRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!vendor) throw new BadRequestException('Vendor not found');
-
-  //   const page = ordersQuery.page || 1;
-  //   const limit = ordersQuery.limit || 10;
-  //   const status = ordersQuery.status || 'all';
-
-  //   // Cache key must include filters
-  //   const cacheKey = `vendor:${vendor.id}:orders:status=${status}:page=${page}:limit=${limit}`;
-
-  //   const cached = await this.cacheManager.get<string>(cacheKey);
-  //   if (cached) {
-  //     return JSON.parse(cached);
-  //   }
-
-  //   // Build dynamic where clause
-  //   const where: any = {
-  //     vendor: { id: vendor.id },
-  //   };
-
-  //   if (ordersQuery.status) {
-  //     where.status = ordersQuery.status;
-  //   }
-
-  //   // Fetch from DB
-  //   const orders = await this.paginationProvider.paginateQuery(
-  //     {
-  //       page,
-  //       limit,
-  //     },
-  //     this.orderRepo,
-  //     {
-  //       where, // use the dynamic where here
-  //       relations: ['request', 'vendor'],
-  //       order: { createdAt: 'DESC' },
-  //     },
-  //   );
-
-  //   // Store in cache
-  //   await this.cacheManager.set(
-  //     cacheKey,
-  //     JSON.stringify(orders),
-  //     CacheTTL.VendorOrders,
-  //   );
-
-  //   return orders;
-  // }
-
   async getOrdersForVendor(userId: number, ordersQuery: GetOrdersDto) {
     const vendor = await this.vendorRepo.findOne({
       where: { user: { id: userId } },
@@ -1131,30 +1036,6 @@ export class OrdersService {
   /**
    * Method to get order Items for an order
    */
-
-  // async getOrderItems(orderId: number) {
-  //   const cacheKey = `order:${orderId}:items`;
-
-  //   // Check cache first
-  //   const cached = await this.cacheManager.get<string>(cacheKey);
-  //   if (cached) {
-  //     return JSON.parse(cached);
-  //   }
-
-  //   // Fetch from DB
-  //   const items = await this.orderItemRepo.find({
-  //     where: { order: { id: orderId } },
-  //   });
-
-  //   // Store in cache for future requests
-  //   await this.cacheManager.set(
-  //     cacheKey,
-  //     JSON.stringify(items),
-  //     CacheTTL.VendorOrders,
-  //   );
-
-  //   return items;
-  // }
 
   async getOrderItems(orderId: number) {
     const cached = await this.ordersCacheProvider.getOrderItems(orderId);

@@ -17,8 +17,8 @@ export class WalletsService {
     if (!wallet) {
       wallet = repo.create({
         user: { id: userId } as any,
-        availableBalance: '0.00',
-        escrowBalance: '0.00',
+        availableBalance: 0,
+        escrowBalance: 0,
       });
       wallet = await repo.save(wallet);
     }
@@ -42,8 +42,8 @@ export class WalletsService {
     try {
       wallet = repo.create({
         user: { id: userId } as any,
-        availableBalance: '0.00',
-        escrowBalance: '0.00',
+        availableBalance: 0,
+        escrowBalance: 0,
       });
       wallet = await repo.save(wallet);
 

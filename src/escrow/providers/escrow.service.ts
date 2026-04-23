@@ -8,6 +8,7 @@ import { EscrowStatus } from '../enums/escrowStatus.enum';
 import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { TransactionType } from 'src/transactions/enums/transactionType.enum';
 import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Injectable()
 export class EscrowService {
@@ -17,6 +18,7 @@ export class EscrowService {
     private readonly dataSource: DataSource,
     private readonly walletService: WalletsService,
     private readonly txService: TransactionsService,
+    private readonly currencyConvert: CurrencyConvertProvider,
   ) {}
 
   async releaseToAgent(orderItemId: number, manager?: EntityManager) {
@@ -67,25 +69,38 @@ export class EscrowService {
       const agentWallet = await this.walletService.lockWallet(agentUserId, mgr);
 
       // Calculate fees and update balances
-      const fee = Number(oi.cost);
-      if (!Number.isFinite(fee) || fee <= 0)
-        throw new Error('Invalid delivery fee');
 
-      const commission = fee * this.COMMISSION_RATE;
-      const agentEarning = fee - commission;
+      // const fee = Number(oi.cost);
+      // if (!Number.isFinite(fee) || fee <= 0)
+      //   throw new Error('Invalid delivery fee');
 
-      // Ensure vendor has sufficient escrow balance
-      if (Number(vendorWallet.escrowBalance) < fee) {
+      // const commission = fee * this.COMMISSION_RATE;
+      // const agentEarning = fee - commission;
+
+      // // Ensure vendor has sufficient escrow balance
+      // if (Number(vendorWallet.escrowBalance) < fee) {
+      //   throw new Error('Vendor escrow insufficient');
+      // }
+
+      // vendorWallet.escrowBalance = (
+      //   Number(vendorWallet.escrowBalance) - fee
+      // ).toFixed(2);
+
+      // agentWallet.availableBalance = (
+      //   Number(agentWallet.availableBalance) + agentEarning
+      // ).toFixed(2);
+
+      const feeKobo = this.currencyConvert.toKobo(Number(oi.cost));
+
+      const commissionKobo = Math.round(feeKobo * this.COMMISSION_RATE);
+      const agentEarningKobo = feeKobo - commissionKobo;
+
+      if (vendorWallet.escrowBalance < feeKobo) {
         throw new Error('Vendor escrow insufficient');
       }
 
-      vendorWallet.escrowBalance = (
-        Number(vendorWallet.escrowBalance) - fee
-      ).toFixed(2);
-
-      agentWallet.availableBalance = (
-        Number(agentWallet.availableBalance) + agentEarning
-      ).toFixed(2);
+      vendorWallet.escrowBalance -= feeKobo;
+      agentWallet.availableBalance += agentEarningKobo;
 
       await walletRepo.save([vendorWallet, agentWallet]);
 
@@ -98,7 +113,7 @@ export class EscrowService {
         {
           user: oi.agent.user,
           type: TransactionType.CREDIT,
-          amount: agentEarning,
+          amount: this.currencyConvert.toNaira(agentEarningKobo),
           description: `Escrow released for delivery item #${oi.id}`,
           reference: `ESCROW-REL-${oi.id}`,
           status: TransactionStatus.SUCCESSFUL,
@@ -151,20 +166,14 @@ export class EscrowService {
       );
 
       // Calculate fee and update balances
-      const fee = Number(oi.cost);
-      if (!Number.isFinite(fee) || fee <= 0) throw new Error('Invalid fee');
+      const feeKobo = this.currencyConvert.toKobo(Number(oi.cost));
 
-      if (Number(vendorWallet.escrowBalance) < fee) {
+      if (vendorWallet.escrowBalance < feeKobo) {
         throw new Error('Vendor escrow insufficient');
       }
 
-      vendorWallet.escrowBalance = (
-        Number(vendorWallet.escrowBalance) - fee
-      ).toFixed(2);
-
-      vendorWallet.availableBalance = (
-        Number(vendorWallet.availableBalance) + fee
-      ).toFixed(2);
+      vendorWallet.escrowBalance -= feeKobo;
+      vendorWallet.availableBalance += feeKobo;
 
       await walletRepo.save(vendorWallet);
 
@@ -177,7 +186,7 @@ export class EscrowService {
         {
           user: oi.order.vendor.user,
           type: TransactionType.CREDIT,
-          amount: fee,
+          amount: this.currencyConvert.toNaira(feeKobo),
           description: `Escrow refunded for cancelled item #${oi.id}`,
           reference: `ESCROW-REF-${oi.id}`,
           status: TransactionStatus.SUCCESSFUL,

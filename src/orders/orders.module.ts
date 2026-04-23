@@ -18,10 +18,11 @@ import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
 import { DashboardOverviewModule } from 'src/dashboard-overview/dashboard-overview.module';
 import { OrdersCacheProvider } from './providers/orders.provider';
 import { redisProvider } from 'src/common/providers/redis.provider';
+import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Module({
   controllers: [OrdersController],
-  providers: [OrdersService, OrdersCacheProvider, redisProvider],
+  providers: [OrdersService, OrdersCacheProvider, redisProvider, CurrencyConvertProvider],
   imports: [
     TypeOrmModule.forFeature([
       Order,
