@@ -133,11 +133,15 @@ export class WithdrawalsService {
       // Deduct immediately
       const amountKobo = this.currencyConvert.toKobo(amount);
 
-      if (wallet.availableBalance < amountKobo) {
+      // Normalize bigint-safe value
+      const availableBalanceKobo = Number(wallet.availableBalance ?? 0);
+
+      if (availableBalanceKobo < amountKobo) {
         throw new BadRequestException('Insufficient wallet balance');
       }
 
-      wallet.availableBalance -= amountKobo;
+      // Safe deduction in KOBO
+      wallet.availableBalance = availableBalanceKobo - amountKobo;
 
       await walletRepo.save(wallet);
 

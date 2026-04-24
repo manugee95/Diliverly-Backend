@@ -66,41 +66,25 @@ export class EscrowService {
         vendorUserId,
         mgr,
       );
+
       const agentWallet = await this.walletService.lockWallet(agentUserId, mgr);
-
-      // Calculate fees and update balances
-
-      // const fee = Number(oi.cost);
-      // if (!Number.isFinite(fee) || fee <= 0)
-      //   throw new Error('Invalid delivery fee');
-
-      // const commission = fee * this.COMMISSION_RATE;
-      // const agentEarning = fee - commission;
-
-      // // Ensure vendor has sufficient escrow balance
-      // if (Number(vendorWallet.escrowBalance) < fee) {
-      //   throw new Error('Vendor escrow insufficient');
-      // }
-
-      // vendorWallet.escrowBalance = (
-      //   Number(vendorWallet.escrowBalance) - fee
-      // ).toFixed(2);
-
-      // agentWallet.availableBalance = (
-      //   Number(agentWallet.availableBalance) + agentEarning
-      // ).toFixed(2);
 
       const feeKobo = this.currencyConvert.toKobo(Number(oi.cost));
 
       const commissionKobo = Math.round(feeKobo * this.COMMISSION_RATE);
       const agentEarningKobo = feeKobo - commissionKobo;
 
-      if (vendorWallet.escrowBalance < feeKobo) {
+      // CRITICAL: normalize to numbers (avoid string concatenation)
+      const vendorEscrowKobo = Number(vendorWallet.escrowBalance ?? 0);
+      const agentAvailableKobo = Number(agentWallet.availableBalance ?? 0);
+
+      if (vendorEscrowKobo < feeKobo) {
         throw new Error('Vendor escrow insufficient');
       }
 
-      vendorWallet.escrowBalance -= feeKobo;
-      agentWallet.availableBalance += agentEarningKobo;
+      // Perform safe arithmetic
+      vendorWallet.escrowBalance = vendorEscrowKobo - feeKobo;
+      agentWallet.availableBalance = agentAvailableKobo + agentEarningKobo;
 
       await walletRepo.save([vendorWallet, agentWallet]);
 
@@ -165,15 +149,20 @@ export class EscrowService {
         mgr,
       );
 
-      // Calculate fee and update balances
+      // Calculate fee in kobo
       const feeKobo = this.currencyConvert.toKobo(Number(oi.cost));
 
-      if (vendorWallet.escrowBalance < feeKobo) {
+      // Normalize types (CRITICAL because bigint comes back as string)
+      const escrowKobo = Number(vendorWallet.escrowBalance ?? 0);
+      const availableKobo = Number(vendorWallet.availableBalance ?? 0);
+
+      if (escrowKobo < feeKobo) {
         throw new Error('Vendor escrow insufficient');
       }
 
-      vendorWallet.escrowBalance -= feeKobo;
-      vendorWallet.availableBalance += feeKobo;
+      // Safe arithmetic in KOBO only
+      vendorWallet.escrowBalance = escrowKobo - feeKobo;
+      vendorWallet.availableBalance = availableKobo + feeKobo;
 
       await walletRepo.save(vendorWallet);
 

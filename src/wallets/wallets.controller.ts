@@ -154,8 +154,8 @@ export class WalletsController {
 
     return {
       id: wallet.id,
-      availableBalance: this.currencyConvert.toNaira(wallet.availableBalance),
-      escrowBalance: this.currencyConvert.toNaira(wallet.escrowBalance),
+      availableBalance: this.currencyConvert.formatNaira(wallet.availableBalance),
+      escrowBalance: this.currencyConvert.formatNaira(wallet.escrowBalance),
       currency: wallet.currency,
     };
   }

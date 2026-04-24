@@ -676,26 +676,19 @@ export class OrdersService {
       }
 
       // (1) COD settlement: agent -> vendor
-
-      // agentWallet.availableBalance = (
-      //   Number(agentWallet.availableBalance) - codAmount
-      // ).toFixed(2);
-
-      // vendorWallet.availableBalance = (
-      //   Number(vendorWallet.availableBalance) + codAmount
-      // ).toFixed(2);
-
-      // await walletRepo.save([agentWallet, vendorWallet]);
-
       const codAmountKobo = this.currencyConvert.toKobo(Number(oi.codAmount));
 
-      if (agentWallet.availableBalance < codAmountKobo) {
+      // Normalize bigint-safe values
+      const agentBalanceKobo = Number(agentWallet.availableBalance ?? 0);
+      const vendorBalanceKobo = Number(vendorWallet.availableBalance ?? 0);
+
+      if (agentBalanceKobo < codAmountKobo) {
         throw new BadRequestException('Insufficient wallet balance');
       }
 
-      // Agent pays vendor
-      agentWallet.availableBalance -= codAmountKobo;
-      vendorWallet.availableBalance += codAmountKobo;
+      // Safe transfer in KOBO
+      agentWallet.availableBalance = agentBalanceKobo - codAmountKobo;
+      vendorWallet.availableBalance = vendorBalanceKobo + codAmountKobo;
 
       await walletRepo.save([agentWallet, vendorWallet]);
 

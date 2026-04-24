@@ -122,12 +122,17 @@ export class QuotePaymentService {
       // 4. Move funds
       const totalKobo = this.currencyConvert.toKobo(Number(quote.subtotal));
 
-      if (wallet.availableBalance < totalKobo) {
+      // Ensure wallet values are numbers (kobo)
+      const availableBalanceKobo = Number(wallet.availableBalance ?? 0);
+      const escrowBalanceKobo = Number(wallet.escrowBalance ?? 0);
+
+      if (availableBalanceKobo < totalKobo) {
         throw new BadRequestException('Insufficient balance');
       }
 
-      wallet.availableBalance -= totalKobo;
-      wallet.escrowBalance += totalKobo;
+      // Perform operation in KOBO ONLY
+      wallet.availableBalance = availableBalanceKobo - totalKobo;
+      wallet.escrowBalance = escrowBalanceKobo + totalKobo;
 
       await walletRepo.save(wallet);
 
