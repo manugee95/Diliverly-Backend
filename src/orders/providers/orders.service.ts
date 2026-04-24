@@ -1043,6 +1043,7 @@ export class OrdersService {
           'request',
           'vendor',
           'request.quotes',
+          'request.quotes.agent',
           'request.quotes.deliveryCost',
           'request.quotes.deliveryCost.delivery'
         ],
