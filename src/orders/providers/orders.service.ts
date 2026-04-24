@@ -1005,7 +1005,6 @@ export class OrdersService {
   /**
    * Method to get orders made by a vendor
    */
-
   async getOrdersForVendor(userId: number, ordersQuery: GetOrdersDto) {
     const vendor = await this.vendorRepo.findOne({
       where: { user: { id: userId } },
@@ -1040,7 +1039,13 @@ export class OrdersService {
       this.orderRepo,
       {
         where,
-        relations: ['request', 'vendor'],
+        relations: [
+          'request',
+          'vendor',
+          'request.quotes',
+          'request.quotes.deliveryCost',
+          'request.quotes.deliveryCost.delivery'
+        ],
         order: { createdAt: 'DESC' },
       },
     );

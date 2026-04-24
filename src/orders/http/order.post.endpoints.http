@@ -1,19 +1,19 @@
 POST http://localhost:3000/orders/create-order-items
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3Njk1MTc5OSwiZXhwIjoxNzc2OTU1Mzk5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.LqarSf2tspiBa8_2W9scx8SZpDIMPFHPne9IyMS22U8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NzAzMjI3MiwiZXhwIjoxNzc3MDM1ODcyLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.jnubvpma3oUWiwR74bhcZeZjC4VuaR13r1gHow6w0QY
 
 {
-    "requestId": 26,
+    "requestId": 22,
     "items": [
         {
-            "deliveryId": 79,
+            "deliveryId": 69,
             "itemName": "Wireless Mouse",
             "quantity": 2,
             "buyerName": "John Doe",
             "buyerPhone": "+1234567890"
         },
         {
-            "deliveryId": 80,
+            "deliveryId": 70,
             "itemName": "Keyboard",
             "quantity": 1,
             "buyerName": "Jane Smith",
@@ -21,7 +21,15 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
             "codAmount": 1000
         },
         {
-            "deliveryId": 81,
+            "deliveryId": 71,
+            "itemName": "USB-C Cable",
+            "quantity": 3,
+            "buyerName": "Alice Johnson",
+            "buyerPhone": "+1122334455",
+            "codAmount": 1500
+        },
+        {
+            "deliveryId": 72,
             "itemName": "USB-C Cable",
             "quantity": 3,
             "buyerName": "Alice Johnson",
@@ -33,18 +41,18 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
 
 POST http://localhost:3000/orders/mark-delivered
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc2Njg0MzU4LCJleHAiOjE3NzY2ODc5NTgsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.5P0O0Obhe0Rn-F6ixQeDy9LG1-rJhW6n8HMcRq7L8DM
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc3MDMyOTIzLCJleHAiOjE3NzcwMzY1MjMsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.6vLxu1TpuKmaPkA6YHl1BEyLVo5KR8ro_lcA3gUYHXg
 
 {
-    "orderItemId": 29,
-    "deliveryPin": "6680"
+    "orderItemId": 37,
+    "deliveryPin": "5519"
 }
 
 
 POST http://localhost:3000/orders/cancel-order-item
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc2Njg0MzU4LCJleHAiOjE3NzY2ODc5NTgsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.5P0O0Obhe0Rn-F6ixQeDy9LG1-rJhW6n8HMcRq7L8DM
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc3MDMyOTIzLCJleHAiOjE3NzcwMzY1MjMsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.6vLxu1TpuKmaPkA6YHl1BEyLVo5KR8ro_lcA3gUYHXg
 
 {
-    "orderItemId": 28
+    "orderItemId": 39
 }
