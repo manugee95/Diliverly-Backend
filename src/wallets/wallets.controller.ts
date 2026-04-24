@@ -14,6 +14,8 @@ import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { WalletsService } from './providers/wallets.service';
 import * as crypto from 'crypto';
 import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { AuthType } from 'src/auth/enums/auth-type.enum';
 
 @Controller('wallets')
 export class WalletsController {
@@ -92,6 +94,7 @@ export class WalletsController {
   @ApiOperation({
     summary: 'Handles Paystack webhook events for wallet funding.',
   })
+  @Auth(AuthType.None)
   @Post('webhook/paystack')
   @HttpCode(HttpStatus.OK)
   public async handlePaystackWebhook(
