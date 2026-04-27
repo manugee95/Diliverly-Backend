@@ -72,38 +72,4 @@ export class WebhookController {
       return { status: 'received' };
     }
   }
-
-  // async handlePaystackWebhook(
-  //   @Req() req,
-  //   @Headers('x-paystack-signature') signature: string,
-  // ) {
-  //   console.log('Webhook hit');
-  //   console.log('Signature:', signature);
-
-  //   await this.paystackService.verifyWebhookSignature(req.rawBody, signature);
-
-  //   const event = req.body.event;
-  //   const data = req.body.data;
-
-  //   switch (event) {
-  //     case 'charge.success':
-  //       return this.walletService.handleSuccessfulCharge(req.body);
-
-  //     case 'transfer.success':
-  //       return this.withdrawalService.handleTransferSuccess(data);
-
-  //     case 'transfer.failed':
-  //       return this.withdrawalService.handleTransferFailed(data);
-
-  //     case 'transfer.reversed':
-  //       return this.withdrawalService.handleTransferReversed(data);
-
-  //     case 'dedicatedaccount.assign.success':
-  //       return this.vaService.handleSuccessfulCharge(req.body);
-
-  //     default:
-  //       console.log('Unhandled event:', event);
-  //       return;
-  //   }
-  // }
 }

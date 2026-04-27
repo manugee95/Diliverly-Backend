@@ -163,7 +163,7 @@ export class WithdrawalsService {
           type: TransactionType.WITHDRAWAL,
           amount,
           description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
-          reference: this.reference.generateTransactionRef(),
+          reference: savedWithdrawal.reference,
           status: TransactionStatus.PENDING,
           withdrawal: savedWithdrawal,
         },

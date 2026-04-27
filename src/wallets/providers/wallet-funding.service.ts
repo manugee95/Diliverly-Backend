@@ -43,79 +43,6 @@ export class WalletFundingService {
    * Core logic to finalize funding after Paystack verification.
    */
 
-  // private async finalizeFunding(
-  //   reference: string,
-  //   amountPaidNaira: number,
-  //   rawPayload: any,
-  // ) {
-  //   await this.dataSource.transaction(async (manager) => {
-  //     const fundingRepo = manager.getRepository(WalletFunding);
-  //     const walletRepo = manager.getRepository(Wallet);
-
-  //     const funding = await fundingRepo.findOne({
-  //       where: { reference },
-  //       lock: { mode: 'pessimistic_write' },
-  //     });
-
-  //     if (!funding) return;
-
-  //     // Strict state control
-  //     if (funding.status !== FundingStatus.PENDING) return;
-
-  //     // Prevent race condition
-  //     funding.status = FundingStatus.PROCESSING;
-  //     await fundingRepo.save(funding);
-
-  //     const userId = funding.userId ?? funding.user?.id;
-  //     if (!userId) return;
-
-  //     // Validate amount
-  //     if (Number(funding.amount) !== amountPaidNaira) {
-  //       return;
-  //     }
-
-  //     // Validate currency
-  //     if (rawPayload?.data?.currency !== 'NGN') {
-  //       return;
-  //     }
-
-  //     const wallet = await walletRepo.findOne({
-  //       where: { userId },
-  //       lock: { mode: 'pessimistic_write' },
-  //     });
-
-  //     if (!wallet) return;
-
-  //     // Use KOBO (integer)
-  //     const amountPaidKobo = this.currencyConvert.toKobo(amountPaidNaira);
-  //     const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
-  //     const newBalanceKobo = currentBalanceKobo + amountPaidKobo;
-
-  //     wallet.availableBalance = newBalanceKobo;
-  //     await walletRepo.save(wallet);
-
-  //     // Mark success
-  //     funding.status = FundingStatus.SUCCESS;
-  //     funding.paystackReference = reference;
-  //     funding.raw = rawPayload;
-
-  //     await fundingRepo.save(funding);
-
-  //     // Log transaction
-  //     await this.txService.logTransaction(
-  //       {
-  //         user: { id: userId } as User,
-  //         type: TransactionType.CREDIT,
-  //         amount: amountPaidNaira,
-  //         description: 'Wallet funding via Paystack',
-  //         reference,
-  //         status: TransactionStatus.SUCCESSFUL,
-  //       },
-  //       manager,
-  //     );
-  //   });
-  // }
-
   private async finalizeFunding(
     reference: string,
     amountPaidNaira: number,
@@ -254,26 +181,6 @@ export class WalletFundingService {
    * Paystack webhook handler core logic.
    * Call this from controller after verifying signature.
    */
-
-  // async handleSuccessfulCharge(event: any) {
-  //   const eventType = event?.event;
-  //   const data = event?.data;
-
-  //   // We care about successful charges
-  //   if (eventType !== 'charge.success') return;
-
-  //   const reference = data?.reference;
-  //   if (!reference) return;
-
-  //   // Optional extra hardening: ensure status is success
-  //   if (data?.status !== 'success') return;
-
-  //   // amount is in kobo
-  //   const amountPaidNaira = Number(data?.amount ?? 0) / 100;
-
-  //   await this.finalizeFunding(reference, amountPaidNaira, event);
-  // }
-
   async handleSuccessfulCharge(data: any) {
     if (!data) return;
 
