@@ -3,12 +3,22 @@ import * as crypto from 'crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InitiatePaymentDto } from '../dtos/initiatePayment.dto';
+import { HttpService } from '@nestjs/axios';
+import { User } from 'src/users/user.entity';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PaystackService {
   private readonly baseUrl = 'https://api.paystack.co';
+  private headers = {
+    Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`,
+    'Content-Type': 'application/json',
+  };
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly http: HttpService,
+  ) {}
 
   private get secretKey() {
     return this.config.get<string>('PAYSTACK_SECRET_KEY');
@@ -56,7 +66,7 @@ export class PaystackService {
     return res.data;
   }
 
-  verifyWebhookSignature(rawBody: Buffer, signature: string | undefined) {
+  async verifyWebhookSignature(rawBody: Buffer, signature: string | undefined) {
     if (!signature)
       throw new UnauthorizedException('Missing Paystack signature');
 
@@ -70,5 +80,36 @@ export class PaystackService {
 
     if (hash !== signature)
       throw new UnauthorizedException('Invalid Paystack signature');
+  }
+
+  async createCustomer(user: User) {
+    const { data } = await firstValueFrom(
+      this.http.post(
+        `${this.baseUrl}/customer`,
+        {
+          email: user.email,
+          first_name: user.firstName,
+          last_name: user.lastName,
+        },
+        { headers: this.headers },
+      ),
+    );
+
+    return data.data;
+  }
+
+  async createDedicatedAccount(customerCode: string) {
+    const { data } = await firstValueFrom(
+      this.http.post(
+        `${this.baseUrl}/dedicated_account`,
+        {
+          customer: customerCode,
+          preferred_bank: 'wema-bank', // or providus
+        },
+        { headers: this.headers },
+      ),
+    );
+
+    return data.data;
   }
 }

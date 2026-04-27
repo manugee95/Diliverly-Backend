@@ -181,7 +181,7 @@ export class WalletFundingService {
    * Paystack webhook handler core logic.
    * Call this from controller after verifying signature.
    */
-  async handlePaystackWebhook(event: any) {
+  async handleSuccessfulCharge(event: any) {
     const eventType = event?.event;
     const data = event?.data;
 

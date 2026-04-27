@@ -16,6 +16,7 @@ import * as crypto from 'crypto';
 import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { AuthType } from 'src/auth/enums/auth-type.enum';
+import { PaystackService } from 'src/paystack/providers/paystack.service';
 
 @Controller('wallets')
 export class WalletsController {
@@ -26,6 +27,7 @@ export class WalletsController {
     private readonly walletFundingService: WalletFundingService,
     private readonly walletsService: WalletsService,
     private readonly currencyConvert: CurrencyConvertProvider,
+    private readonly paystackService: PaystackService
   ) {}
 
   /**
@@ -91,51 +93,36 @@ export class WalletsController {
   /**
    * Endpoint to handle Paystack webhook events.
    */
-  @ApiOperation({
-    summary: 'Handles Paystack webhook events for wallet funding.',
-  })
-  @Auth(AuthType.None)
-  @Post('webhook/paystack')
-  @HttpCode(HttpStatus.OK)
-  public async handlePaystackWebhook(
-    @Req() req,
-    @Headers('x-paystack-signature') signature: string,
-  ) {
-    try {
-      const secret = process.env.PAYSTACK_SECRET_KEY;
 
-      console.log('Webhook hit');
-      console.log('Signature:', signature);
 
-      if (!signature || !secret) {
-        return;
-      }
+  // @ApiOperation({
+  //   summary: 'Handles Paystack webhook events for wallet funding.',
+  // })
+  // @Auth(AuthType.None)
+  // @Post('webhook/paystack')
+  // @HttpCode(HttpStatus.OK)
+  // public async handlePaystackWebhook(
+  //   @Req() req,
+  //   @Headers('x-paystack-signature') signature: string,
+  // ) {
+  //   try {
+  //     console.log('Webhook hit');
+  //     console.log('Signature:', signature);
 
-      /**
-       * IMPORTANT: requires rawBody (configured in main.ts)
-       */
-      const hash = crypto
-        .createHmac('sha512', secret)
-        .update(req.rawBody)
-        .digest('hex');
+  //     await this.paystackService.verifyWebhookSignature(req.rawBody, signature)
 
-      console.log('Generated hash:', hash);
+  //     const event = req.body;
 
-      if (hash !== signature) {
-        return;
-      }
+  //     await this.walletFundingService.handleSuccessfulCharge(event);
 
-      const event = req.body;
+  //     return;
+  //   } catch (error) {
+  //     // NEVER throw in webhook
+  //     return;
+  //   }
+  // }
 
-      await this.walletFundingService.handlePaystackWebhook(event);
-
-      return;
-    } catch (error) {
-      // NEVER throw in webhook
-      return;
-    }
-  }
-
+  
   /**
    * Endpoint to get or create a wallet for a user.
    */

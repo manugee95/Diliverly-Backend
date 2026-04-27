@@ -33,7 +33,7 @@ export class PaystackController {
 
     // Process event
     const event = req.body;
-    await this.walletFundingService.handlePaystackWebhook(event);
+    await this.walletFundingService.handleSuccessfulCharge(event);
 
     return { received: true };
   }

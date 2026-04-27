@@ -35,6 +35,8 @@ import { TrustScoreModule } from './common/trust-score/trust-score.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { DashboardOverviewModule } from './dashboard-overview/dashboard-overview.module';
 import { CurrencyConvertProvider } from './common/providers/currency-convert.provider';
+import { VirtualAccountModule } from './virtual-account/virtual-account.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 // const ENV = process.env.NODE_ENV;
 
@@ -119,6 +121,8 @@ import { CurrencyConvertProvider } from './common/providers/currency-convert.pro
     TrustScoreModule,
     FavoritesModule,
     DashboardOverviewModule,
+    VirtualAccountModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [
