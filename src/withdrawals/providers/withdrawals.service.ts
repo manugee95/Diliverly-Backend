@@ -270,8 +270,6 @@ export class WithdrawalsService {
       const transactionRepo = manager.getRepository(Transaction);
       const walletRepo = manager.getRepository(Wallet);
 
-      console.log(data);
-
       const reference = data.reference;
 
       const withdrawal = await withdrawalRepo.findOne({

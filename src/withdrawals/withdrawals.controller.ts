@@ -11,6 +11,7 @@ import { WithdrawalsService } from './providers/withdrawals.service';
 import { CreateWithdrawalDto } from './dtos/withdrawal.dto';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PaystackService } from 'src/paystack/providers/paystack.service';
+import { FinalizeWithdrawalDto } from './dtos/finalize-withdrawal.dto';
 
 @Controller('withdrawals')
 export class WithdrawalsController {
@@ -35,7 +36,7 @@ export class WithdrawalsController {
   }
 
   @Post('finalize')
-  finalizeWithdrawalOtp(@Body() dto: { transferCode: string; otp: string }) {
+  finalizeWithdrawalOtp(@Body() dto: FinalizeWithdrawalDto) {
     return this.paystackService.finalizeTransfer(dto.transferCode, dto.otp);
   }
 }

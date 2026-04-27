@@ -3,7 +3,7 @@ Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NzI5MzM3MiwiZXhwIjoxNzc3Mjk2OTcyLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.5tSpqapHpmbxNpxB10s5mVj8tObHhT_DblLdDyc2w1E
 
 {
-    "amount": 3000
+    "amount": 3500
 }
 
 POST http://localhost:3000/withdrawals/finalize
@@ -11,6 +11,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiO
 Content-Type: application/json
 
 {
-    "transferCode": "TRF_4tkdiasrhle60tqw",
-    "otp": "576942"
+    "transferCode": "TRF_p62le3fhawino1wv",
+    "otp": "138566"
 }
