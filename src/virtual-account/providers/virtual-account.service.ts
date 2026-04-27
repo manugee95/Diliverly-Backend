@@ -21,7 +21,7 @@ export class VirtualAccountService {
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(VirtualAccount);
 
-      // Check if already exists
+      // Check if already exists 
       let account = await repo.findOne({
         where: { userId: user.id },
       });

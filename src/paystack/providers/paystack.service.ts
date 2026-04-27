@@ -11,7 +11,7 @@ import { firstValueFrom } from 'rxjs';
 export class PaystackService {
   private readonly baseUrl = 'https://api.paystack.co';
   private headers = {
-    Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`,
+    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
     'Content-Type': 'application/json',
   };
 
@@ -82,34 +82,63 @@ export class PaystackService {
       throw new UnauthorizedException('Invalid Paystack signature');
   }
 
+  async finalizeTransfer(transferCode: string, otp: string) {
+    const res = await axios.post(
+      `${this.baseUrl}/transfer/finalize_transfer`,
+      {
+        transfer_code: transferCode,
+        otp,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${this.config.get('PAYSTACK_SECRET_KEY')}`,
+        },
+      },
+    );
+
+    return res.data;
+  }
+
   async createCustomer(user: User) {
-    const { data } = await firstValueFrom(
-      this.http.post(
+    try {
+      const response = await axios.post(
         `${this.baseUrl}/customer`,
         {
           email: user.email,
           first_name: user.firstName,
           last_name: user.lastName,
         },
-        { headers: this.headers },
-      ),
-    );
+        {
+          headers: this.headers,
+        },
+      );
 
-    return data.data;
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || 'Failed to create Paystack customer',
+      );
+    }
   }
 
   async createDedicatedAccount(customerCode: string) {
-    const { data } = await firstValueFrom(
-      this.http.post(
+    try {
+      const response = await axios.post(
         `${this.baseUrl}/dedicated_account`,
         {
           customer: customerCode,
-          preferred_bank: 'wema-bank', // or providus
+          preferred_bank: 'wema-bank',
         },
-        { headers: this.headers },
-      ),
-    );
+        {
+          headers: this.headers,
+        },
+      );
 
-    return data.data;
+      return response.data.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.message || 'Failed to create dedicated account',
+      );
+    }
   }
 }

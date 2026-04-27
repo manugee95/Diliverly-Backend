@@ -1,30 +1,34 @@
-import { Controller, Post, Req, Headers } from '@nestjs/common';
+import { Controller, Post, Req, Headers, Get, UseGuards, ForbiddenException } from '@nestjs/common';
 import { PaystackService } from 'src/paystack/providers/paystack.service';
 import { VirtualAccountService } from './providers/virtual-account.service';
+import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
+import { User } from 'src/users/user.entity';
 
 @Controller('virtual-account')
 export class VirtualAccountController {
-  constructor(
-    private readonly paystackService: PaystackService,
-    private readonly virtualAccountService: VirtualAccountService,
-  ) {}
+  constructor(private readonly virtualAccountService: VirtualAccountService) {}
 
-  @Post()
-  async handleWebhook(
-    @Req() req,
-    @Headers('x-paystack-signature') signature: string,
-  ) {
-    console.log('Webhook hit');
-    console.log('Signature:', signature);
+  @UseGuards(AgentGuard)
+  @Get('me')
+  async getVirtualAccount(@Req() req) {
+    const user = req.user as User;
 
-    await this.paystackService.verifyWebhookSignature(req.rawBody, signature);
-
-    const event = req.body;
-
-    if (event.event === 'charge.success') {
-      await this.virtualAccountService.handleSuccessfulCharge(event.data);
+    // Ensure only agents can access this
+    if (user.isAgent === false) {
+      throw new ForbiddenException('Only agents can have a virtual account');
     }
 
-    return { status: 'ok' };
+    const account =
+      await this.virtualAccountService.getOrCreateAgentAccount(user);
+
+    return {
+      status: 'success',
+      message: 'Virtual account retrieved successfully',
+      data: {
+        accountNumber: account.accountNumber,
+        bankName: account.bankName,
+        accountName: account.accountName,
+      },
+    };
   }
 }

@@ -9,6 +9,7 @@ import { ReferenceModule } from 'src/common/reference/reference.module';
 import { Agent } from 'src/agent/agent.entity';
 import { MailerModule } from 'src/mailer/mailer.module';
 import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { PaystackModule } from 'src/paystack/paystack.module';
 
 @Module({
   controllers: [WithdrawalsController],
@@ -17,7 +18,9 @@ import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.p
     TypeOrmModule.forFeature([Withdrawal, Agent, User]),
     TransactionsModule,
     ReferenceModule,
-    MailerModule
+    MailerModule,
+    PaystackModule,
   ],
+  exports: [WithdrawalsService],
 })
 export class WithdrawalsModule {}

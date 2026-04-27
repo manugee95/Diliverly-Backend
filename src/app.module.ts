@@ -62,8 +62,18 @@ import { WebhookModule } from './webhook/webhook.module';
       database: process.env.DATABASE_NAME,
 
       autoLoadEntities: true,
-      synchronize: false,
+      synchronize: true,
       ssl: false,
+
+      extra: {
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+        keepAlive: true,
+      },
+
+      retryAttempts: 5,
+      retryDelay: 3000,
     }),
     // TypeOrmModule.forRootAsync({
     //   imports: [ConfigModule],

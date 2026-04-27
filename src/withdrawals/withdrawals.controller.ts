@@ -10,6 +10,7 @@ import {
 import { WithdrawalsService } from './providers/withdrawals.service';
 import { CreateWithdrawalDto } from './dtos/withdrawal.dto';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { PaystackService } from 'src/paystack/providers/paystack.service';
 
 @Controller('withdrawals')
 export class WithdrawalsController {
@@ -18,6 +19,7 @@ export class WithdrawalsController {
      * Inject Withdrawals service
      */
     private readonly withdrawalService: WithdrawalsService,
+    private readonly paystackService: PaystackService,
   ) {}
 
   @ApiOperation({
@@ -32,11 +34,8 @@ export class WithdrawalsController {
     return this.withdrawalService.manualWithdrawal(req.user.id, dto.amount);
   }
 
-  @Post('webhook/paystack')
-  @HttpCode(200)
-  handlePaystackWebhook(@Req() req, @Res() res) {
-    console.log('Webhook received:', req.body);
-
-    res.status(200).send('OK');
+  @Post('finalize')
+  finalizeWithdrawalOtp(@Body() dto: { transferCode: string; otp: string }) {
+    return this.paystackService.finalizeTransfer(dto.transferCode, dto.otp);
   }
 }

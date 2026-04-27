@@ -20,6 +20,7 @@ import { Agent } from 'src/agent/agent.entity';
 import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { MailerService } from 'src/mailer/providers/mailer.service';
 import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { Transaction } from 'src/transactions/transaction.entity';
 
 @Injectable()
 export class WithdrawalsService {
@@ -126,9 +127,9 @@ export class WithdrawalsService {
 
       if (!wallet) throw new Error('Wallet not found');
 
-      if (Number(wallet.availableBalance) < amount) {
-        throw new BadRequestException('Insufficient wallet balance');
-      }
+      // if (Number(wallet.availableBalance) < amount) {
+      //   throw new BadRequestException('Insufficient wallet balance');
+      // }
 
       // Deduct immediately
       const amountKobo = this.currencyConvert.toKobo(amount);
@@ -196,6 +197,7 @@ export class WithdrawalsService {
         message: 'Withdrawal initiated successfully',
         reference: savedWithdrawal.reference,
         status: WithdrawalStatus.PROCESSING,
+        transferCode: transfer.transferCode,
       };
     });
   }
@@ -244,6 +246,15 @@ export class WithdrawalsService {
         },
       );
 
+      const data = transferRes.data.data;
+
+      if (data.status === 'otp') {
+        return {
+          transferCode: data.transfer_code,
+          requiresOtp: true,
+        };
+      }
+
       return {
         transferCode: transferRes.data.data.transfer_code,
       };
@@ -253,97 +264,118 @@ export class WithdrawalsService {
     }
   }
 
-  async handlePaystackWebhook(
-    signature: string,
-    payload: any,
-    rawBody: Buffer,
-  ) {
-    const secret = this.config.get('PAYSTACK_SECRET_KEY');
+  async handleTransferSuccess(data: any) {
+    await this.dataSource.transaction(async (manager) => {
+      const withdrawalRepo = manager.getRepository(Withdrawal);
+      const transactionRepo = manager.getRepository(Transaction);
 
-    // Correct signature hash (MUST USE RAW BODY)
-    const hash = crypto
-      .createHmac('sha512', secret)
-      .update(rawBody)
-      .digest('hex');
+      const reference = data.reference;
 
-    if (hash !== signature) {
-      throw new ForbiddenException('Invalid webhook signature');
-    }
+      const withdrawal = await withdrawalRepo.findOne({
+        where: { reference },
+        relations: ['user', 'user.wallet'],
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    const event = payload.event;
-    const data = payload.data;
+      if (!withdrawal) return;
 
-    const reference = data.reference || data.transfer_code;
-    if (!reference) return;
+      // Idempotency
+      if (withdrawal.status === WithdrawalStatus.SUCCESS) return;
 
-    const withdrawal = await this.withdrawalRepo.findOne({
-      where: { reference },
-      relations: ['agent'],
-    });
+      withdrawal.status = WithdrawalStatus.SUCCESS;
+      await withdrawalRepo.save(withdrawal);
 
-    if (!withdrawal) return;
-
-    switch (event) {
-      case 'transfer.success':
-        await this.markWithdrawalSuccessful(withdrawal, data);
-        break;
-      case 'transfer.failed':
-        await this.markWithdrawalFailed(withdrawal, data);
-        break;
-      case 'transfer.reversed':
-        await this.markWithdrawalReversed(withdrawal, data);
-        break;
-      default:
-        return { status: 'ignored' };
-    }
-
-    return { status: 'processed' };
-  }
-
-  private async markWithdrawalSuccessful(withdrawal: Withdrawal, data: any) {
-    withdrawal.status = WithdrawalStatus.SUCCESS;
-
-    await this.withdrawalRepo.save(withdrawal);
-
-    // Update transaction status
-    await this.transactionService.updateTransaction(data.reference, {
-      status: TransactionStatus.SUCCESSFUL,
+      await transactionRepo.update(
+        { reference },
+        { status: TransactionStatus.SUCCESSFUL },
+      );
     });
   }
 
-  private async markWithdrawalFailed(withdrawal: Withdrawal, data: any) {
-    withdrawal.status = WithdrawalStatus.FAILED;
-    await this.withdrawalRepo.save(withdrawal);
+  async handleTransferFailed(data: any) {
+    await this.dataSource.transaction(async (manager) => {
+      const withdrawalRepo = manager.getRepository(Withdrawal);
+      const walletRepo = manager.getRepository(Wallet);
+      const transactionRepo = manager.getRepository(Transaction);
 
-    // Refund wallet
-    withdrawal.user.wallet.availableBalance += this.currencyConvert.toKobo(
-      withdrawal.amount,
-    );
+      const reference = data.reference;
 
-    await this.userRepo.save(withdrawal.user);
+      const withdrawal = await withdrawalRepo.findOne({
+        where: { reference },
+        relations: ['user', 'user.wallet'],
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    // Update transaction status
-    await this.transactionService.updateTransaction(data.reference, {
-      status: TransactionStatus.FAILED,
-      description: `Withdrawal failed. Amount refunded to wallet.`,
+      if (!withdrawal) return;
+
+      // Prevent double refund
+      if (
+        withdrawal.status === WithdrawalStatus.FAILED ||
+        withdrawal.status === WithdrawalStatus.REVERSED
+      ) {
+        return;
+      }
+
+      withdrawal.status = WithdrawalStatus.FAILED;
+      await withdrawalRepo.save(withdrawal);
+
+      // 💰 Refund wallet (IMPORTANT: stay consistent with units)
+      const wallet = withdrawal.user.wallet;
+
+      const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
+      const amountKobo = Number(withdrawal.amount);
+
+      wallet.availableBalance = currentBalanceKobo + amountKobo;
+
+      await walletRepo.save(wallet);
+
+      await transactionRepo.update(
+        { reference },
+        {
+          status: TransactionStatus.FAILED,
+          description: 'Withdrawal failed. Amount refunded.',
+        },
+      );
     });
   }
 
-  private async markWithdrawalReversed(withdrawal: Withdrawal, data: any) {
-    withdrawal.status = WithdrawalStatus.REVERSED;
-    await this.withdrawalRepo.save(withdrawal);
+  async handleTransferReversed(data: any) {
+    await this.dataSource.transaction(async (manager) => {
+      const withdrawalRepo = manager.getRepository(Withdrawal);
+      const walletRepo = manager.getRepository(Wallet);
+      const transactionRepo = manager.getRepository(Transaction);
 
-    // Refund wallet
-    withdrawal.user.wallet.availableBalance += this.currencyConvert.toKobo(
-      withdrawal.amount,
-    );
+      const reference = data.reference;
 
-    await this.userRepo.save(withdrawal.user);
+      const withdrawal = await withdrawalRepo.findOne({
+        where: { reference },
+        relations: ['user', 'user.wallet'],
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    // Update transaction status
-    await this.transactionService.updateTransaction(data.reference, {
-      status: TransactionStatus.FAILED,
-      description: `Withdrawal reversed. Amount refunded to wallet.`,
+      if (!withdrawal) return;
+
+      if (withdrawal.status === WithdrawalStatus.REVERSED) return;
+
+      withdrawal.status = WithdrawalStatus.REVERSED;
+      await withdrawalRepo.save(withdrawal);
+
+      const wallet = withdrawal.user.wallet;
+
+      const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
+      const amountKobo = Number(withdrawal.amount);
+
+      wallet.availableBalance = currentBalanceKobo + amountKobo;
+
+      await walletRepo.save(wallet);
+
+      await transactionRepo.update(
+        { reference },
+        {
+          status: TransactionStatus.FAILED,
+          description: 'Withdrawal reversed. Amount refunded.',
+        },
+      );
     });
   }
 }
