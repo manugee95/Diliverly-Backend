@@ -181,22 +181,18 @@ export class WalletFundingService {
    * Paystack webhook handler core logic.
    * Call this from controller after verifying signature.
    */
-  async handleSuccessfulCharge(event: any) {
-    const eventType = event?.event;
-    const data = event?.data;
+  async handleSuccessfulCharge(data: any) {
+    if (!data) return;
 
-    // We care about successful charges
-    if (eventType !== 'charge.success') return;
-
-    const reference = data?.reference;
+    const reference = data.reference;
     if (!reference) return;
 
-    // Optional extra hardening: ensure status is success
-    if (data?.status !== 'success') return;
+    // Ensure it's actually successful
+    if (data.status !== 'success') return;
 
-    // amount is in kobo
-    const amountPaidNaira = Number(data?.amount ?? 0) / 100;
+    // Paystack sends amount in kobo → convert to naira
+    const amountPaidNaira = Number(data.amount ?? 0) / 100;
 
-    await this.finalizeFunding(reference, amountPaidNaira, event);
+    await this.finalizeFunding(reference, amountPaidNaira, data);
   }
 }
