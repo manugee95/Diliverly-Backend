@@ -268,19 +268,22 @@ export class WithdrawalsService {
     await this.dataSource.transaction(async (manager) => {
       const withdrawalRepo = manager.getRepository(Withdrawal);
       const transactionRepo = manager.getRepository(Transaction);
+      const walletRepo = manager.getRepository(Wallet);
 
       console.log(data);
-      
 
       const reference = data.reference;
 
       const withdrawal = await withdrawalRepo.findOne({
         where: { reference },
-        relations: ['user', 'user.wallet'],
-        lock: { mode: 'pessimistic_write' },
       });
 
       if (!withdrawal) return;
+
+      await walletRepo.findOne({
+        where: { userId: withdrawal.user.id },
+        lock: { mode: 'pessimistic_write' },
+      });
 
       // Idempotency
       if (withdrawal.status === WithdrawalStatus.SUCCESS) return;
@@ -305,11 +308,14 @@ export class WithdrawalsService {
 
       const withdrawal = await withdrawalRepo.findOne({
         where: { reference },
-        relations: ['user', 'user.wallet'],
-        lock: { mode: 'pessimistic_write' },
       });
 
       if (!withdrawal) return;
+
+      await walletRepo.findOne({
+        where: { userId: withdrawal.user.id },
+        lock: { mode: 'pessimistic_write' },
+      });
 
       // Prevent double refund
       if (
@@ -352,11 +358,14 @@ export class WithdrawalsService {
 
       const withdrawal = await withdrawalRepo.findOne({
         where: { reference },
-        relations: ['user', 'user.wallet'],
-        lock: { mode: 'pessimistic_write' },
       });
 
       if (!withdrawal) return;
+
+      await walletRepo.findOne({
+        where: { userId: withdrawal.user.id },
+        lock: { mode: 'pessimistic_write' },
+      });
 
       if (withdrawal.status === WithdrawalStatus.REVERSED) return;
 
