@@ -86,32 +86,6 @@ export class FavoritesService {
   }
 
   // Get all favorite agents (for quick request sending) USING Pagination
-
-  // async getFavorites(
-  //   userId: number,
-  //   dto: GetFavoritesDto,
-  // ): Promise<Paginated<FavoriteAgent>> {
-  //   const vendor = await this.vendorRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-  //   if (!vendor) throw new NotFoundException('Vendor not found');
-
-  //   const favorites = await this.paginationProvider.paginateQuery(
-  //     {
-  //       page: dto.page || 1,
-  //       limit: dto.limit || 10,
-  //     },
-  //     this.favRepo,
-  //     {
-  //       where: { vendor: { id: vendor.id } },
-  //       relations: ['agent', 'agent.user'],
-  //       order: { createdAt: 'DESC' },
-  //     },
-  //   );
-
-  //   return favorites;
-  // }
-
   async getFavorites(
     userId: number,
     dto: GetFavoritesDto,
@@ -154,5 +128,19 @@ export class FavoritesService {
     );
 
     return favorites;
+  }
+
+  // Check if an agent is in favorites
+  async isFavorite(userId: number, agentId: number): Promise<boolean> {
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!vendor) throw new NotFoundException('Vendor not found');
+
+    const fav = await this.favRepo.findOne({
+      where: { vendor: { id: vendor.id }, agent: { id: agentId } },
+    });
+
+    return !!fav;
   }
 }

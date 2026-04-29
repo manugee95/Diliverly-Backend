@@ -56,4 +56,17 @@ export class FavoritesController {
   getFavorites(@Req() req, @Query() dto: GetFavoritesDto) {
     return this.favService.getFavorites(req.user.id, dto);
   }
+
+  @ApiOperation({
+    summary: 'Check if an agent is in favorites',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Favorite status fetched successfully.',
+  })
+  @UseGuards(VendorGuard)
+  @Get('is-favorite')
+  isFavorite(@Req() req, @Query('agentId') agentId: number) {
+    return this.favService.isFavorite(req.user.id, agentId);
+  }
 }

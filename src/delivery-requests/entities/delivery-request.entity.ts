@@ -24,7 +24,6 @@ export class DeliveryRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Exclude()
   @ManyToOne(() => Vendor, (vendor) => vendor.delivery_request, {
     onDelete: 'CASCADE',
   })

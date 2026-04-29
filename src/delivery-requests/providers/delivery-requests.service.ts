@@ -277,7 +277,7 @@ export class DeliveryRequestService {
             assignedAgent: { id: agent.id },
           },
         ],
-        relations: ['vendor', 'assignedAgent'],
+        relations: ['vendor', 'assignedAgent', 'deliveries'],
         order: { createdAt: 'DESC' },
       },
     );
@@ -333,7 +333,7 @@ export class DeliveryRequestService {
       where: { id: requestId },
       relations: ['vendor', 'deliveries'],
     });
-
+ 
     if (!request) {
       throw new NotFoundException('Delivery request not found');
     }

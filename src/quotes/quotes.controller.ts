@@ -71,6 +71,22 @@ export class QuotesController {
     return this.quotesService.getQuotesForAgent(userId, dto);
   }
 
+   /**
+   * Endpoint to get a single quote by ID
+   */
+  @ApiOperation({
+    summary: 'Get a single quote by ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Quote retrieved successfully.',
+  })
+  @Get('/view/:quoteId')
+  public async getQuoteById(@Req() req, @Param('quoteId') quoteId: number) {
+    const userId = req.user.id;
+    return this.quotesService.getQuoteById(userId, quoteId);
+  }
+
   /**
    * Endpoint to get quotes for a delivery request
    */
@@ -111,22 +127,6 @@ export class QuotesController {
   ) {
     const userId = req.user.id;
     return this.quotesService.getQuotesForRequest(userId, requestId, dto);
-  }
-
-  /**
-   * Endpoint to get a single quote by ID
-   */
-  @ApiOperation({
-    summary: 'Get a single quote by ID',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Quote retrieved successfully.',
-  })
-  @Get('/:quoteId')
-  public async getQuoteById(@Req() req, @Param('quoteId') quoteId: number) {
-    const userId = req.user.id;
-    return this.quotesService.getQuoteById(userId, quoteId);
   }
 
   /**

@@ -15,7 +15,6 @@ import { Vendor } from 'src/vendor/vendor.entity';
 import { QuoteStatus } from '../enums/quoteStatus.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from 'src/common/providers/cache.service';
-import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { GetQuoteDto } from '../dtos/get-quote.dto';
 import { Agent } from 'src/agent/agent.entity';
@@ -163,67 +162,6 @@ export class QuotesService {
   /**
    * Method to get all quotes for a delivery request
    */
-
-  // async getQuotesForRequest(
-  //   userId: number,
-  //   requestId: number,
-  //   quoteQuery: GetQuoteDto,
-  // ) {
-  //   // get vendor user id
-  //   const vendor = await this.vendorRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-  //   if (!vendor) {
-  //     throw new NotFoundException('Vendor not found');
-  //   }
-
-  //   // ensure this request belongs to the vendor
-  //   const request = await this.deliveryRequestRepo.findOne({
-  //     where: {
-  //       id: requestId,
-  //       vendor: { id: vendor.id },
-  //     },
-
-  //     relations: ['vendor'],
-  //   });
-
-  //   if (!request) {
-  //     throw new BadRequestException('Request not found or not owned by vendor');
-  //   }
-
-  //   // Check cache first
-  //   const cacheKey = `vendor:${vendor.id}:quotes`;
-
-  //   const cached = await this.cacheManager.get<string>(cacheKey);
-
-  //   if (cached) {
-  //     return JSON.parse(cached);
-  //   }
-
-  //   // get all quotes for this request
-  //   const quotes = await this.paginationProvider.paginateQuery(
-  //     {
-  //       page: quoteQuery.page || 1,
-  //       limit: quoteQuery.limit || 10,
-  //     },
-  //     this.quoteRepo,
-  //     {
-  //       where: { request: { id: requestId } },
-  //       relations: ['agent', 'deliveryCost.delivery'],
-  //       order: { createdAt: 'ASC' },
-  //     },
-  //   );
-
-  //   // Store in cache for future requests
-  //   await this.cacheManager.set(
-  //     cacheKey,
-  //     JSON.stringify(quotes),
-  //     CacheTTL.AgentOrders,
-  //   );
-
-  //   return quotes;
-  // }
-
   async getQuotesForRequest(
     userId: number,
     requestId: number,
@@ -287,42 +225,10 @@ export class QuotesService {
   /**
    * Method to get all quotes submitted by an agent
    */
-
-  // async getQuotesForAgent(userId: number, quoteQuery: GetQuoteDto) {
-  //   const agent = await this.agentRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!agent) throw new NotFoundException('Agent not found');
-
-  //   // Dynamic filter
-  //   const where: any = {
-  //     agent: { id: agent.id },
-  //   };
-
-  //   if (quoteQuery.status) {
-  //     where.status = quoteQuery.status;
-  //   }
-
-  //   const quotes = await this.paginationProvider.paginateQuery(
-  //     {
-  //       page: quoteQuery.page || 1,
-  //       limit: quoteQuery.limit || 10,
-  //     },
-  //     this.quoteRepo,
-  //     {
-  //       where,
-  //       relations: ['request', 'request.vendor'],
-  //       order: { createdAt: 'ASC' },
-  //     },
-  //   );
-
-  //   return quotes;
-  // }
-
   async getQuotesForAgent(userId: number, quoteQuery: GetQuoteDto) {
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
+      relations: ['user', 'quotes', 'quotes.request', 'quotes.request.vendor'],
     });
 
     if (!agent) throw new NotFoundException('Agent not found');
@@ -377,7 +283,12 @@ export class QuotesService {
   async getQuoteById(userId: number, quoteId: number) {
     const quote = await this.quoteRepo.findOne({
       where: { id: quoteId },
-      relations: ['agent', 'agent.user', 'request', 'request.vendor'],
+      relations: [
+        'agent',
+        'agent.user',
+        'request',
+        'request.vendor',
+      ],
     });
 
     if (!quote) throw new NotFoundException('Quote not found');
