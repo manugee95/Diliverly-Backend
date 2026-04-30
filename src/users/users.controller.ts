@@ -9,7 +9,9 @@ import {
   Query,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './providers/users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -22,6 +24,7 @@ import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AdminGuard } from 'src/auth/guards/roles/admin.guard';
 import { ResendCodeDto } from './dtos/resend-code.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -149,9 +152,18 @@ export class UsersController {
     status: 201,
     description: 'User profile updated successfully.',
   })
+  @UseInterceptors(
+    FileInterceptor('profileImage', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
   @Patch('/me')
-  public updateProfile(@Req() req, @Body() dto: UpdateUserDto) {
-    return this.usersService.updateUser(req.user.id, dto);
+  public updateProfile(
+    @Req() req,
+    @Body() dto: UpdateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.usersService.updateUser(req.user.id, dto, file);
   }
 
   /**

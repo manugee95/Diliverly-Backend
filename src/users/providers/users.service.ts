@@ -31,6 +31,7 @@ import { Response } from 'express';
 import { Agent } from 'src/agent/agent.entity';
 import { generateVerificationCode } from 'src/common/utils/verification-code.util';
 import { ResendCodeDto } from '../dtos/resend-code.dto';
+import { S3Service } from 'src/s3/providers/s3.service';
 
 @Injectable()
 export class UsersService {
@@ -62,6 +63,11 @@ export class UsersService {
      * Injecting Data Source
      */
     private readonly dataSource: DataSource,
+
+    /**
+     * Injecting S3 Service
+     */
+    private readonly s3Service: S3Service,
   ) {}
 
   public async createUser(
@@ -206,7 +212,7 @@ export class UsersService {
     }
 
     // 3) generate a new code
-    const verificationCode = generateVerificationCode()
+    const verificationCode = generateVerificationCode();
 
     // 4) update cache (keep other pending fields)
     await this.cacheManager.set(
@@ -405,13 +411,45 @@ export class UsersService {
   /**
    * Method to update a user
    */
-  public async updateUser(userId: number, dto: UpdateUserDto): Promise<User> {
+
+  // public async updateUser(userId: number, dto: UpdateUserDto): Promise<User> {
+  //   const user = await this.userRepository.findOne({
+  //     where: { id: userId },
+  //   });
+
+  //   if (!user) {
+  //     throw new NotFoundException('User not found');
+  //   }
+
+  //   Object.assign(user, dto);
+
+  //   return this.userRepository.save(user);
+  // }
+
+  public async updateUser(
+    userId: number,
+    dto: UpdateUserDto,
+    file?: Express.Multer.File,
+  ): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    // Validate file type if a file is provided
+    if (file && !file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('Only image files allowed');
+    }
+
+    // Upload profile image if file exists
+    if (file) {
+      const imageUrl = await this.s3Service.uploadFile(file);
+      user.profileImageUrl = imageUrl;
+
+      console.log('Profile image uploaded to S3:', imageUrl);
     }
 
     Object.assign(user, dto);

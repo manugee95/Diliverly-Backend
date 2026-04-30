@@ -6,7 +6,7 @@ import { User } from './user.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { MailerModule } from 'src/mailer/mailer.module';
-import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
+import { S3Module } from 'src/s3/s3.module';
 
 @Module({
   controllers: [UsersController],
@@ -16,6 +16,7 @@ import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provi
     forwardRef(() => AuthModule),
     PaginationModule,
     MailerModule,
+    S3Module,
   ],
   exports: [UsersService],
 })

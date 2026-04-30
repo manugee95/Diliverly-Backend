@@ -100,8 +100,17 @@ export class WithdrawalsService {
   }
 
   async manualWithdrawal(userId: number, amount: number) {
+    const FLAT_WITHDRAWAL_FEE = 50;
+
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException('Invalid amount');
+    }
+
+    // Prevent useless withdrawals
+    if (amount <= FLAT_WITHDRAWAL_FEE) {
+      throw new BadRequestException(
+        `Amount must be greater than ₦${FLAT_WITHDRAWAL_FEE}`,
+      );
     }
 
     // Fetch user + bank account (no wallet join needed here)
@@ -127,10 +136,6 @@ export class WithdrawalsService {
 
       if (!wallet) throw new Error('Wallet not found');
 
-      // if (Number(wallet.availableBalance) < amount) {
-      //   throw new BadRequestException('Insufficient wallet balance');
-      // }
-
       // Deduct immediately
       const amountKobo = this.currencyConvert.toKobo(amount);
 
@@ -141,15 +146,18 @@ export class WithdrawalsService {
         throw new BadRequestException('Insufficient wallet balance');
       }
 
-      // Safe deduction in KOBO
+      // Deduct ONLY the requested amount
       wallet.availableBalance = availableBalanceKobo - amountKobo;
-
       await walletRepo.save(wallet);
+
+      // Flat fee logic
+      const fee = FLAT_WITHDRAWAL_FEE;
+      const netAmount = amount - fee;
 
       // Create withdrawal record
       const withdrawal = withdrawalRepo.create({
         user: { id: userId } as any,
-        amount,
+        amount: netAmount,
         reference: `WD-${Date.now()}`,
         status: WithdrawalStatus.PROCESSING,
       });
@@ -161,7 +169,7 @@ export class WithdrawalsService {
         {
           user,
           type: TransactionType.WITHDRAWAL,
-          amount,
+          amount: netAmount,
           description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
           reference: savedWithdrawal.reference,
           status: TransactionStatus.PENDING,
@@ -174,7 +182,7 @@ export class WithdrawalsService {
       // If this throws, the whole TX rolls back (wallet deduction is undone)
       const transfer = await this.processPaystackTransfer(
         user,
-        amount,
+        netAmount,
         savedWithdrawal.reference,
       );
 
@@ -188,7 +196,7 @@ export class WithdrawalsService {
         accountName: user.bank_account.accountName,
         accountNumber: user.bank_account.accountNumber,
         bankName: user.bank_account.bankName,
-        amount,
+        amount: netAmount,
         orderReference: savedWithdrawal.reference,
       });
 

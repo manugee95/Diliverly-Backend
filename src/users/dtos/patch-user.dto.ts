@@ -27,12 +27,4 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   phone?: string;
-
-  @ApiProperty({
-    description: 'user profile image url',
-    example: 'https://example.com/profile.jpg',
-  })
-  @IsOptional()
-  @IsString()
-  profileImageUrl?: string;
 }

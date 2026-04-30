@@ -37,6 +37,7 @@ import { DashboardOverviewModule } from './dashboard-overview/dashboard-overview
 import { CurrencyConvertProvider } from './common/providers/currency-convert.provider';
 import { VirtualAccountModule } from './virtual-account/virtual-account.module';
 import { WebhookModule } from './webhook/webhook.module';
+import { S3Module } from './s3/s3.module';
 
 // const ENV = process.env.NODE_ENV;
 
@@ -133,6 +134,7 @@ import { WebhookModule } from './webhook/webhook.module';
     DashboardOverviewModule,
     VirtualAccountModule,
     WebhookModule,
+    S3Module,
   ],
   controllers: [AppController],
   providers: [
