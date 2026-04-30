@@ -386,16 +386,16 @@ export class QuotesService {
     // OUTSIDE TRANSACTION
 
     // 9. Send email
-    await this.mailService.sendTemplate(
-      result.agentEmail,
-      'Your delivery quote has been accepted',
-      'vendor-accepts-quote',
-      {
-        agentName: result.agentName,
-        vendorName: result.vendorName,
-        deliveryTitle: result.deliveryTitle,
-      },
-    );
+    // await this.mailService.sendTemplate(
+    //   result.agentEmail,
+    //   'Your delivery quote has been accepted',
+    //   'vendor-accepts-quote',
+    //   {
+    //     agentName: result.agentName,
+    //     vendorName: result.vendorName,
+    //     deliveryTitle: result.deliveryTitle,
+    //   },
+    // );
 
     // 10. Invalidate caches
     await this.dashboardCacheProvider.invalidateBoth(

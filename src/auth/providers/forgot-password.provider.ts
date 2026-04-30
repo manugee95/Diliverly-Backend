@@ -42,7 +42,7 @@ export class ForgotPasswordProvider {
 
     await this.mailService.sendTemplate(
       email,
-      'Verify your email',
+      'Account password reset',
       'forgot-password',
       {
         user: user.firstName,

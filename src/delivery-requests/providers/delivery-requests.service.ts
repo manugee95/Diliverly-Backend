@@ -87,7 +87,7 @@ export class DeliveryRequestService {
     try {
       await this.mailService.sendTemplate(
         payload.agentEmail,
-        'New Delivery Request Received',
+        'New Delivery Request',
         'agent-delivery-request',
         {
           agentName: payload.agentName,

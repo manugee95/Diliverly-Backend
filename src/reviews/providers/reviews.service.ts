@@ -60,68 +60,6 @@ export class ReviewsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // async rateAgent(userId: number, orderId: number, dto: RateAgentDto) {
-  //   const { rating, review } = dto;
-
-  //   // Find vendor
-  //   const vendor = await this.vendorRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!vendor) throw new UnauthorizedException('Vendor not found');
-
-  //   // Find order + load review relation
-  //   const order = await this.orderRepo.findOne({
-  //     where: { id: orderId },
-  //     relations: ['vendor', 'vendor.user', 'items', 'items.agent', 'review'],
-  //   });
-
-  //   if (!order) throw new NotFoundException('Order not found');
-
-  //   // Confirm vendor owns this order
-  //   if (order.vendor.id !== vendor.id) {
-  //     throw new UnauthorizedException('You cannot rate an order not yours');
-  //   }
-
-  //   // Confirm order is complete
-  //   if (order.status !== OrderStatus.COMPLETE) {
-  //     throw new BadRequestException('Order must be completed before rating');
-  //   }
-
-  //   // Check if already reviewed
-  //   if (order.review) {
-  //     throw new BadRequestException('Order already reviewed');
-  //   }
-
-  //   // Get agent
-  //   const agent = order.items[0]?.agent;
-  //   if (!agent) throw new BadRequestException('Agent not assigned');
-
-  //   // Calculate rating
-  //   const newRatingCount = agent.rating_count + 1;
-  //   const newRatingAvg =
-  //     (agent.rating_avg * agent.rating_count + rating) / newRatingCount;
-
-  //   // Update agent safely
-  //   await this.agentRepo.update(agent.id, {
-  //     rating_avg: Number(newRatingAvg.toFixed(1)),
-  //     rating_count: newRatingCount,
-  //   });
-
-  //   // Create review
-  //   const agentReview = this.reviewRepo.create({
-  //     agent: { id: agent.id },
-  //     vendor: { id: vendor.id },
-  //     order: { id: order.id },
-  //     comment: review,
-  //     rating,
-  //   });
-
-  //   await this.reviewRepo.save(agentReview);
-
-  //   return { message: 'Thank you for leaving a review' };
-  // }
-
   async rateAgent(userId: number, orderId: number, dto: RateAgentDto) {
     const { rating, review } = dto;
 

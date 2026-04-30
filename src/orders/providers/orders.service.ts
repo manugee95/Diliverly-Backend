@@ -16,7 +16,6 @@ import { OrderItem } from '../entities/orderItem.entity';
 import { DataSource } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from 'src/common/providers/cache.service';
-import { CacheTTL } from 'src/common/cache/cacheTTL';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { GetOrdersDto } from '../dtos/getOrders.dto';
 import { OrderStatus } from '../enums/orderStatus.enum';
@@ -24,7 +23,6 @@ import { MarkDeliveredDto } from '../dtos/markDelivered.dto';
 import { User } from 'src/users/user.entity';
 import { DeliveryType } from 'src/delivery-requests/enums/deliveryType.enum';
 import { CancelOrderItemDto } from '../dtos/cancelOrderItem.dto';
-import { Transaction } from 'src/transactions/transaction.entity';
 import { TransactionType } from 'src/transactions/enums/transactionType.enum';
 import { TransactionsService } from 'src/transactions/providers/transactions.service';
 import { ReferenceProvider } from 'src/common/reference/reference.provider';
@@ -39,7 +37,6 @@ import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
 import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider';
 import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
 import { OrdersCacheProvider } from './orders.provider';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
 
 @Injectable()
@@ -234,7 +231,7 @@ export class OrdersService {
     try {
       await this.mailService.sendTemplate(
         payload.vendorEmail,
-        'You’ve Been Paid for a COD Delivery',
+        'COD Payment Received',
         'cod-payment',
         {
           orderReference: payload.orderReference,
@@ -345,7 +342,7 @@ export class OrdersService {
         );
       }
 
-      // 🔥 Build input map by deliveryId
+      // Build input map by deliveryId
       const inputByDeliveryId = new Map<number, (typeof dto.items)[0]>();
 
       for (const item of dto.items) {
@@ -398,7 +395,7 @@ export class OrdersService {
           );
         }
 
-        // ✅ Assign values correctly
+        // Assign values correctly
         target.itemName = input.itemName;
         target.quantity = input.quantity;
         target.buyerName = input.buyerName;

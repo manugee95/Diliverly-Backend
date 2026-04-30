@@ -116,7 +116,7 @@ export class UsersService {
       // Send verification email
       await this.mailService.sendTemplate(
         email,
-        'Verify your email',
+        'Verify your email address',
         'verify-email',
         {
           name: firstName,
@@ -302,7 +302,7 @@ export class UsersService {
     // Send Welcome email
     await this.mailService.sendTemplate(
       email,
-      'Welcome to Diliverly 🎉',
+      'Welcome to Dilivaly',
       'welcome',
       {
         name: createdUser.firstName,
