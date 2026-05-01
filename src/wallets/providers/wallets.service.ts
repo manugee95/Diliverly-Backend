@@ -10,10 +10,12 @@ export class WalletsService {
     const repo = manager
       ? manager.getRepository(Wallet)
       : this.dataSource.getRepository(Wallet);
+
     let wallet = await repo.findOne({
       where: { userId },
       relations: ['user'],
     });
+
     if (!wallet) {
       wallet = repo.create({
         user: { id: userId } as any,
@@ -22,6 +24,7 @@ export class WalletsService {
       });
       wallet = await repo.save(wallet);
     }
+    
     return wallet;
   }
 

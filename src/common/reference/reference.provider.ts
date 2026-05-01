@@ -5,7 +5,7 @@ export class ReferenceProvider {
     public generateTransactionRef(): string {
     const num = Math.floor(100000000 + Math.random() * 900000000); // 9-digit number
     const alpha = Math.random().toString(36).substring(2, 5).toUpperCase(); // 3 letters
-    return `D${num}${alpha}`; // e.g., D431442179MIC
+    return `WD-${num}${alpha}`; // e.g., WD-431442179MIC
   }
 
   public generateOrderRef(): string {

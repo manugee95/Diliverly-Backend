@@ -22,10 +22,30 @@ export class TransactionsQueryService {
   ) {}
 
   // Get paginated transaction history
+
+  // async getUserTransactions(
+  //   userId: number,
+  //   transactionQuery: GetTransactionsDto,
+  // ): Promise<Paginated<Transaction>> {
+  //   const transactions = await this.paginationProvider.paginateQuery(
+  //     {
+  //       page: transactionQuery.page || 1,
+  //       limit: transactionQuery.limit || 10,
+  //     },
+  //     this.transRepo,
+  //     {
+  //       where: { user: { id: userId } },
+  //       order: { createdAt: 'DESC' },
+  //     },
+  //   );
+
+  //   return transactions;
+  // }
+
   async getUserTransactions(
     userId: number,
     transactionQuery: GetTransactionsDto,
-  ): Promise<Paginated<Transaction>> {
+  ): Promise<Paginated<any>> {
     const transactions = await this.paginationProvider.paginateQuery(
       {
         page: transactionQuery.page || 1,
@@ -38,6 +58,15 @@ export class TransactionsQueryService {
       },
     );
 
-    return transactions;
+    // Format amounts to 2 decimal places
+    const formattedData = transactions.data.map((tx) => ({
+      ...tx,
+      amount: Number(tx.amount).toFixed(2),
+    }));
+
+    return {
+      ...transactions,
+      data: formattedData,
+    };
   }
 }

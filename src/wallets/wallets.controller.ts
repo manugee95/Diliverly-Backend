@@ -90,38 +90,6 @@ export class WalletsController {
     return await this.walletFundingService.verifyAndFundWallet(reference);
   }
 
-  /**
-   * Endpoint to handle Paystack webhook events.
-   */
-
-
-  // @ApiOperation({
-  //   summary: 'Handles Paystack webhook events for wallet funding.',
-  // })
-  // @Auth(AuthType.None)
-  // @Post('webhook/paystack')
-  // @HttpCode(HttpStatus.OK)
-  // public async handlePaystackWebhook(
-  //   @Req() req,
-  //   @Headers('x-paystack-signature') signature: string,
-  // ) {
-  //   try {
-  //     console.log('Webhook hit');
-  //     console.log('Signature:', signature);
-
-  //     await this.paystackService.verifyWebhookSignature(req.rawBody, signature)
-
-  //     const event = req.body;
-
-  //     await this.walletFundingService.handleSuccessfulCharge(event);
-
-  //     return;
-  //   } catch (error) {
-  //     // NEVER throw in webhook
-  //     return;
-  //   }
-  // }
-
   
   /**
    * Endpoint to get or create a wallet for a user.

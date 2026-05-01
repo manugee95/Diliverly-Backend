@@ -78,7 +78,7 @@ export class WithdrawalsService {
     accountName: string | undefined;
     accountNumber: string | undefined;
     bankName: string | undefined;
-    amount: number;
+    amount: string;
   }) {
     try {
       await this.mailService.sendTemplate(
@@ -136,29 +136,31 @@ export class WithdrawalsService {
 
       if (!wallet) throw new Error('Wallet not found');
 
-      // Deduct immediately
+      // Debit Wallet (CRITICAL: do this BEFORE initiating transfer to avoid balance issues if transfer fails)
       const amountKobo = this.currencyConvert.toKobo(amount);
+      const feeKobo = this.currencyConvert.toKobo(FLAT_WITHDRAWAL_FEE);
 
-      // Normalize bigint-safe value
+      const totalDebitKobo = amountKobo + feeKobo;
+
       const availableBalanceKobo = Number(wallet.availableBalance ?? 0);
 
-      if (availableBalanceKobo < amountKobo) {
+      if (availableBalanceKobo < totalDebitKobo) {
         throw new BadRequestException('Insufficient wallet balance');
       }
 
-      // Deduct ONLY the requested amount
-      wallet.availableBalance = availableBalanceKobo - amountKobo;
+      // Deduct FULL amount (amount + fee)
+      wallet.availableBalance = availableBalanceKobo - totalDebitKobo;
       await walletRepo.save(wallet);
 
-      // Flat fee logic
-      const fee = FLAT_WITHDRAWAL_FEE;
-      const netAmount = amount - fee;
+      // Amount user actually receives
+      const netAmountKobo = amountKobo - feeKobo;
+      const netAmount = this.currencyConvert.toNaira(netAmountKobo);
 
       // Create withdrawal record
       const withdrawal = withdrawalRepo.create({
         user: { id: userId } as any,
         amount: netAmount,
-        reference: `WD-${Date.now()}`,
+        reference: this.reference.generateTransactionRef(),
         status: WithdrawalStatus.PROCESSING,
       });
 
@@ -196,7 +198,7 @@ export class WithdrawalsService {
         accountName: user.bank_account.accountName,
         accountNumber: user.bank_account.accountNumber,
         bankName: user.bank_account.bankName,
-        amount: netAmount,
+        amount: Number(savedWithdrawal.amount).toFixed(2),
         orderReference: savedWithdrawal.reference,
       });
 
@@ -305,6 +307,8 @@ export class WithdrawalsService {
   }
 
   async handleTransferFailed(data: any) {
+    const FLAT_WITHDRAWAL_FEE = 50;
+
     await this.dataSource.transaction(async (manager) => {
       const withdrawalRepo = manager.getRepository(Withdrawal);
       const walletRepo = manager.getRepository(Wallet);
@@ -334,13 +338,15 @@ export class WithdrawalsService {
       withdrawal.status = WithdrawalStatus.FAILED;
       await withdrawalRepo.save(withdrawal);
 
-      // 💰 Refund wallet (IMPORTANT: stay consistent with units)
+      // Refund wallet (IMPORTANT: stay consistent with units) 
       const wallet = withdrawal.user.wallet;
 
       const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
-      const amountKobo = Number(withdrawal.amount);
+      const amountKobo = this.currencyConvert.toKobo(withdrawal.amount);
+      const feeKobo = this.currencyConvert.toKobo(FLAT_WITHDRAWAL_FEE);
+      const netAmountKobo = amountKobo + feeKobo;
 
-      wallet.availableBalance = currentBalanceKobo + amountKobo;
+      wallet.availableBalance = currentBalanceKobo + netAmountKobo;
 
       await walletRepo.save(wallet);
 
@@ -348,13 +354,15 @@ export class WithdrawalsService {
         { reference },
         {
           status: TransactionStatus.FAILED,
-          description: 'Withdrawal failed. Amount refunded.',
+          description: 'Withdrawal failed. Amount refunded to wallet.',
         },
       );
     });
   }
 
   async handleTransferReversed(data: any) {
+    const FLAT_WITHDRAWAL_FEE = 50;
+
     await this.dataSource.transaction(async (manager) => {
       const withdrawalRepo = manager.getRepository(Withdrawal);
       const walletRepo = manager.getRepository(Wallet);
@@ -373,17 +381,26 @@ export class WithdrawalsService {
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (withdrawal.status === WithdrawalStatus.REVERSED) return;
+      // Prevent double refund
+      if (
+        withdrawal.status === WithdrawalStatus.FAILED ||
+        withdrawal.status === WithdrawalStatus.REVERSED
+      ) {
+        return;
+      }
 
       withdrawal.status = WithdrawalStatus.REVERSED;
       await withdrawalRepo.save(withdrawal);
 
+      // Refund wallet (IMPORTANT: stay consistent with units) 
       const wallet = withdrawal.user.wallet;
 
       const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
-      const amountKobo = Number(withdrawal.amount);
+      const amountKobo = this.currencyConvert.toKobo(withdrawal.amount);
+      const feeKobo = this.currencyConvert.toKobo(FLAT_WITHDRAWAL_FEE);
+      const netAmountKobo = amountKobo + feeKobo;
 
-      wallet.availableBalance = currentBalanceKobo + amountKobo;
+      wallet.availableBalance = currentBalanceKobo + netAmountKobo;
 
       await walletRepo.save(wallet);
 
@@ -391,7 +408,7 @@ export class WithdrawalsService {
         { reference },
         {
           status: TransactionStatus.FAILED,
-          description: 'Withdrawal reversed. Amount refunded.',
+          description: 'Withdrawal reversed. Amount refunded to wallet.',
         },
       );
     });
