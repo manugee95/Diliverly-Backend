@@ -1,28 +1,32 @@
 POST http://localhost:3000/quotes
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc2OTUzNTIzLCJleHAiOjE3NzY5NTcxMjMsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.fCDaHDSyG-kUque_XdQvJ0F2yxc1UWnLBkRhcpLU9dU
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc3NjUwNzAwLCJleHAiOjE3Nzc2NTQzMDAsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.haIIsBYC0cnlV5tQRfeevF_cwQqrlJEaM-VqvLt543M
 
 {
-    "requestId": 26,
+    "requestId": 21,
     "deliveryCosts": [
         {
-            "deliveryId":79,
-            "cost": 1500
+            "deliveryId":65,
+            "cost": 500
         },
         {
-            "deliveryId": 80,
-            "cost": 1200
+            "deliveryId": 66,
+            "cost": 200
         },
         {
-            "deliveryId": 81,
+            "deliveryId": 67,
+            "cost": 200
+        },
+        {
+            "deliveryId": 68,
             "cost": 1200
         }
     ]
 }
 
 
-POST http://localhost:3000/quotes/17
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3Njk1MTc5OSwiZXhwIjoxNzc2OTU1Mzk5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.LqarSf2tspiBa8_2W9scx8SZpDIMPFHPne9IyMS22U8
+POST http://localhost:3000/quotes/19
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NzY1MDgxMCwiZXhwIjoxNzc3NjU0NDEwLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.DtPxSIkJVA1ysVDL3lI-V8o8FJWdDjzDwPWaSqARY_Y
 
-POST http://localhost:3000/quotes/26/pay
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3Njk1MTc5OSwiZXhwIjoxNzc2OTU1Mzk5LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.LqarSf2tspiBa8_2W9scx8SZpDIMPFHPne9IyMS22U8
+POST http://localhost:3000/quotes/21/pay
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NzY1MDgxMCwiZXhwIjoxNzc3NjU0NDEwLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.DtPxSIkJVA1ysVDL3lI-V8o8FJWdDjzDwPWaSqARY_Y

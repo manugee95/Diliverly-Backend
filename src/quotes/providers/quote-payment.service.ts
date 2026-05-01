@@ -13,12 +13,9 @@ import { QuoteStatus } from '../enums/quoteStatus.enum';
 import { Wallet } from 'src/wallets/entities/wallet.entity';
 import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
 import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
-import { TransactionType } from 'src/transactions/enums/transactionType.enum';
-import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
 import { MailerService } from 'src/mailer/providers/mailer.service';
 import { Quote } from '../entities/quote.entity';
 import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
-import { Agent } from 'src/agent/agent.entity';
 import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
 import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
@@ -54,11 +51,12 @@ export class QuotePaymentService {
     vendorName: string;
     deliveryTitle: string;
     orderId: number;
+    reference: string;
   }) {
     try {
       await this.mailService.sendTemplate(
         payload.agentEmail,
-        'New Delivery Order 🎉',
+        `New Delivery Order: ${payload.reference}`,
         'agent-new-order',
         {
           agentName: payload.agentName,
@@ -145,6 +143,7 @@ export class QuotePaymentService {
         return {
           orderId: existingOrder.id,
           deliveryTitle: request.title,
+          reference: existingOrder.reference,
         };
       }
 
@@ -219,6 +218,7 @@ export class QuotePaymentService {
       return {
         orderId: order.id,
         deliveryTitle: request.title,
+        reference: order.reference,
       };
     });
   }
@@ -259,6 +259,7 @@ export class QuotePaymentService {
       vendorName: vendor.businessName || 'Vendor',
       deliveryTitle: result.deliveryTitle,
       orderId: result.orderId,
+      reference: result.reference, 
     });
 
     return result;

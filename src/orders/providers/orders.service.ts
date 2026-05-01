@@ -447,7 +447,6 @@ export class OrdersService {
   /**
    * Method to Handle prepaid delivery
    */
-
   private async handlePrepaidDelivery(orderItem: OrderItem) {
     await this.dataSource.transaction(async (manager) => {
       const oiRepo = manager.getRepository(OrderItem);
@@ -524,7 +523,9 @@ export class OrdersService {
     await this.notifyVendorDelivered({
       vendorEmail: orderItem.order.vendor.user.email,
       orderReference: orderItem.order.reference,
-      vendorName: orderItem.order.vendor.user.firstName,
+      vendorName:
+        orderItem.order.vendor.businessName ||
+        orderItem.order.vendor.user.firstName,
     });
 
     return { message: 'Delivered successfully. Escrow released to agent.' };
@@ -775,7 +776,9 @@ export class OrdersService {
     await this.notifyVendorCodPayment({
       vendorEmail: orderItem.order.vendor.user.email,
       orderReference: orderItem.order.reference,
-      vendorName: orderItem.order.vendor.user.firstName,
+      vendorName:
+        orderItem.order.vendor.businessName ||
+        orderItem.order.vendor.user.firstName,
       amountPaid: orderItem.codAmount,
       deliveryItem: orderItem.itemName,
     });
@@ -874,7 +877,9 @@ export class OrdersService {
     await this.notifyVendorCancelled({
       vendorEmail: orderItem.order.vendor.user.email,
       orderReference: orderItem.order.reference,
-      vendorName: orderItem.order.vendor.user.firstName,
+      vendorName:
+        orderItem.order.vendor.businessName ||
+        orderItem.order.vendor.user.firstName,
     });
 
     return { message: 'Order canceled. Vendor refunded from escrow.' };
@@ -934,7 +939,7 @@ export class OrdersService {
       await this.notifyVendorCompleted({
         vendorEmail: order.vendor.user.email,
         orderReference: order.reference,
-        vendorName: order.vendor.user.firstName,
+        vendorName: order.vendor.businessName || order.vendor.user.firstName,
       });
     }
   }
@@ -942,7 +947,6 @@ export class OrdersService {
   /**
    * Method to get orders assigned to an agent
    */
-
   async getOrdersAssignedToAgent(userId: number, ordersQuery: GetOrdersDto) {
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
@@ -1042,7 +1046,7 @@ export class OrdersService {
           'request.quotes',
           'request.quotes.agent',
           'request.quotes.deliveryCost',
-          'request.quotes.deliveryCost.delivery'
+          'request.quotes.deliveryCost.delivery',
         ],
         order: { createdAt: 'DESC' },
       },

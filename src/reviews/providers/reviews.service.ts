@@ -16,33 +16,16 @@ import { Paginated } from 'src/common/pagination/interfaces/paginated.interface'
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { Agent } from 'src/agent/agent.entity';
 import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider';
+import { MailerService } from 'src/mailer/providers/mailer.service';
 
 @Injectable()
 export class ReviewsService {
   constructor(
     /**
-     * Inject Order repository
-     */
-    @InjectRepository(Order)
-    private readonly orderRepo: Repository<Order>,
-
-    /**
      * Inject Review repository
      */
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
-
-    /**
-     * Inject Agent repository
-     */
-    @InjectRepository(Agent)
-    private readonly agentRepo: Repository<Agent>,
-
-    /**
-     * Inject Vendor repository
-     */
-    @InjectRepository(Vendor)
-    private readonly vendorRepo: Repository<Vendor>,
 
     /**
      * Inject Pagination Provider
@@ -58,7 +41,32 @@ export class ReviewsService {
      * Inject DataSource for transactions
      */
     private readonly dataSource: DataSource,
+
+    /**
+     * Inject Mail Service 
+     */
+    private readonly mailService: MailerService,
   ) {}
+
+  private async notifyAgent(payload: {
+    agentEmail: string;
+    agentName: string;
+    vendorName: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.agentEmail,
+        `${payload.vendorName} Just Left You A Review!`,
+        'order-review',
+        {
+          agentName: payload.agentName,
+          vendorName: payload.vendorName,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send agent email:', error);
+    }
+  }
 
   async rateAgent(userId: number, orderId: number, dto: RateAgentDto) {
     const { rating, review } = dto;
@@ -108,6 +116,14 @@ export class ReviewsService {
 
       if (!agent) throw new NotFoundException('Agent not found');
 
+      // Fetch agent full graph 
+      const agentFull = await agentRepo.findOne({
+        where: { id: agentId },
+        relations: ['user'],
+      });
+
+      if (!agentFull) throw new NotFoundException('Agent full details not found');
+
       // 5) Compute new rating safely
       const newRatingCount = agent.rating_count + 1;
       const newRatingAvg =
@@ -143,6 +159,13 @@ export class ReviewsService {
       });
 
       await reviewRepo.save(agentReview);
+
+      // 10) Notify agent about new review (async, no need to await)
+      this.notifyAgent({
+        agentEmail: agentFull.user.email,
+        agentName: agentFull.businessName || agentFull.user.firstName,
+        vendorName: vendor.businessName || vendor.user.firstName,
+      });
 
       return { message: 'Thank you for leaving a review' };
     });

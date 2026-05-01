@@ -8,6 +8,7 @@ import { Review } from './review.entity';
 import { PaginationModule } from 'src/common/pagination/pagination.module';
 import { Agent } from 'src/agent/agent.entity';
 import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
+import { MailerModule } from 'src/mailer/mailer.module';
 
 @Module({
   controllers: [ReviewsController],
@@ -16,6 +17,7 @@ import { TrustScoreModule } from 'src/common/trust-score/trust-score.module';
     TypeOrmModule.forFeature([Review, Agent, Order, Vendor]),
     PaginationModule,
     TrustScoreModule,
+    MailerModule,
   ],
 })
 export class ReviewsModule {}
