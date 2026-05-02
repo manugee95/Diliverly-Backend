@@ -4,4 +4,5 @@ export enum TransactionType {
   COMMISSION = 'commission',
   REFUND = 'refund',
   WITHDRAWAL = 'withdrawal',
+  WITHDRAWAL_FEE = 'withdrawal_fee'
 }

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Withdrawal } from '../withdrawal.entity';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { User } from 'src/users/user.entity';
 import { TransactionsService } from 'src/transactions/providers/transactions.service';
 import { ConfigService } from '@nestjs/config';
@@ -99,6 +99,43 @@ export class WithdrawalsService {
     }
   }
 
+  private async logWithdrawalTransactions(
+    user: User,
+    withdrawal: Withdrawal,
+    netAmount: number,
+    fee: number,
+    manager: EntityManager,
+  ) {
+    const basePayload = {
+      user,
+      reference: withdrawal.reference,
+      status: TransactionStatus.PENDING,
+      withdrawal,
+    };
+
+    await Promise.all([
+      this.transactionService.logTransaction(
+        {
+          ...basePayload,
+          type: TransactionType.WITHDRAWAL,
+          amount: netAmount,
+          description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
+        },
+        manager,
+      ),
+
+      this.transactionService.logTransaction(
+        {
+          ...basePayload,
+          type: TransactionType.WITHDRAWAL_FEE,
+          amount: fee,
+          description: `Withdrawal Fee`,
+        },
+        manager,
+      ),
+    ]);
+  }
+
   async manualWithdrawal(userId: number, amount: number) {
     const FLAT_WITHDRAWAL_FEE = 50;
 
@@ -155,6 +192,7 @@ export class WithdrawalsService {
       // Amount user actually receives
       const netAmountKobo = amountKobo - feeKobo;
       const netAmount = this.currencyConvert.toNaira(netAmountKobo);
+      const fee = this.currencyConvert.toNaira(feeKobo);
 
       // Create withdrawal record
       const withdrawal = withdrawalRepo.create({
@@ -167,16 +205,38 @@ export class WithdrawalsService {
       const savedWithdrawal = await withdrawalRepo.save(withdrawal);
 
       // Log transaction (PENDING because transfer not confirmed yet)
-      await this.transactionService.logTransaction(
-        {
-          user,
-          type: TransactionType.WITHDRAWAL,
-          amount: netAmount,
-          description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
-          reference: savedWithdrawal.reference,
-          status: TransactionStatus.PENDING,
-          withdrawal: savedWithdrawal,
-        },
+      // await this.transactionService.logTransaction(
+      //   {
+      //     user,
+      //     type: TransactionType.WITHDRAWAL,
+      //     amount: netAmount,
+      //     description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
+      //     reference: savedWithdrawal.reference,
+      //     status: TransactionStatus.PENDING,
+      //     withdrawal: savedWithdrawal,
+      //   },
+      //   manager,
+      // );
+
+      // Log Withdrawal Fee Transaction
+      // await this.transactionService.logTransaction(
+      //   {
+      //     user,
+      //     type: TransactionType.WITHDRAWAL,
+      //     amount: fee,
+      //     description: `Withdrawal Fee`,
+      //     reference: savedWithdrawal.reference,
+      //     status: TransactionStatus.PENDING,
+      //     withdrawal: savedWithdrawal,
+      //   },
+      //   manager,
+      // );
+
+      await this.logWithdrawalTransactions(
+        user,
+        savedWithdrawal,
+        netAmount,
+        fee,
         manager,
       );
 
@@ -269,7 +329,6 @@ export class WithdrawalsService {
         transferCode: transferRes.data.data.transfer_code,
       };
     } catch (error) {
-      console.error('PAYSTACK ERROR:', error.response?.data || error.message);
       throw new BadRequestException('Transfer initiation failed');
     }
   }
@@ -338,7 +397,7 @@ export class WithdrawalsService {
       withdrawal.status = WithdrawalStatus.FAILED;
       await withdrawalRepo.save(withdrawal);
 
-      // Refund wallet (IMPORTANT: stay consistent with units) 
+      // Refund wallet (IMPORTANT: stay consistent with units)
       const wallet = withdrawal.user.wallet;
 
       const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
@@ -392,7 +451,7 @@ export class WithdrawalsService {
       withdrawal.status = WithdrawalStatus.REVERSED;
       await withdrawalRepo.save(withdrawal);
 
-      // Refund wallet (IMPORTANT: stay consistent with units) 
+      // Refund wallet (IMPORTANT: stay consistent with units)
       const wallet = withdrawal.user.wallet;
 
       const currentBalanceKobo = Number(wallet.availableBalance ?? 0);

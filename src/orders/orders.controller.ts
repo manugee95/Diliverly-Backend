@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   Req,
@@ -12,7 +13,6 @@ import { OrdersService } from './providers/orders.service';
 import { CreateOrderDto } from './dtos/createOrder.dto';
 import { GetOrdersDto } from './dtos/getOrders.dto';
 import { MarkDeliveredDto } from './dtos/markDelivered.dto';
-import { VendorDecisionDto } from './dtos/vendorDecision.dto';
 import { CancelOrderItemDto } from './dtos/cancelOrderItem.dto';
 import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
 import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
@@ -160,5 +160,26 @@ export class OrdersController {
   async cancelOrderItem(@Req() req, @Body() dto: CancelOrderItemDto) {
     const userId = req.user.id;
     return this.ordersService.cancelOrderItem(userId, dto);
+  }
+
+  /**
+   * Endpoint to send reminder to vendor for providing delivery details
+   */
+  @ApiOperation({
+    summary: 'Send reminder to vendor for providing delivery details',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reminder sent successfully.',
+  })
+  @UseGuards(AgentGuard)
+  @Post(':orderId/remind-vendor')
+  async sendReminder(
+    @Param('orderId') orderId: number,
+    @Req() req,
+  ) {
+    const userId = req.user.id;
+
+    return this.ordersService.sendDeliveryDetailsReminder(userId, orderId);
   }
 }

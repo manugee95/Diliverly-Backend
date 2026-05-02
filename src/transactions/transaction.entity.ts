@@ -31,7 +31,6 @@ export class Transaction {
   @Column({ nullable: true })
   description: string;
 
-  @Index({ unique: true })
   @Column({ nullable: true })
   reference: string;
 

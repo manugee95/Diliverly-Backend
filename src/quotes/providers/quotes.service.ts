@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Quote } from '../entities/quote.entity';
@@ -96,67 +97,169 @@ export class QuotesService {
   /**
    * Method to create a quote for a delivery request
    */
+
+  // async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
+  //   const { requestId, deliveryCosts } = dto;
+
+  //   const agent = await this.agentRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+  //   if (!agent) throw new NotFoundException('Agent not found');
+
+  //   const request = await this.deliveryRequestRepo.findOne({
+  //     where: { id: requestId },
+  //     relations: ['deliveries', 'vendor', 'vendor.user'],
+  //   });
+  //   if (!request) throw new NotFoundException('Delivery request not found');
+
+  //   const existingQuote = await this.quoteRepo.findOne({
+  //     where: {
+  //       agent: { id: agent.id },
+  //       request: { id: request.id },
+  //     },
+  //   });
+
+  //   if (existingQuote) {
+  //     throw new BadRequestException(
+  //       'You have already submitted a quote for this delivery request',
+  //     );
+  //   }
+
+  //   const validDeliveryIds = request.deliveries.map((d) => d.id);
+
+  //   for (const { deliveryId } of deliveryCosts) {
+  //     if (!validDeliveryIds.includes(deliveryId)) {
+  //       throw new BadRequestException(
+  //         `Delivery ${deliveryId} does not belong to this request`,
+  //       );
+  //     }
+  //   }
+
+  //   const subtotal = deliveryCosts.reduce((sum, d) => sum + Number(d.cost), 0);
+
+  //   // Map real delivery entities
+  //   const deliveriesMap = new Map(request.deliveries.map((d) => [d.id, d]));
+
+  //   const quote = this.quoteRepo.create({
+  //     agent,
+  //     request,
+  //     subtotal,
+  //     deliveryCost: deliveryCosts.map((item) => ({
+  //       delivery: deliveriesMap.get(item.deliveryId),
+  //       cost: item.cost,
+  //     })),
+  //   });
+
+  //   await this.dashboardCacheProvider.invalidateAgent(agent.id);
+
+  //   await this.quotesCacheProvider.invalidateAgentQuotes(agent.id);
+  //   await this.quotesCacheProvider.invalidateVendorRequestQuotes(
+  //     request.vendor.id,
+  //     request.id,
+  //   );
+
+  //   // Send email notification to vendor
+  //   this.mailService.sendTemplate(
+  //     request.vendor.user.email,
+  //     'New Quote Received for Your Delivery Request',
+  //     'vendor-new-quotes',
+  //     {
+  //       vendorName:
+  //         request.vendor.businessName || request.vendor.user.firstName,
+  //       requestTitle: request.title,
+  //       agentName: agent.businessName || agent.user.firstName,
+  //     },
+  //   );
+
+  //   return await this.quoteRepo.save(quote);
+  // }
+
   async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
     const { requestId, deliveryCosts } = dto;
 
-    const agent = await this.agentRepo.findOne({
-      where: { user: { id: userId } },
-    });
-    if (!agent) throw new NotFoundException('Agent not found');
+    const savedQuote = await this.dataSource.transaction(async (manager) => {
+      const agentRepo = manager.getRepository(Agent);
+      const requestRepo = manager.getRepository(DeliveryRequest);
+      const quoteRepo = manager.getRepository(Quote);
 
-    const request = await this.deliveryRequestRepo.findOne({
-      where: { id: requestId },
-      relations: ['deliveries', 'vendor', 'vendor.user'],
-    });
-    if (!request) throw new NotFoundException('Delivery request not found');
+      const agent = await agentRepo.findOne({
+        where: { user: { id: userId } },
+      });
+      if (!agent) throw new NotFoundException('Agent not found');
 
-    const existingQuote = await this.quoteRepo.findOne({
-      where: {
-        agent: { id: agent.id },
-        request: { id: request.id },
-      },
-    });
+      const request = await requestRepo.findOne({
+        where: { id: requestId },
+        lock: { mode: 'pessimistic_read' },
+      });
+      if (!request) throw new NotFoundException('Delivery request not found');
 
-    if (existingQuote) {
-      throw new BadRequestException(
-        'You have already submitted a quote for this delivery request',
-      );
-    }
+      const requestWithRelations = await requestRepo.findOne({
+        where: { id: requestId },
+        relations: ['deliveries', 'vendor', 'vendor.user'],
+      });
+      if (!requestWithRelations)
+        throw new NotFoundException('Delivery request not found');
 
-    const validDeliveryIds = request.deliveries.map((d) => d.id);
+      const existingQuote = await quoteRepo.findOne({
+        where: {
+          agent: { id: agent.id },
+          request: { id: request.id },
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    for (const { deliveryId } of deliveryCosts) {
-      if (!validDeliveryIds.includes(deliveryId)) {
-        throw new BadRequestException(
-          `Delivery ${deliveryId} does not belong to this request`,
-        );
+      if (existingQuote) {
+        throw new BadRequestException('You have already submitted a quote');
       }
-    }
 
-    const subtotal = deliveryCosts.reduce((sum, d) => sum + Number(d.cost), 0);
+      const subtotal = deliveryCosts.reduce(
+        (sum, d) => sum + Number(d.cost),
+        0,
+      );
 
-    // Map real delivery entities
-    const deliveriesMap = new Map(request.deliveries.map((d) => [d.id, d]));
+      const deliveriesMap = new Map(
+        requestWithRelations.deliveries.map((d) => [d.id, d]),
+      );
 
-    const quote = this.quoteRepo.create({
-      agent,
-      request,
-      subtotal,
-      deliveryCost: deliveryCosts.map((item) => ({
-        delivery: deliveriesMap.get(item.deliveryId),
-        cost: item.cost,
-      })),
+      const quote = quoteRepo.create({
+        agent,
+        request: requestWithRelations,
+        subtotal,
+        deliveryCost: deliveryCosts.map((item) => ({
+          delivery: deliveriesMap.get(item.deliveryId),
+          cost: item.cost,
+        })),
+      });
+
+      return await quoteRepo.save(quote);
     });
 
-    await this.dashboardCacheProvider.invalidateAgent(agent.id);
+    // AFTER transaction succeeds
+    await this.dashboardCacheProvider.invalidateAgent(savedQuote.agent.id);
 
-    await this.quotesCacheProvider.invalidateAgentQuotes(agent.id);
+    await this.quotesCacheProvider.invalidateAgentQuotes(savedQuote.agent.id);
+
     await this.quotesCacheProvider.invalidateVendorRequestQuotes(
-      request.vendor.id,
-      request.id,
+      savedQuote.request.vendor.id,
+      savedQuote.request.id,
     );
 
-    return await this.quoteRepo.save(quote);
+    // Send email AFTER commit
+    await this.mailService.sendTemplate(
+      savedQuote.request.vendor.user.email,
+      'New Quote Received for Your Delivery Request',
+      'vendor-new-quotes',
+      {
+        vendorName:
+          savedQuote.request.vendor.businessName ||
+          savedQuote.request.vendor.user.firstName,
+        requestTitle: savedQuote.request.title,
+        agentName:
+          savedQuote.agent.businessName || savedQuote.agent.user.firstName,
+      },
+    );
+
+    return savedQuote;
   }
 
   /**
@@ -283,12 +386,7 @@ export class QuotesService {
   async getQuoteById(userId: number, quoteId: number) {
     const quote = await this.quoteRepo.findOne({
       where: { id: quoteId },
-      relations: [
-        'agent',
-        'agent.user',
-        'request',
-        'request.vendor',
-      ],
+      relations: ['agent', 'agent.user', 'request', 'request.vendor'],
     });
 
     if (!quote) throw new NotFoundException('Quote not found');
@@ -382,20 +480,6 @@ export class QuotesService {
         deliveryTitle: fullQuote.request.title,
       };
     });
-
-    // OUTSIDE TRANSACTION
-
-    // 9. Send email
-    // await this.mailService.sendTemplate(
-    //   result.agentEmail,
-    //   'Your delivery quote has been accepted',
-    //   'vendor-accepts-quote',
-    //   {
-    //     agentName: result.agentName,
-    //     vendorName: result.vendorName,
-    //     deliveryTitle: result.deliveryTitle,
-    //   },
-    // );
 
     // 10. Invalidate caches
     await this.dashboardCacheProvider.invalidateBoth(

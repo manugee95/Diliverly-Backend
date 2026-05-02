@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -246,6 +247,31 @@ export class OrdersService {
   }
 
   /**
+   * Method to notify vendor to provide delivery details
+   */
+  private async notifyVendorReminder(payload: {
+    vendorEmail: string;
+    orderReference: string;
+    vendorName: string;
+    orderUrl: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.vendorEmail,
+        `Reminder: Provide Delivery Details for Order ${payload.orderReference}`,
+        'send-reminder',
+        {
+          orderReference: payload.orderReference,
+          vendorName: payload.vendorName,
+          orderUrl: payload.orderUrl,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send vendor email:', error);
+    }
+  }
+
+  /**
    * Method to create order items for an order
    */
   async createOrderItem(userId: number, dto: CreateOrderDto) {
@@ -411,6 +437,11 @@ export class OrdersService {
 
       // Mark order ACTIVE after vendor completes details
       await orderRepo.update(order.id, { status: OrderStatus.ACTIVE });
+
+      // Update order
+      order.deliveryDetailsProvided = true;
+      order.status = OrderStatus.IN_PROGRESS;
+      await orderRepo.save(order);
 
       // Clear cache for vendor and agent dashboards
       if (orderWithRelations?.vendor?.id) {
@@ -1067,7 +1098,6 @@ export class OrdersService {
   /**
    * Method to get order Items for an order
    */
-
   async getOrderItems(orderId: number) {
     const cached = await this.ordersCacheProvider.getOrderItems(orderId);
     if (cached) return cached;
@@ -1079,5 +1109,119 @@ export class OrdersService {
     await this.ordersCacheProvider.setOrderItems(orderId, items);
 
     return items;
+  }
+
+  /**
+   * Method to send remider
+   */
+  async sendDeliveryDetailsReminder(userId: number, orderId: number) {
+    let emailPayload: {
+      vendorEmail: string;
+      orderReference: string;
+      vendorName: string;
+      orderUrl: string;
+    } | null = null;
+
+    await this.dataSource.transaction(async (manager) => {
+      const agentRepo = manager.getRepository(Agent);
+      const orderRepo = manager.getRepository(Order);
+
+      const agent = await agentRepo.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!agent) throw new BadRequestException('Agent not found');
+
+      const order = await orderRepo.findOne({
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      const orderWithRelations = await orderRepo.findOne({
+        where: { id: orderId },
+        relations: [
+          'vendor',
+          'vendor.user',
+          'items',
+          'items.agent',
+          'request',
+          'request.quotes',
+          'request.quotes.agent',
+        ],
+      });
+
+      if (!orderWithRelations) {
+        throw new NotFoundException('Order not found');
+      }
+
+      // Ensure agent is assigned
+      const isAgentAssigned = orderWithRelations.request.quotes.some(
+        (q) =>
+          q.agent &&
+          q.agent.id === agent.id &&
+          q.status === QuoteStatus.ACCEPTED,
+      );
+
+      if (!isAgentAssigned) {
+        throw new ForbiddenException('You are not assigned to this order');
+      }
+
+      // Check delivery details
+      if (order.deliveryDetailsProvided) {
+        throw new BadRequestException(
+          'Vendor has already provided delivery details',
+        );
+      }
+
+      // Check order status
+      if (order.status !== OrderStatus.PENDING) {
+        throw new BadRequestException(
+          'Reminder can only be sent for pending orders',
+        );
+      }
+
+      // Enforce 6-hour cooldown
+      if (order.lastReminderSentAt) {
+        const now = Date.now();
+        const lastSent = new Date(order.lastReminderSentAt).getTime();
+
+        const diffInHours = (now - lastSent) / (1000 * 60 * 60);
+
+        if (diffInHours < 6) {
+          throw new BadRequestException(
+            `You can send another reminder in ${(6 - diffInHours).toFixed(
+              1,
+            )} hours`,
+          );
+        }
+      }
+
+      // Update timestamp FIRST (inside transaction)
+      order.lastReminderSentAt = new Date();
+      await orderRepo.save(order);
+
+      // Prepare email payload (DO NOT SEND YET)
+      emailPayload = {
+        vendorEmail: orderWithRelations.vendor.user.email,
+        orderReference: orderWithRelations.reference,
+        vendorName:
+          orderWithRelations.vendor.businessName ||
+          orderWithRelations.vendor.user.firstName,
+        orderUrl: `${process.env.FRONTEND_URL}/vendor/orders/${order.id}`,
+      };
+    });
+
+    // Send email AFTER transaction commits
+    if (emailPayload) {
+      await this.notifyVendorReminder(emailPayload);
+    }
+
+    return {
+      message: 'Reminder sent successfully',
+    };
   }
 }

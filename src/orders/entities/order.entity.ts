@@ -48,6 +48,12 @@ export class Order {
   @OneToOne(() => Review, (review) => review.order)
   review: Review;
 
+  @Column({ type: 'timestamp', nullable: true })
+  lastReminderSentAt?: Date;
+
+  @Column({ default: false })
+  deliveryDetailsProvided: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
