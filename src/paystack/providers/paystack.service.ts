@@ -103,14 +103,16 @@ export class PaystackService {
   // }
 
   async handleTransferApproval(event: any): Promise<boolean> {
-    const transfer = event.data;
+    const requestBody = event.details?.body;
+    const transfer = event.transfers?.[0];
 
-    console.log(transfer);
-    
+    if (!requestBody || !transfer) {
+      return false;
+    }
 
-    // Example checks
-    const amount = transfer.amount;
-    const reference = transfer.reference;
+    // checks
+    const amount = requestBody.amount;
+    const reference = requestBody.reference;
 
     // My rules (IMPORTANT)
     // ------------------------
@@ -128,7 +130,10 @@ export class PaystackService {
     // 3. Wallet balance validation
     if (tx.amount !== amount) return false;
 
-    await this.transactionRepo.save(tx);
+    // // 4. Validate recipient code
+    // if (tx.recipientCode !== recipient) {
+    //   return false;
+    // }
 
     return true;
   }
@@ -150,7 +155,8 @@ export class PaystackService {
       return response.data.data;
     } catch (error) {
       throw new Error(
-        (error as any).response?.data?.message || 'Failed to create Paystack customer',
+        (error as any).response?.data?.message ||
+          'Failed to create Paystack customer',
       );
     }
   }
@@ -171,7 +177,8 @@ export class PaystackService {
       return response.data.data;
     } catch (error) {
       throw new Error(
-        (error as any).response?.data?.message || 'Failed to create dedicated account',
+        (error as any).response?.data?.message ||
+          'Failed to create dedicated account',
       );
     }
   }

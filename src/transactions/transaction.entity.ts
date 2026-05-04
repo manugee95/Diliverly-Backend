@@ -24,7 +24,7 @@ export class Transaction {
   @Column({ type: 'enum', enum: TransactionType })
   type!: TransactionType;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'bigint', default: 0 })
   amount!: number;
 
   @Column({ nullable: true })
@@ -32,6 +32,9 @@ export class Transaction {
 
   @Column({ nullable: true })
   reference!: string;
+
+  @Column({ nullable: true })
+  recipientCode?: string;
 
   @Column({ type: 'enum', enum: TransactionStatus })
   status!: TransactionStatus;

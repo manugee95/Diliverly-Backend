@@ -763,7 +763,7 @@ export class OrdersService {
           {
             user: agentUserEntity,
             type: TransactionType.DEBIT,
-            amount: this.currencyConvert.toNaira(codAmountKobo),
+            amount: codAmountKobo,
             description: `COD paid to vendor...`,
             reference: transactionRef,
             status: TransactionStatus.SUCCESSFUL,
@@ -777,7 +777,7 @@ export class OrdersService {
           {
             user: vendorUserEntity,
             type: TransactionType.CREDIT,
-            amount: this.currencyConvert.toNaira(codAmountKobo),
+            amount: codAmountKobo,
             description: `COD received from agent for order #${oi.order.reference}, item #${oi.id}`,
             orderItem: oi,
             reference: transactionRef,

@@ -178,7 +178,7 @@ export class WithdrawalsService {
       // Amount user actually receives
       const netAmountKobo = amountKobo - feeKobo;
       const netAmount = this.currencyConvert.toNaira(netAmountKobo);
-      const fee = this.currencyConvert.toNaira(feeKobo);
+      // const fee = this.currencyConvert.toNaira(feeKobo);
 
       // Generate unique reference
       const reference = `WD-${generateTransactionRef()}`;
@@ -186,7 +186,7 @@ export class WithdrawalsService {
       // Create withdrawal record
       const withdrawal = withdrawalRepo.create({
         user: { id: userId } as any,
-        amount: netAmount,
+        amount: netAmountKobo,
         reference: reference,
         status: WithdrawalStatus.PROCESSING,
       });
@@ -196,8 +196,8 @@ export class WithdrawalsService {
       await this.logWithdrawalTransactions(
         user,
         savedWithdrawal,
-        netAmount,
-        fee,
+        netAmountKobo,
+        feeKobo,
         manager,
       );
 
@@ -228,7 +228,6 @@ export class WithdrawalsService {
         message: 'Withdrawal initiated successfully',
         reference: savedWithdrawal.reference,
         status: WithdrawalStatus.PROCESSING,
-        transferCode: transfer.transferCode,
       };
     });
   }

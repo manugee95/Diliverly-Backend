@@ -98,7 +98,7 @@ export class WalletFundingService {
         {
           user: { id: userId } as User,
           type: TransactionType.CREDIT,
-          amount: amountPaidNaira,
+          amount: amountPaidKobo,
           description: 'Wallet funding via Paystack',
           reference,
           status: TransactionStatus.SUCCESSFUL,
@@ -124,11 +124,14 @@ export class WalletFundingService {
     // Generate unique reference
     const reference = `FUND-${generateTransactionRef()}`;
 
+    // convert naira to kobo for storage
+    const amountKobo = this.currencyConvert.toKobo(amount);
+
     // Create pending funding record (idempotency is by unique reference)
     await this.fundingRepo.save(
       this.fundingRepo.create({
         user: { id: userId },
-        amount: amount,
+        amount: amountKobo,
         reference,
         status: FundingStatus.PENDING,
       }),
@@ -152,27 +155,29 @@ export class WalletFundingService {
   /**
    * Verify payment and fund wallet. (temporary method for dev, webhook is the source of truth in production)
    */
-  async verifyAndFundWallet(reference: string) {
-    const verification = await this.paystack.verifyTransaction(reference);
 
-    const ok = verification?.status === true;
-    const status = verification?.data?.status; // 'success'
-    if (!ok || status !== 'success') {
-      return { verified: false, reference, verification };
-    }
+  // async verifyAndFundWallet(reference: string) {
+  //   const verification = await this.paystack.verifyTransaction(reference);
 
-    const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
+  //   const ok = verification?.status === true;
+  //   const status = verification?.data?.status; // 'success'
+  //   if (!ok || status !== 'success') {
+  //     return { verified: false, reference, verification };
+  //   }
 
-    //This is the temporary replacement for webhook in dev
-    await this.finalizeFunding(reference, amountPaidNaira, verification);
+  //   const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
 
-    return { verified: true, reference };
-  }
+  //   //This is the temporary replacement for webhook in dev
+  //   await this.finalizeFunding(reference, amountPaidNaira, verification);
+
+  //   return { verified: true, reference };
+  // }
 
   /**
    * Paystack webhook handler core logic.
    * Call this from controller after verifying signature.
    */
+
   async handleSuccessfulCharge(data: any) {
     if (!data) return;
 

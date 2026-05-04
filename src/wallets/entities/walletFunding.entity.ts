@@ -23,7 +23,7 @@ export class WalletFunding {
   @Column()
   userId!: number;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  @Column({ type: 'bigint', default: 0 })
   amount!: number;
 
   @Index({ unique: true })

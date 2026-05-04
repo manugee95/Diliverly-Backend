@@ -97,7 +97,7 @@ export class EscrowService {
         {
           user: oi.agent.user,
           type: TransactionType.CREDIT,
-          amount: this.currencyConvert.toNaira(agentEarningKobo),
+          amount: agentEarningKobo,
           description: `Escrow released for delivery item #${oi.id}`,
           reference: `ESCROW-REL-${oi.id}`,
           status: TransactionStatus.SUCCESSFUL,
@@ -175,7 +175,7 @@ export class EscrowService {
         {
           user: oi.order.vendor.user,
           type: TransactionType.CREDIT,
-          amount: this.currencyConvert.toNaira(feeKobo),
+          amount: feeKobo,
           description: `Escrow refunded for cancelled item #${oi.id}`,
           reference: `ESCROW-REF-${oi.id}`,
           status: TransactionStatus.SUCCESSFUL,

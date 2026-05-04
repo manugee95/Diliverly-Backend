@@ -39,14 +39,11 @@ export class TransactionsQueryService {
     );
 
     // Format amounts to 2 decimal places
-    const formattedData = transactions.data.map((tx) => ({
-      ...tx,
-      amount: Number(tx.amount).toFixed(2),
-    }));
+    // const formattedData = transactions.data.map((tx) => ({
+    //   ...tx,
+    //   amount: Number(tx.amount).toFixed(2),
+    // }));
 
-    return {
-      ...transactions,
-      data: formattedData,
-    };
+    return transactions;
   }
 }
