@@ -9,7 +9,6 @@ import { WalletFundingService } from './providers/wallet-funding.service';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { WalletsService } from './providers/wallets.service';
 import { CurrencyConvertProvider } from '../common/providers/currency-convert.provider';
-import { PaystackService } from '../paystack/providers/paystack.service';
 
 @Controller('wallets')
 export class WalletsController {
@@ -20,7 +19,6 @@ export class WalletsController {
     private readonly walletFundingService: WalletFundingService,
     private readonly walletsService: WalletsService,
     private readonly currencyConvert: CurrencyConvertProvider,
-    private readonly paystackService: PaystackService
   ) {}
 
   /**

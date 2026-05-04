@@ -7,10 +7,11 @@ import { PaginationModule } from '../common/pagination/pagination.module';
 import { OrderItem } from '../orders/entities/orderItem.entity';
 import { User } from '../users/user.entity';
 import { TransactionsQueryService } from './providers/transactions-query.service';
+import { CurrencyConvertProvider } from '../common/providers/currency-convert.provider';
 
 @Module({
   controllers: [TransactionsController],
-  providers: [TransactionsService, TransactionsQueryService],
+  providers: [TransactionsService, TransactionsQueryService, CurrencyConvertProvider],
   imports: [
     TypeOrmModule.forFeature([Transaction, OrderItem, User]),
     PaginationModule,

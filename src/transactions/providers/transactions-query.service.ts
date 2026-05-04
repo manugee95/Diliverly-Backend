@@ -5,6 +5,7 @@ import { Transaction } from '../transaction.entity';
 import { Repository } from 'typeorm';
 import { GetTransactionsDto } from '../dtos/get-transactions.dto';
 import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
 
 @Injectable()
 export class TransactionsQueryService {
@@ -19,6 +20,7 @@ export class TransactionsQueryService {
      */
     @InjectRepository(Transaction)
     private readonly transRepo: Repository<Transaction>,
+    private readonly currencyConvert: CurrencyConvertProvider
   ) {}
 
   // Get paginated transaction history for a user
@@ -39,11 +41,14 @@ export class TransactionsQueryService {
     );
 
     // Format amounts to 2 decimal places
-    // const formattedData = transactions.data.map((tx) => ({
-    //   ...tx,
-    //   amount: Number(tx.amount).toFixed(2),
-    // }));
+    const formattedData = transactions.data.map((tx) => ({
+      ...tx,
+      amount: this.currencyConvert.formatNaira(tx.amount),
+    }));
 
-    return transactions;
+    return {
+      ...transactions,
+      data: formattedData,
+    };
   }
 }
