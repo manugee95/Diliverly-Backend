@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { PaystackService } from 'src/paystack/providers/paystack.service';
-import { User } from 'src/users/user.entity';
+import { PaystackService } from '../../paystack/providers/paystack.service';
+import { User } from '../../users/user.entity';
 import { DataSource } from 'typeorm';
 import { VirtualAccount } from '../virtual-account.entity';
-import { WalletFunding } from 'src/wallets/entities/walletFunding.entity';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
-import { Transaction } from 'src/transactions/transaction.entity';
-import { FundingStatus } from 'src/wallets/enums/fundingStatus.enum';
-import { TransactionType } from 'src/transactions/enums/transactionType.enum';
-import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
+import { WalletFunding } from '../../wallets/entities/walletFunding.entity';
+import { Wallet } from '../../wallets/entities/wallet.entity';
+import { Transaction } from '../../transactions/transaction.entity';
+import { FundingStatus } from '../../wallets/enums/fundingStatus.enum';
+import { TransactionType } from '../../transactions/enums/transactionType.enum';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
 
 @Injectable()
 export class VirtualAccountService {

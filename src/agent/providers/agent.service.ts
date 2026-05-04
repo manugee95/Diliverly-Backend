@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/users/user.entity';
+import { User } from '../../users/user.entity';
 import { CreateAgentDto } from '../dtos/create-agent.dto';
 import { GetAgentsDto } from '../dtos/get-agents.dto';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { Agent } from '../agent.entity';
 
 @Injectable()

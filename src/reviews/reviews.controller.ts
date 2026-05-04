@@ -10,11 +10,8 @@ import {
 } from '@nestjs/common';
 import { ReviewsService } from './providers/reviews.service';
 import { RateAgentDto } from './dtos/rate-agent.dto';
-import { Roles } from 'src/auth/decorators/roles.decorator';
-import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
-import { UserRole } from 'src/users/enums/userRole.enum';
 import { GetReviewsDto } from './dtos/get-review.dto';
-import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
+import { VendorGuard } from '../auth/guards/roles/vendor.guard';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 
 @Controller('reviews')

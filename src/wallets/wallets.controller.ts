@@ -2,21 +2,14 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
-  HttpCode,
-  HttpStatus,
   Post,
-  Query,
   Req,
 } from '@nestjs/common';
 import { WalletFundingService } from './providers/wallet-funding.service';
-import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { WalletsService } from './providers/wallets.service';
-import * as crypto from 'crypto';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { AuthType } from 'src/auth/enums/auth-type.enum';
-import { PaystackService } from 'src/paystack/providers/paystack.service';
+import { CurrencyConvertProvider } from '../common/providers/currency-convert.provider';
+import { PaystackService } from '../paystack/providers/paystack.service';
 
 @Controller('wallets')
 export class WalletsController {
@@ -63,32 +56,32 @@ export class WalletsController {
   /**
    * Endpoint to verify and fund wallet after Paystack callback
    */
-  @ApiOperation({
-    summary:
-      "Verifies Paystack payment and funds the user's wallet accordingly.",
-  })
-  @ApiResponse({
-    status: 201,
-    description:
-      "Verifies Paystack payment and funds the user's wallet accordingly.",
-    schema: {
-      example: {
-        authorizationUrl: 'https://paystack.com/pay/abc123',
-      },
-    },
-  })
-  @ApiQuery({
-    name: 'reference',
-    type: 'string',
-    required: true,
-    description:
-      'The unique payment reference returned by Paystack after payment.',
-    example: 'abc123',
-  })
-  @Get('verify')
-  public async verifyPayment(@Query('reference') reference: string) {
-    return await this.walletFundingService.verifyAndFundWallet(reference);
-  }
+  // @ApiOperation({
+  //   summary:
+  //     "Verifies Paystack payment and funds the user's wallet accordingly.",
+  // })
+  // @ApiResponse({
+  //   status: 201,
+  //   description:
+  //     "Verifies Paystack payment and funds the user's wallet accordingly.",
+  //   schema: {
+  //     example: {
+  //       authorizationUrl: 'https://paystack.com/pay/abc123',
+  //     },
+  //   },
+  // })
+  // @ApiQuery({
+  //   name: 'reference',
+  //   type: 'string',
+  //   required: true,
+  //   description:
+  //     'The unique payment reference returned by Paystack after payment.',
+  //   example: 'abc123',
+  // })
+  // @Get('verify')
+  // public async verifyPayment(@Query('reference') reference: string) {
+  //   return await this.walletFundingService.verifyAndFundWallet(reference);
+  // }
 
   
   /**

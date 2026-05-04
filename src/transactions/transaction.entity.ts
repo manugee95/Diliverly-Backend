@@ -3,7 +3,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  Index,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -17,37 +16,37 @@ import { Order } from '../orders/entities/order.entity';
 @Entity()
 export class Transaction {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => User, { nullable: false })
-  user: User;
+  user!: User;
 
   @Column({ type: 'enum', enum: TransactionType })
-  type: TransactionType;
+  type!: TransactionType;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column({ nullable: true })
-  description: string;
+  description!: string;
 
   @Column({ nullable: true })
-  reference: string;
+  reference!: string;
 
   @Column({ type: 'enum', enum: TransactionStatus })
-  status: TransactionStatus;
+  status!: TransactionStatus;
 
   @OneToOne(() => Order, { nullable: true })
-  order: Order;
+  order!: Order;
 
   @ManyToOne(() => OrderItem, { nullable: true })
-  orderItem: OrderItem;
+  orderItem!: OrderItem;
 
   @OneToOne(() => Withdrawal, (withdrawal) => withdrawal.transaction, {
     nullable: true,
   })
-  withdrawal: Withdrawal;
+  withdrawal!: Withdrawal;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

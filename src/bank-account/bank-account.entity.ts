@@ -11,12 +11,12 @@ import {
 @Entity()
 export class Bank_Account {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @OneToOne(() => User, (user) => user.bank_account, {
     onDelete: 'SET NULL',
   })
-  user: User;
+  user!: User;
 
   @Column({ nullable: true })
   bankName?: string;
@@ -31,8 +31,8 @@ export class Bank_Account {
   accountNumber?: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

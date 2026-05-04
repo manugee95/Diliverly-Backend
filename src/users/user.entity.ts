@@ -19,56 +19,56 @@ import { Wallet } from '../wallets/entities/wallet.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ default: false })
-  isAgent: boolean;
+  isAgent!: boolean;
 
   @Column({ default: false })
-  isVendor: boolean;
+  isVendor!: boolean;
 
   @Column({ unique: true, type: 'varchar', length: 96 })
-  email: string;
+  email!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   @Exclude()
-  password: string;
+  password!: string;
 
   @Column({ type: 'varchar', length: 96 })
-  firstName: string;
+  firstName!: string;
 
   @Column({ type: 'varchar', length: 96 })
-  lastName: string;
+  lastName!: string;
 
   @Column({ type: 'varchar', length: 15, nullable: true })
   phone?: string;
 
   @OneToOne(() => Agent, (agent) => agent.user)
-  agent: Agent;
+  agent!: Agent;
 
   @OneToOne(() => Vendor, (vendor) => vendor.user)
-  vendor: Vendor;
+  vendor!: Vendor;
 
   @Column({
     type: 'enum',
     enum: UserStatus,
   })
-  status: UserStatus;
+  status!: UserStatus;
 
   @Column({ nullable: true })
   profileImageUrl?: string;
 
   @OneToOne(() => Wallet, (wallet) => wallet.user)
-  wallet: Wallet;
+  wallet!: Wallet;
 
   @OneToOne(() => Bank_Account, (bank_account) => bank_account.user, {
     onDelete: 'SET NULL',
   })
   @JoinColumn()
-  bank_account: Bank_Account;
+  bank_account!: Bank_Account;
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
-  transactions: Transaction[];
+  transactions!: Transaction[];
 
   @Column({ type: 'varchar', length: 6, nullable: true })
   verificationCode?: string;
@@ -83,8 +83,8 @@ export class User {
   resetCodeExpiresAt?: Date;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

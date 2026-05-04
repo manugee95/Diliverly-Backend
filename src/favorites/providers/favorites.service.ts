@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Vendor } from '../../vendor/vendor.entity';
 import { FavoriteAgent } from '../favorite-agent.entity';
-import { Agent } from 'src/agent/agent.entity';
+import { Agent } from '../../agent/agent.entity';
 import { GetFavoritesDto } from '../dtos/get-favorite.dto';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { FavoritesCacheProvider } from './favorites.provider';
 
 @Injectable()

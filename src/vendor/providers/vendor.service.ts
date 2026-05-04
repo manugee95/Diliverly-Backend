@@ -7,12 +7,11 @@ import {
 import { Vendor } from '../vendor.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/user.entity';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { User } from '../../users/user.entity';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { CreateVendorDto } from '../dtos/create-vendor.dto';
 import { GetVendorsDto } from '../dtos/get-vendors.dto';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
-import { UpdateVendorDto } from '../dtos/patch-vendor.dto';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
 
 @Injectable()
 export class VendorService {

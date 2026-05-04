@@ -18,37 +18,37 @@ import { Agent } from '../../agent/agent.entity';
 @Index('idx_order_item_agent', ['agent'])
 export class OrderItem {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Order, (order) => order.items, {
     onDelete: 'CASCADE',
     nullable: false,
   })
-  order: Order;
+  order!: Order;
 
   @ManyToOne(() => Agent, (agent) => agent.orderItems, { nullable: false })
-  agent: Agent;
+  agent!: Agent;
 
   @ManyToOne(() => Delivery, { onDelete: 'CASCADE', nullable: false })
-  delivery: Delivery;
+  delivery!: Delivery;
 
   @Column()
-  itemName: string;
+  itemName!: string;
 
   @Column()
-  quantity: number;
+  quantity!: number;
 
   @Column()
-  buyerName: string;
+  buyerName!: string;
 
   @Column()
-  buyerPhone: string;
+  buyerPhone!: string;
 
   @Column({ type: 'enum', enum: DeliveryType, nullable: true })
   deliveryType?: DeliveryType;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  cost: number;
+  cost!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   codAmount?: number;
@@ -61,11 +61,11 @@ export class OrderItem {
     enum: OrderStatus,
     default: OrderStatus.IN_PROGRESS,
   })
-  status: OrderStatus;
+  status!: OrderStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

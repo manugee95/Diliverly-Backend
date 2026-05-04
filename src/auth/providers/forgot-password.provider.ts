@@ -1,13 +1,13 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MailerService } from 'src/mailer/providers/mailer.service';
-import { User } from 'src/users/user.entity';
+import { MailerService } from '../../mailer/providers/mailer.service';
+import { User } from '../../users/user.entity';
 import { Repository } from 'typeorm';
 import { ForgotPasswordDto } from '../dtos/forgot-password.dto';
 import { VerifyResetCodeDto } from '../dtos/verify-reset-code.dto';
 import * as bcrypt from 'bcrypt';
 import { ResetPasswordDto } from '../dtos/reset-password.dto';
-import { generateVerificationCode } from 'src/common/utils/verification-code.util';
+import { generateVerificationCode } from '../../common/utils/verification-code.util';
 
 @Injectable()
 export class ForgotPasswordProvider {

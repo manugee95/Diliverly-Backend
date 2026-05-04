@@ -12,18 +12,18 @@ import { Agent } from '../agent/agent.entity';
 @Unique(['vendor', 'agent'])
 export class FavoriteAgent {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Vendor, (vendor) => vendor.favoriteAgents, {
     onDelete: 'CASCADE',
   })
-  vendor: Vendor;
+  vendor!: Vendor;
 
   @ManyToOne(() => Agent, (agent) => agent.favoriteByVendors, {
     onDelete: 'CASCADE',
   })
-  agent: Agent;
+  agent!: Agent;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

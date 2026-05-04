@@ -11,33 +11,33 @@ import {
 @Entity()
 export class VirtualAccount {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn()
-  user: User;
+  user!: User;
 
   @Column()
-  userId: number;
+  userId!: number;
 
   @Column()
-  customerCode: string;
+  customerCode!: string;
 
   @Column()
-  accountNumber: string;
+  accountNumber!: string;
 
   @Column()
-  bankName: string;
+  bankName!: string;
 
   @Column()
-  accountName: string;
+  accountName!: string;
 
   @Column({ nullable: true })
-  paystackDvaId: string;
+  paystackDvaId!: string;
 
   @Column({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

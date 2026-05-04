@@ -1,10 +1,10 @@
 import { Controller, Post, Req, Headers } from '@nestjs/common';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { AuthType } from 'src/auth/enums/auth-type.enum';
-import { PaystackService } from 'src/paystack/providers/paystack.service';
-import { VirtualAccountService } from 'src/virtual-account/providers/virtual-account.service';
-import { WalletFundingService } from 'src/wallets/providers/wallet-funding.service';
-import { WithdrawalsService } from 'src/withdrawals/providers/withdrawals.service';
+import { Auth } from '../auth/decorators/auth.decorator';
+import { AuthType } from '../auth/enums/auth-type.enum';
+import { PaystackService } from '../paystack/providers/paystack.service';
+import { VirtualAccountService } from '../virtual-account/providers/virtual-account.service';
+import { WalletFundingService } from '../wallets/providers/wallet-funding.service';
+import { WithdrawalsService } from '../withdrawals/providers/withdrawals.service';
 
 @Controller('webhook')
 export class WebhookController {

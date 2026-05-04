@@ -17,18 +17,18 @@ import { FavoriteAgent } from '../favorites/favorite-agent.entity';
 @Entity()
 export class Agent {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @OneToOne(() => User, (user) => user.agent, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  user: User;
+  user!: User;
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.agent, {
     nullable: false,
   })
-  orderItems: OrderItem[];
+  orderItems!: OrderItem[];
 
   @Column({ nullable: true })
   businessName?: string;
@@ -43,32 +43,32 @@ export class Agent {
   statesCovered?: string[];
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
-  rating_avg: number;
+  rating_avg!: number;
 
   @Column({ type: 'float', default: 0 })
-  trust_score: number;
+  trust_score!: number;
 
   @Column({ type: 'int', default: 0 })
-  rating_count: number;
+  rating_count!: number;
 
   @Column({ type: 'int', default: 0 })
-  total_deliveries: number;
+  total_deliveries!: number;
 
   @Column({ default: false })
-  isVerified: boolean;
+  isVerified!: boolean;
 
   @OneToMany(() => Quote, (quote) => quote.agent)
-  quotes: Quote[];
+  quotes!: Quote[];
 
   @OneToMany(() => Review, (review) => review.agent)
-  reviews: Review[];
+  reviews!: Review[];
 
   @OneToMany(() => FavoriteAgent, (fav) => fav.agent)
-  favoriteByVendors: FavoriteAgent[];
+  favoriteByVendors!: FavoriteAgent[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

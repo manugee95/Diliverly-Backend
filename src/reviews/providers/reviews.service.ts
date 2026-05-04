@@ -5,18 +5,18 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from 'src/orders/entities/order.entity';
+import { Order } from '../../orders/entities/order.entity';
 import { DataSource, Repository } from 'typeorm';
 import { Review } from '../review.entity';
 import { RateAgentDto } from '../dtos/rate-agent.dto';
-import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { OrderStatus } from '../../orders/enums/orderStatus.enum';
+import { Vendor } from '../../vendor/vendor.entity';
 import { GetReviewsDto } from '../dtos/get-review.dto';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { Agent } from 'src/agent/agent.entity';
-import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider';
-import { MailerService } from 'src/mailer/providers/mailer.service';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
+import { Agent } from '../../agent/agent.entity';
+import { MailerService } from '../../mailer/providers/mailer.service';
+import { calculateTrustScore } from '../../common/utils/trust-score.util';
 
 @Injectable()
 export class ReviewsService {
@@ -33,17 +33,12 @@ export class ReviewsService {
     private readonly paginationProvider: PaginationProvider,
 
     /**
-     * Inject Trust Score Provider
-     */
-    private readonly trustScoreProvider: TrustScoreProvider,
-
-    /**
      * Inject DataSource for transactions
      */
     private readonly dataSource: DataSource,
 
     /**
-     * Inject Mail Service 
+     * Inject Mail Service
      */
     private readonly mailService: MailerService,
   ) {}
@@ -116,13 +111,14 @@ export class ReviewsService {
 
       if (!agent) throw new NotFoundException('Agent not found');
 
-      // Fetch agent full graph 
+      // Fetch agent full graph
       const agentFull = await agentRepo.findOne({
         where: { id: agentId },
         relations: ['user'],
       });
 
-      if (!agentFull) throw new NotFoundException('Agent full details not found');
+      if (!agentFull)
+        throw new NotFoundException('Agent full details not found');
 
       // 5) Compute new rating safely
       const newRatingCount = agent.rating_count + 1;
@@ -139,8 +135,7 @@ export class ReviewsService {
       };
 
       // 7) Recalculate trust score
-      const trustScore =
-        this.trustScoreProvider.calculateTrustScore(updatedAgent);
+      const trustScore = calculateTrustScore(updatedAgent);
 
       // 8) Persist agent updates
       await agentRepo.update(agent.id, {

@@ -12,8 +12,7 @@ import {
 import { AgentService } from './providers/agent.service';
 import { CreateAgentDto } from './dtos/create-agent.dto';
 import { GetAgentsDto } from './dtos/get-agents.dto';
-import { AuthenticationGuard } from 'src/auth/guards/authentication/authentication.guard';
-import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
+import { AgentGuard } from '../auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
 @Controller('agent')

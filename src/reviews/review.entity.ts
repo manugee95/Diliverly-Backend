@@ -16,34 +16,34 @@ import {
 @Entity()
 export class Review {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'int' })
   @Check(`"rating" >= 1 AND "rating" <= 5`)
-  rating: number;
+  rating!: number;
 
   @Column({ type: 'text', nullable: true })
-  comment: string;
+  comment!: string;
 
   @ManyToOne(() => Vendor, (vendor) => vendor.reviews, {
     onDelete: 'CASCADE',
   })
-  vendor: Vendor;
+  vendor!: Vendor;
 
   @ManyToOne(() => Agent, (agent) => agent.reviews, {
     onDelete: 'CASCADE',
   })
-  agent: Agent;
+  agent!: Agent;
 
   @OneToOne(() => Order, (order) => order.review, {
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  order: Order;
+  order!: Order;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

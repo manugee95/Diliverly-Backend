@@ -7,38 +7,38 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Vendor } from '../../vendor/vendor.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { CreateOrderDto } from '../dtos/createOrder.dto';
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
-import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
+import { DeliveryRequest } from '../../delivery-requests/entities/delivery-request.entity';
+import { QuoteStatus } from '../../quotes/enums/quoteStatus.enum';
 import { Order } from '../entities/order.entity';
 import { OrderItem } from '../entities/orderItem.entity';
 import { DataSource } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { CacheService } from 'src/common/providers/cache.service';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { CacheService } from '../../common/providers/cache.service';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { GetOrdersDto } from '../dtos/getOrders.dto';
 import { OrderStatus } from '../enums/orderStatus.enum';
 import { MarkDeliveredDto } from '../dtos/markDelivered.dto';
-import { User } from 'src/users/user.entity';
-import { DeliveryType } from 'src/delivery-requests/enums/deliveryType.enum';
+import { User } from '../../users/user.entity';
+import { DeliveryType } from '../../delivery-requests/enums/deliveryType.enum';
 import { CancelOrderItemDto } from '../dtos/cancelOrderItem.dto';
-import { TransactionType } from 'src/transactions/enums/transactionType.enum';
-import { TransactionsService } from 'src/transactions/providers/transactions.service';
-import { ReferenceProvider } from 'src/common/reference/reference.provider';
-import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
-import { Agent } from 'src/agent/agent.entity';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
-import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
-import { Escrow } from 'src/escrow/escrow.entity';
-import { EscrowService } from 'src/escrow/providers/escrow.service';
-import { MailerService } from 'src/mailer/providers/mailer.service';
-import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
-import { TrustScoreProvider } from 'src/common/trust-score/trust-score.provider';
-import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
+import { TransactionType } from '../../transactions/enums/transactionType.enum';
+import { TransactionsService } from '../../transactions/providers/transactions.service';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
+import { Agent } from '../../agent/agent.entity';
+import { Wallet } from '../../wallets/entities/wallet.entity';
+import { EscrowStatus } from '../../escrow/enums/escrowStatus.enum';
+import { Escrow } from '../../escrow/escrow.entity';
+import { EscrowService } from '../../escrow/providers/escrow.service';
+import { MailerService } from '../../mailer/providers/mailer.service';
+import { RequestStatus } from '../../delivery-requests/enums/requestStatus.enum';
+import { DashboardCacheProvider } from '../../dashboard-overview/providers/dashboard-overview.provider';
 import { OrdersCacheProvider } from './orders.provider';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
+import { generateTransactionRef } from '../../common/utils/reference.util';
+import { calculateTrustScore } from '../../common/utils/trust-score.util';
 
 @Injectable()
 export class OrdersService {
@@ -83,11 +83,6 @@ export class OrdersService {
     private readonly txService: TransactionsService,
 
     /**
-     * Injecting Reference Provider
-     */
-    private readonly reference: ReferenceProvider,
-
-    /**
      * Injecting Cache Service
      */
     @Inject(CACHE_MANAGER)
@@ -100,11 +95,6 @@ export class OrdersService {
      * Injecting mail service
      */
     private readonly mailService: MailerService,
-
-    /**
-     * Injecting Trust Score Provider
-     */
-    private readonly trustScoreProvider: TrustScoreProvider,
 
     /**
      * Injecting Dashboard Cache Provider
@@ -527,8 +517,7 @@ export class OrdersService {
         if (!updatedAgent) throw new Error('Agent not found');
 
         // Calculate trust score
-        const trustScore =
-          this.trustScoreProvider.calculateTrustScore(updatedAgent);
+        const trustScore = calculateTrustScore(updatedAgent);
 
         // Persist trust score
         await agentRepo.update(
@@ -743,8 +732,7 @@ export class OrdersService {
         if (!updatedAgent) throw new Error('Agent not found');
 
         // Calculate trust score
-        const trustScore =
-          this.trustScoreProvider.calculateTrustScore(updatedAgent);
+        const trustScore = calculateTrustScore(updatedAgent);
 
         // Persist trust score
         await agentRepo.update(
@@ -767,6 +755,9 @@ export class OrdersService {
         where: { id: vendorUserId },
       });
 
+      // Generate unique reference for both transactions (same ref for both sides of COD)
+      const transactionRef = generateTransactionRef();
+
       if (agentUserEntity) {
         await this.txService.logTransaction(
           {
@@ -774,7 +765,7 @@ export class OrdersService {
             type: TransactionType.DEBIT,
             amount: this.currencyConvert.toNaira(codAmountKobo),
             description: `COD paid to vendor...`,
-            reference: this.reference.generateTransactionRef(),
+            reference: transactionRef,
             status: TransactionStatus.SUCCESSFUL,
           },
           manager,
@@ -789,7 +780,7 @@ export class OrdersService {
             amount: this.currencyConvert.toNaira(codAmountKobo),
             description: `COD received from agent for order #${oi.order.reference}, item #${oi.id}`,
             orderItem: oi,
-            reference: this.reference.generateTransactionRef(),
+            reference: transactionRef,
             status: TransactionStatus.SUCCESSFUL,
           },
           manager,

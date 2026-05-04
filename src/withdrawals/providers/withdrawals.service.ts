@@ -1,36 +1,27 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Withdrawal } from '../withdrawal.entity';
 import { Repository, DataSource, EntityManager } from 'typeorm';
-import { User } from 'src/users/user.entity';
-import { TransactionsService } from 'src/transactions/providers/transactions.service';
+import { User } from '../../users/user.entity';
+import { TransactionsService } from '../../transactions/providers/transactions.service';
 import { ConfigService } from '@nestjs/config';
 import { WithdrawalStatus } from '../enums/withdrawalStatus.enum';
-import { TransactionType } from 'src/transactions/enums/transactionType.enum';
-import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
+import { TransactionType } from '../../transactions/enums/transactionType.enum';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
 import axios from 'axios';
-import { ReferenceProvider } from 'src/common/reference/reference.provider';
-import * as crypto from 'crypto';
-import { Agent } from 'src/agent/agent.entity';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
-import { MailerService } from 'src/mailer/providers/mailer.service';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
-import { Transaction } from 'src/transactions/transaction.entity';
+import { Wallet } from '../../wallets/entities/wallet.entity';
+import { MailerService } from '../../mailer/providers/mailer.service';
+import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
+import { Transaction } from '../../transactions/transaction.entity';
+import { generateTransactionRef } from '../../common/utils/reference.util';
 
 @Injectable()
 export class WithdrawalsService {
   constructor(
-    /**
-     * Inject Withdrawal repository
-     */
-    @InjectRepository(Withdrawal)
-    private withdrawalRepo: Repository<Withdrawal>,
-
     /**
      * Inject User repository
      */
@@ -51,11 +42,6 @@ export class WithdrawalsService {
      * Inject Config service
      */
     private config: ConfigService,
-
-    /**
-     * Injecting Reference Provider
-     */
-    private readonly reference: ReferenceProvider,
 
     /**
      * Inject currency conversion provider
@@ -194,43 +180,18 @@ export class WithdrawalsService {
       const netAmount = this.currencyConvert.toNaira(netAmountKobo);
       const fee = this.currencyConvert.toNaira(feeKobo);
 
+      // Generate unique reference
+      const reference = `WD-${generateTransactionRef()}`;
+
       // Create withdrawal record
       const withdrawal = withdrawalRepo.create({
         user: { id: userId } as any,
         amount: netAmount,
-        reference: this.reference.generateTransactionRef(),
+        reference: reference,
         status: WithdrawalStatus.PROCESSING,
       });
 
       const savedWithdrawal = await withdrawalRepo.save(withdrawal);
-
-      // Log transaction (PENDING because transfer not confirmed yet)
-      // await this.transactionService.logTransaction(
-      //   {
-      //     user,
-      //     type: TransactionType.WITHDRAWAL,
-      //     amount: netAmount,
-      //     description: `Withdrawal to bank account (${user.bank_account.accountNumber} ${user.bank_account.bankName})`,
-      //     reference: savedWithdrawal.reference,
-      //     status: TransactionStatus.PENDING,
-      //     withdrawal: savedWithdrawal,
-      //   },
-      //   manager,
-      // );
-
-      // Log Withdrawal Fee Transaction
-      // await this.transactionService.logTransaction(
-      //   {
-      //     user,
-      //     type: TransactionType.WITHDRAWAL,
-      //     amount: fee,
-      //     description: `Withdrawal Fee`,
-      //     reference: savedWithdrawal.reference,
-      //     status: TransactionStatus.PENDING,
-      //     withdrawal: savedWithdrawal,
-      //   },
-      //   manager,
-      // );
 
       await this.logWithdrawalTransactions(
         user,

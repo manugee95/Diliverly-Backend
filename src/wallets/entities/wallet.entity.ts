@@ -12,29 +12,29 @@ import {
 @Entity()
 export class Wallet {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user!: User;
 
   @Column({ unique: true })
-  userId: number;
+  userId!: number;
 
   // Store in KOBO (integer)
   @Column({ type: 'bigint', default: 0 })
-  availableBalance: number;
+  availableBalance!: number;
 
   @Column({ type: 'bigint', default: 0 })
-  escrowBalance: number;
+  escrowBalance!: number;
 
   // Currency support
   @Column({ default: 'NGN' })
-  currency: string;
+  currency!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

@@ -3,13 +3,13 @@ import { FavoritesController } from './favorites.controller';
 import { FavoritesService } from './providers/favorites.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FavoriteAgent } from './favorite-agent.entity';
-import { VendorModule } from 'src/vendor/vendor.module';
-import { AgentModule } from 'src/agent/agent.module';
-import { Vendor } from 'src/vendor/vendor.entity';
-import { Agent } from 'src/agent/agent.entity';
-import { PaginationModule } from 'src/common/pagination/pagination.module';
+import { VendorModule } from '../vendor/vendor.module';
+import { AgentModule } from '../agent/agent.module';
+import { Vendor } from '../vendor/vendor.entity';
+import { Agent } from '../agent/agent.entity';
+import { PaginationModule } from '../common/pagination/pagination.module';
 import { FavoritesCacheProvider } from './providers/favorites.provider';
-import { redisProvider } from 'src/common/providers/redis.provider';
+import { redisProvider } from '../common/providers/redis.provider';
 
 @Module({
   controllers: [FavoritesController],

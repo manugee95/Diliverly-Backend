@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   Patch,
-  Post,
   Query,
   Req,
   UseGuards,
@@ -12,8 +11,7 @@ import {
 import { VendorService } from './providers/vendor.service';
 import { CreateVendorDto } from './dtos/create-vendor.dto';
 import { GetVendorsDto } from './dtos/get-vendors.dto';
-import { AuthenticationGuard } from 'src/auth/guards/authentication/authentication.guard';
-import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
+import { VendorGuard } from '../auth/guards/roles/vendor.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
 @Controller('vendor')

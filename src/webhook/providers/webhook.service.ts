@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { VirtualAccountService } from 'src/virtual-account/providers/virtual-account.service';
-import { WalletFundingService } from 'src/wallets/providers/wallet-funding.service';
+import { VirtualAccountService } from '../../virtual-account/providers/virtual-account.service';
+import { WalletFundingService } from '../../wallets/providers/wallet-funding.service';
 
 @Injectable()
 export class WebhookService {

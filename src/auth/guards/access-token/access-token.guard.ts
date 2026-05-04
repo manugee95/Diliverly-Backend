@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import jwtConfig from 'src/auth/config/jwt.config';
+import jwtConfig from '../../../auth/config/jwt.config';
 import { Request } from 'express';
 
 interface AuthenticatedRequest extends Request {

@@ -18,34 +18,34 @@ import { EscrowStatus } from './enums/escrowStatus.enum';
 @Entity()
 export class Escrow {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Index({ unique: true })
   @Column()
-  reference: string; // ESCROW-OI-<orderItemId>
+  reference!: string; // ESCROW-OI-<orderItemId>
 
   @ManyToOne(() => Order, { onDelete: 'CASCADE' })
-  order: Order;
+  order!: Order;
 
   @OneToOne(() => OrderItem, { onDelete: 'CASCADE' })
   @JoinColumn()
-  orderItem: OrderItem;
+  orderItem!: OrderItem;
 
   @ManyToOne(() => Vendor)
-  vendor: Vendor;
+  vendor!: Vendor;
 
   @ManyToOne(() => Agent)
-  agent: Agent;
+  agent!: Agent;
 
   @Column({ type: 'bigint', default: 0 })
-  amount: number;
+  amount!: number;
 
   @Column({ type: 'enum', enum: EscrowStatus, default: EscrowStatus.HELD })
-  status: EscrowStatus;
+  status!: EscrowStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

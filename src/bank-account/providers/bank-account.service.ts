@@ -6,7 +6,7 @@ import {
 import { CreateBankAccountDto } from '../dtos/create-bank-account.dto';
 import { Bank_Account } from '../bank-account.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/user.entity';
+import { User } from '../../users/user.entity';
 import { Repository } from 'typeorm';
 import axios from 'axios';
 import { PatchBankAccountDto } from '../dtos/patch-bank-account.dto';

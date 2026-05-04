@@ -5,12 +5,12 @@ import {
   RequestTimeoutException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UsersService } from 'src/users/providers/users.service';
+import { UsersService } from '../../users/providers/users.service';
 import { HashingProvider } from './hashing.provider';
 import { GenerateTokensProvider } from './generate-tokens.provider';
 import { SignInDto } from '../dtos/signin.dto';
-import { UserStatus } from 'src/users/enums/userStatus.enum';
-import { User } from 'src/users/user.entity';
+import { UserStatus } from '../../users/enums/userStatus.enum';
+import { User } from '../../users/user.entity';
 
 @Injectable()
 export class SignInProvider {

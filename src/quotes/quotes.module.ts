@@ -4,23 +4,22 @@ import { QuotesService } from './providers/quotes.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Quote } from './entities/quote.entity';
 import { DeliveryCost } from './entities/deliveryCost.entity';
-import { DeliveryRequestsModule } from 'src/delivery-requests/delivery-requests.module';
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
-import { AgentModule } from 'src/agent/agent.module';
-import { VendorModule } from 'src/vendor/vendor.module';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { DeliveryRequestsModule } from '../delivery-requests/delivery-requests.module';
+import { DeliveryRequest } from '../delivery-requests/entities/delivery-request.entity';
+import { AgentModule } from '../agent/agent.module';
+import { VendorModule } from '../vendor/vendor.module';
+import { Vendor } from '../vendor/vendor.entity';
 import { CacheModule } from '@nestjs/cache-manager';
-import { PaginationModule } from 'src/common/pagination/pagination.module';
-import { Agent } from 'src/agent/agent.entity';
-import { MailerModule } from 'src/mailer/mailer.module';
+import { PaginationModule } from '../common/pagination/pagination.module';
+import { Agent } from '../agent/agent.entity';
+import { MailerModule } from '../mailer/mailer.module';
 import { QuotePaymentService } from './providers/quote-payment.service';
-import { WalletsModule } from 'src/wallets/wallets.module';
-import { TransactionsModule } from 'src/transactions/transactions.module';
-import { ReferenceModule } from 'src/common/reference/reference.module';
-import { DashboardOverviewModule } from 'src/dashboard-overview/dashboard-overview.module';
+import { WalletsModule } from '../wallets/wallets.module';
+import { TransactionsModule } from '../transactions/transactions.module';
+import { DashboardOverviewModule } from '../dashboard-overview/dashboard-overview.module';
 import { QuotesCacheProvider } from './providers/quotes.provider';
-import { redisProvider } from 'src/common/providers/redis.provider';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { redisProvider } from '../common/providers/redis.provider';
+import { CurrencyConvertProvider } from '../common/providers/currency-convert.provider';
 
 @Module({
   controllers: [QuotesController],
@@ -46,7 +45,6 @@ import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.p
     MailerModule,
     WalletsModule,
     TransactionsModule,
-    ReferenceModule,
     DashboardOverviewModule,
     DeliveryRequestsModule,
     CacheModule.register(),

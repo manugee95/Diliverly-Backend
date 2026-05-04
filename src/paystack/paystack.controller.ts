@@ -1,15 +1,19 @@
-import { Controller, Post, Req, Headers, Get, Query } from '@nestjs/common';
-import { WalletFundingService } from 'src/wallets/providers/wallet-funding.service';
+import {
+  Controller,
+  Post,
+  Req,
+  Headers,
+  Get,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { PaystackService } from './providers/paystack.service';
-import { Request } from 'express';
-import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Auth } from '../auth/decorators/auth.decorator';
+import { AuthType } from '../auth/enums/auth-type.enum';
 
 @Controller('paystack')
 export class PaystackController {
-  constructor(
-    private readonly paystack: PaystackService,
-    private readonly walletFundingService: WalletFundingService,
-  ) {}
+  constructor(private readonly paystack: PaystackService) {}
 
   /**
    * Endpoint to verify a payment
@@ -20,21 +24,32 @@ export class PaystackController {
   }
 
   /**
-   * Endpoint to handle Paystack webhooks
+   * Endpoint to handle transfer approval
    */
-  @Post('webhook')
-  async handleWebhook(
-    @Req() req: Request & { rawBody?: Buffer },
+  @Auth(AuthType.None)
+  @Post('approve-transfer')
+  async approveTransfer(
+    @Req() req,
+    @Res() res,
     @Headers('x-paystack-signature') signature: string,
   ) {
-    // Verify signature using rawBody
-    const rawBody = req.rawBody as Buffer;
-    this.paystack.verifyWebhookSignature(rawBody, signature);
+    try {
+      // 1. Verify request is truly from Paystack
+      await this.paystack.verifyWebhookSignature(req.rawBody, signature);
 
-    // Process event
-    const event = req.body;
-    await this.walletFundingService.handleSuccessfulCharge(event);
+      // 2. Extract transfer details
+      const event = req.body;
 
-    return { received: true };
+      // 3. Run business logic
+      const approved = await this.paystack.handleTransferApproval(event);
+
+      if (approved) {
+        return res.sendStatus(200); // ✅ approve
+      } else {
+        return res.sendStatus(400); // ❌ reject
+      }
+    } catch (error) {
+      return res.sendStatus(400);
+    }
   }
 }

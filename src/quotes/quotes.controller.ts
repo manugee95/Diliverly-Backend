@@ -11,8 +11,8 @@ import {
 import { QuotesService } from './providers/quotes.service';
 import { CreateQuoteDto } from './dtos/create-quote.dto';
 import { GetQuoteDto } from './dtos/get-quote.dto';
-import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
-import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
+import { VendorGuard } from '../auth/guards/roles/vendor.guard';
+import { AgentGuard } from '../auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { QuotePaymentService } from './providers/quote-payment.service';
 

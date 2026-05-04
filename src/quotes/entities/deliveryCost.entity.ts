@@ -13,20 +13,20 @@ import { Delivery } from '../../delivery-requests/entities/delivery.entity';
 @Entity('delivery_cost')
 export class DeliveryCost {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Quote, (quote) => quote.deliveryCost, { nullable: false })
-  quote: Quote;
+  quote!: Quote;
 
   @ManyToOne(() => Delivery, (delivery) => delivery.deliveryCost, { nullable: false })
-  delivery: Delivery;
+  delivery!: Delivery;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: false })
-  cost: number;
+  cost!: number;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

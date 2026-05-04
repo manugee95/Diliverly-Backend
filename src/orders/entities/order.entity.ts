@@ -17,49 +17,49 @@ import { Review } from '../../reviews/review.entity';
 @Index('idx_order_vendor_status', ['vendor', 'status'])
 export class Order {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  reference: string;
+  reference!: string;
 
   @ManyToOne(() => Vendor, (vendor) => vendor.orders, { nullable: false })
-  vendor: Vendor;
+  vendor!: Vendor;
 
   @OneToOne(() => DeliveryRequest, (dr) => dr.order, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn()
-  request: DeliveryRequest;
+  request!: DeliveryRequest;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  totalAmount: number;
+  totalAmount!: number;
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
-  items: OrderItem[];
+  items!: OrderItem[];
 
   @Column({
     type: 'enum',
     enum: OrderStatus,
     default: OrderStatus.PENDING,
   })
-  status: OrderStatus;
+  status!: OrderStatus;
 
   @OneToOne(() => Review, (review) => review.order)
-  review: Review;
+  review!: Review;
 
   @Column({ type: 'timestamp', nullable: true })
   lastReminderSentAt?: Date;
 
   @Column({ default: false })
-  deliveryDetailsProvided: boolean;
+  deliveryDetailsProvided!: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date;
+  completedAt!: Date;
 }

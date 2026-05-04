@@ -1,42 +1,34 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/user.entity';
+import { User } from '../../users/user.entity';
 import { WalletFunding } from '../entities/walletFunding.entity';
 import { Repository, DataSource } from 'typeorm';
 import { WalletsService } from './wallets.service';
-import { TransactionsService } from 'src/transactions/providers/transactions.service';
+import { TransactionsService } from '../../transactions/providers/transactions.service';
 import { FundingStatus } from '../enums/fundingStatus.enum';
 import { Wallet } from '../entities/wallet.entity';
-import { TransactionType } from 'src/transactions/enums/transactionType.enum';
-import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
-import { ReferenceProvider } from 'src/common/reference/reference.provider';
-import { PaystackService } from 'src/paystack/providers/paystack.service';
+import { TransactionType } from '../../transactions/enums/transactionType.enum';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
+import { PaystackService } from '../../paystack/providers/paystack.service';
 import { ConfigService } from '@nestjs/config';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
+import { generateTransactionRef } from '../../common/utils/reference.util';
 
 @Injectable()
 export class WalletFundingService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly paystack: PaystackService,
-    private readonly reference: ReferenceProvider,
     private readonly walletService: WalletsService,
     private readonly txService: TransactionsService,
     private readonly currencyConvert: CurrencyConvertProvider,
+    private readonly config: ConfigService,
 
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
 
     @InjectRepository(WalletFunding)
     private readonly fundingRepo: Repository<WalletFunding>,
-
-    @InjectRepository(Wallet)
-    private readonly walletRepo: Repository<Wallet>,
-
-    /**
-     * Inject Config Service
-     */
-    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -130,7 +122,7 @@ export class WalletFundingService {
     await this.walletService.getOrCreateWallet(userId);
 
     // Generate unique reference
-    const reference = `FUND-${this.reference.generateTransactionRef()}`;
+    const reference = `FUND-${generateTransactionRef()}`;
 
     // Create pending funding record (idempotency is by unique reference)
     await this.fundingRepo.save(

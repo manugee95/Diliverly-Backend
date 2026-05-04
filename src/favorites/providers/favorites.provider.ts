@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import Redis from 'ioredis';
-import { CacheService } from 'src/common/providers/cache.service';
-import { REDIS } from 'src/common/providers/redis.provider';
-import { CacheTTL } from 'src/common/cache/cacheTTL';
+import { CacheService } from '../../common/providers/cache.service';
+import { REDIS } from '../../common/providers/redis.provider';
+import { CacheTTL } from '../../common/cache/cacheTTL';
 
 @Injectable()
 export class FavoritesCacheProvider {

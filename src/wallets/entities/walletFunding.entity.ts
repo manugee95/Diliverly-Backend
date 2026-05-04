@@ -14,34 +14,34 @@ import { FundingStatus } from '../enums/fundingStatus.enum';
 @Entity()
 export class WalletFunding {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user!: User;
 
   @Column()
-  userId: number;
+  userId!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Index({ unique: true })
   @Column({ length: 64 })
-  reference: string; // internal ref
+  reference!: string; // internal ref
 
   @Column({ nullable: true })
   paystackReference?: string;
 
   @Column({ type: 'enum', enum: FundingStatus, default: FundingStatus.PENDING })
-  status: FundingStatus;
+  status!: FundingStatus;
 
   @Column({ type: 'jsonb', nullable: true })
   raw?: any;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

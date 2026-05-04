@@ -11,7 +11,7 @@ import {
 import { FavoritesService } from './providers/favorites.service';
 import { FavoriteAgentDto } from './dtos/favorite-agent.dto';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
+import { VendorGuard } from '../auth/guards/roles/vendor.guard';
 import { GetFavoritesDto } from './dtos/get-favorite.dto';
 
 @Controller('favorites')

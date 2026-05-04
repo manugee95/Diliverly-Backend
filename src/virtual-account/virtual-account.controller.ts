@@ -1,8 +1,7 @@
-import { Controller, Post, Req, Headers, Get, UseGuards, ForbiddenException } from '@nestjs/common';
-import { PaystackService } from 'src/paystack/providers/paystack.service';
+import { Controller, Req, Get, UseGuards, ForbiddenException } from '@nestjs/common';
 import { VirtualAccountService } from './providers/virtual-account.service';
-import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
-import { User } from 'src/users/user.entity';
+import { AgentGuard } from '../auth/guards/roles/agent.guard';
+import { User } from '../users/user.entity';
 
 @Controller('virtual-account')
 export class VirtualAccountController {

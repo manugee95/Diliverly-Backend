@@ -3,13 +3,12 @@ import { WithdrawalsController } from './withdrawals.controller';
 import { WithdrawalsService } from './providers/withdrawals.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Withdrawal } from './withdrawal.entity';
-import { User } from 'src/users/user.entity';
-import { TransactionsModule } from 'src/transactions/transactions.module';
-import { ReferenceModule } from 'src/common/reference/reference.module';
-import { Agent } from 'src/agent/agent.entity';
-import { MailerModule } from 'src/mailer/mailer.module';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
-import { PaystackModule } from 'src/paystack/paystack.module';
+import { User } from '../users/user.entity';
+import { TransactionsModule } from '../transactions/transactions.module';
+import { Agent } from '../agent/agent.entity';
+import { MailerModule } from '../mailer/mailer.module';
+import { CurrencyConvertProvider } from '../common/providers/currency-convert.provider';
+import { PaystackModule } from '../paystack/paystack.module';
 
 @Module({
   controllers: [WithdrawalsController],
@@ -17,7 +16,6 @@ import { PaystackModule } from 'src/paystack/paystack.module';
   imports: [
     TypeOrmModule.forFeature([Withdrawal, Agent, User]),
     TransactionsModule,
-    ReferenceModule,
     MailerModule,
     PaystackModule,
   ],

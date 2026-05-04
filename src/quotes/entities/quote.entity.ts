@@ -19,29 +19,29 @@ import { Agent } from '../../agent/agent.entity';
 @Index('idx_quote_request_status', ['request', 'status'])
 export class Quote {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Agent, (agent) => agent.quotes, { nullable: false })
-  agent: Agent;
+  agent!: Agent;
 
   @ManyToOne(() => DeliveryRequest, (request) => request.quotes, {
     nullable: false,
   })
-  request: DeliveryRequest;
+  request!: DeliveryRequest;
 
   @OneToMany(() => DeliveryCost, (dq) => dq.quote, { cascade: true })
-  deliveryCost: DeliveryCost[];
+  deliveryCost!: DeliveryCost[];
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  subtotal: number;
+  subtotal!: number;
 
   @Column({ type: 'enum', enum: QuoteStatus, default: QuoteStatus.PENDING })
-  status: QuoteStatus;
+  status!: QuoteStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
 

@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import appConfig from './config/app.config';
 import { PaginationModule } from './common/pagination/pagination.module';
@@ -23,15 +23,13 @@ import { RedisCacheModule } from './rediscache/rediscache.module';
 import { MailerModule } from './mailer/mailer.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { TransactionsModule } from './transactions/transactions.module';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ReferenceModule } from './common/reference/reference.module';
+// import { ScheduleModule } from '@nestjs/schedule';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { HealthModule } from './health/health.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
 import { WalletsModule } from './wallets/wallets.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { PaystackModule } from './paystack/paystack.module';
-import { TrustScoreModule } from './common/trust-score/trust-score.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { DashboardOverviewModule } from './dashboard-overview/dashboard-overview.module';
 import { CurrencyConvertProvider } from './common/providers/currency-convert.provider';
@@ -39,16 +37,9 @@ import { VirtualAccountModule } from './virtual-account/virtual-account.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { S3Module } from './s3/s3.module';
 
-// const ENV = process.env.NODE_ENV;
-
 @Module({
   imports: [
     AuthModule,
-    // ConfigModule.forRoot({
-    //   isGlobal: true,
-    //   envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-    //   load: [appConfig, databaseConfig],
-    // }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env.development',
@@ -76,38 +67,6 @@ import { S3Module } from './s3/s3.module';
       retryAttempts: 5,
       retryDelay: 3000,
     }),
-    // TypeOrmModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: (configService: ConfigService) => {
-    //     const isProd = configService.get<boolean>('appConfig.isProduction');
-
-    //     return {
-    //       type: 'postgres',
-    //       autoLoadEntities: true,
-    //       synchronize: !isProd,
-    //       logging: false,
-
-    //       host: configService.get('database.host'),
-    //       port: configService.get<number>('database.port'),
-    //       username: configService.get('database.user'),
-    //       password: configService.get('database.password'),
-    //       database: configService.get('database.name'),
-
-    //       extra: {
-    //         max: 10,
-    //         idleTimeoutMillis: 30000,
-    //         connectionTimeoutMillis: 5000,
-    //         keepAlive: true,
-    //       },
-
-    //       retryAttempts: 5,
-    //       retryDelay: 3000,
-
-    //       ssl: isProd ? { rejectUnauthorized: false } : false,
-    //     };
-    //   },
-    // }),
     UsersModule,
     PaginationModule,
     ConfigModule.forFeature(jwtConfig),
@@ -121,15 +80,13 @@ import { S3Module } from './s3/s3.module';
     MailerModule,
     ReviewsModule,
     TransactionsModule,
-    ScheduleModule.forRoot(),
-    ReferenceModule,
+    // ScheduleModule.forRoot(),
     WithdrawalsModule,
     HealthModule,
     BankAccountModule,
     WalletsModule,
     EscrowModule,
     PaystackModule,
-    TrustScoreModule,
     FavoritesModule,
     DashboardOverviewModule,
     VirtualAccountModule,

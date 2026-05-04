@@ -17,14 +17,15 @@ import { UsersService } from './providers/users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { GetUsersDto } from './dtos/get-users.dto';
 import { UpdateUserDto } from './dtos/patch-user.dto';
-import { Auth } from 'src/auth/decorators/auth.decorator';
-import { AuthType } from 'src/auth/enums/auth-type.enum';
+import { Auth } from '../auth/decorators/auth.decorator';
+import { AuthType } from '../auth/enums/auth-type.enum';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
-import { AdminGuard } from 'src/auth/guards/roles/admin.guard';
+import { AdminGuard } from '../auth/guards/roles/admin.guard';
 import { ResendCodeDto } from './dtos/resend-code.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import * as multer from 'multer';
 
 @Controller('users')
 export class UsersController {

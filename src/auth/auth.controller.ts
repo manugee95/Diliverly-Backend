@@ -21,7 +21,7 @@ import { GenerateTokensProvider } from './providers/generate-tokens.provider';
 import { RefreshTokensProvider } from './providers/refresh-tokens.provider';
 import { Request } from 'express';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
-import { UsersService } from 'src/users/providers/users.service';
+import { UsersService } from '../users/providers/users.service';
 
 @Controller('auth')
 export class AuthController {

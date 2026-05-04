@@ -1,9 +1,9 @@
-import { User } from 'src/users/user.entity';
+import { User } from '../../users/user.entity';
 import { TransactionType } from '../enums/transactionType.enum';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
+import { OrderItem } from '../../orders/entities/orderItem.entity';
 import { TransactionStatus } from '../enums/transactionStatus.enum';
-import { Withdrawal } from 'src/withdrawals/withdrawal.entity';
-import { Order } from 'src/orders/entities/order.entity';
+import { Withdrawal } from '../../withdrawals/withdrawal.entity';
+import { Order } from '../../orders/entities/order.entity';
 
 export class CreateTransactionDto {
   user: User;

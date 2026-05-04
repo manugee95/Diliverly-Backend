@@ -11,12 +11,10 @@ import {
 import { DeliveryRequestService } from './providers/delivery-requests.service';
 import { CreateDeliveryRequestDto } from './dtos/create-delivery-request.dto';
 import { GetDeliveryRequestsDto } from './dtos/get-delivery-requests.dto';
-import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
-import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
+import { VendorGuard } from '../auth/guards/roles/vendor.guard';
+import { AgentGuard } from '../auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { log } from 'console';
-import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
-import { agent } from 'supertest';
+import { GenerateTokensProvider } from '../auth/providers/generate-tokens.provider';
 
 @Controller('delivery-request')
 export class DeliveryRequestsController {

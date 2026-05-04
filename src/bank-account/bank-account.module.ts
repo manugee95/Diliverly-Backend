@@ -3,7 +3,7 @@ import { BankAccountController } from './bank-account.controller';
 import { BankAccountService } from './providers/bank-account.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Bank_Account } from './bank-account.entity';
-import { User } from 'src/users/user.entity';
+import { User } from '../users/user.entity';
 
 @Module({
   controllers: [BankAccountController],

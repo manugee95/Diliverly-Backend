@@ -3,9 +3,11 @@ import * as crypto from 'crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InitiatePaymentDto } from '../dtos/initiatePayment.dto';
-import { HttpService } from '@nestjs/axios';
-import { User } from 'src/users/user.entity';
-import { firstValueFrom } from 'rxjs';
+import { User } from '../../users/user.entity';
+import { Transaction } from '../../transactions/transaction.entity';
+import { Repository } from 'typeorm';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class PaystackService {
@@ -17,7 +19,8 @@ export class PaystackService {
 
   constructor(
     private readonly config: ConfigService,
-    private readonly http: HttpService,
+    @InjectRepository(Transaction)
+    private readonly transactionRepo: Repository<Transaction>,
   ) {}
 
   private get secretKey() {
@@ -82,21 +85,49 @@ export class PaystackService {
       throw new UnauthorizedException('Invalid Paystack signature');
   }
 
-  async finalizeTransfer(transferCode: string, otp: string) {
-    const res = await axios.post(
-      `${this.baseUrl}/transfer/finalize_transfer`,
-      {
-        transfer_code: transferCode,
-        otp,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${this.config.get('PAYSTACK_SECRET_KEY')}`,
-        },
-      },
-    );
+  // async finalizeTransfer(transferCode: string, otp: string) {
+  //   const res = await axios.post(
+  //     `${this.baseUrl}/transfer/finalize_transfer`,
+  //     {
+  //       transfer_code: transferCode,
+  //       otp,
+  //     },
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${this.config.get('PAYSTACK_SECRET_KEY')}`,
+  //       },
+  //     },
+  //   );
 
-    return res.data;
+  //   return res.data;
+  // }
+
+  async handleTransferApproval(event: any): Promise<boolean> {
+    const transfer = event.data;
+
+    // Example checks
+    const amount = transfer.amount;
+    const reference = transfer.reference;
+
+    // My rules (IMPORTANT)
+    // ------------------------
+
+    // 1. Check if transaction exists
+    const tx = await this.transactionRepo.findOne({
+      where: { reference },
+    });
+
+    if (!tx) return false;
+
+    // 2. Prevent double processing
+    if (tx.status !== TransactionStatus.PENDING) return false;
+
+    // 3. Wallet balance validation
+    if (tx.amount !== amount) return false;
+
+    await this.transactionRepo.save(tx);
+
+    return true;
   }
 
   async createCustomer(user: User) {
@@ -116,7 +147,7 @@ export class PaystackService {
       return response.data.data;
     } catch (error) {
       throw new Error(
-        error.response?.data?.message || 'Failed to create Paystack customer',
+        (error as any).response?.data?.message || 'Failed to create Paystack customer',
       );
     }
   }
@@ -137,7 +168,7 @@ export class PaystackService {
       return response.data.data;
     } catch (error) {
       throw new Error(
-        error.response?.data?.message || 'Failed to create dedicated account',
+        (error as any).response?.data?.message || 'Failed to create dedicated account',
       );
     }
   }

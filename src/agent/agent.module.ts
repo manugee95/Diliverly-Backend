@@ -2,12 +2,12 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AgentService } from './providers/agent.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AgentController } from './agent.controller';
-import { UsersModule } from 'src/users/users.module';
-import { User } from 'src/users/user.entity';
+import { UsersModule } from '../users/users.module';
+import { User } from '../users/user.entity';
 import { YouverifyProvider } from './providers/youverify.provider';
 import { HttpModule } from '@nestjs/axios';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { AuthModule } from 'src/auth/auth.module';
+import { PaginationProvider } from '../common/pagination/providers/pagination.provider';
+import { AuthModule } from '../auth/auth.module';
 import { Agent } from './agent.entity';
 
 @Module({

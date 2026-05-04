@@ -1,33 +1,28 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ReferenceProvider } from 'src/common/reference/reference.provider';
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
-import { TransactionsService } from 'src/transactions/providers/transactions.service';
-import { Vendor } from 'src/vendor/vendor.entity';
-import { WalletsService } from 'src/wallets/providers/wallets.service';
-import { DataSource, Not, Repository } from 'typeorm';
-import { Order } from 'src/orders/entities/order.entity';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
-import { Escrow } from 'src/escrow/escrow.entity';
+import { DeliveryRequest } from '../../delivery-requests/entities/delivery-request.entity';
+import { Vendor } from '../../vendor/vendor.entity';
+import { DataSource, Repository } from 'typeorm';
+import { Order } from '../../orders/entities/order.entity';
+import { OrderItem } from '../../orders/entities/orderItem.entity';
+import { Escrow } from '../../escrow/escrow.entity';
 import { QuoteStatus } from '../enums/quoteStatus.enum';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
-import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
-import { EscrowStatus } from 'src/escrow/enums/escrowStatus.enum';
-import { MailerService } from 'src/mailer/providers/mailer.service';
+import { Wallet } from '../../wallets/entities/wallet.entity';
+import { OrderStatus } from '../../orders/enums/orderStatus.enum';
+import { EscrowStatus } from '../../escrow/enums/escrowStatus.enum';
+import { MailerService } from '../../mailer/providers/mailer.service';
 import { Quote } from '../entities/quote.entity';
-import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
-import { Delivery } from 'src/delivery-requests/entities/delivery.entity';
+import { RequestStatus } from '../../delivery-requests/enums/requestStatus.enum';
+import { Delivery } from '../../delivery-requests/entities/delivery.entity';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
+import { generateOrderRef } from '../../common/utils/reference.util';
 
 @Injectable()
 export class QuotePaymentService {
   constructor(
     /** Injecting required repositories and services */
     private readonly dataSource: DataSource,
-    private readonly walletService: WalletsService,
-    private readonly txService: TransactionsService,
-    private readonly reference: ReferenceProvider,
     private readonly currencyConvert: CurrencyConvertProvider,
 
     @InjectRepository(Vendor)
@@ -35,9 +30,6 @@ export class QuotePaymentService {
 
     @InjectRepository(Quote)
     private readonly quoteRepo: Repository<Quote>,
-
-    @InjectRepository(DeliveryRequest)
-    private readonly requestRepo: Repository<DeliveryRequest>,
 
     /**
      * Injecting mail service
@@ -147,10 +139,13 @@ export class QuotePaymentService {
         };
       }
 
+      // Generate unique reference
+      const reference = generateOrderRef();
+
       // 6. Create order
       const order = await orderRepo.save(
         orderRepo.create({
-          reference: this.reference.generateOrderRef(),
+          reference: reference,
           vendor: { id: input.vendor.id },
           request: { id: request.id },
           totalAmount: total,
@@ -259,7 +254,7 @@ export class QuotePaymentService {
       vendorName: vendor.businessName || 'Vendor',
       deliveryTitle: result.deliveryTitle,
       orderId: result.orderId,
-      reference: result.reference, 
+      reference: result.reference,
     });
 
     return result;

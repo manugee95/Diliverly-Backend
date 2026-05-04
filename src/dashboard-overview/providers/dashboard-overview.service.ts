@@ -1,15 +1,15 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CacheService } from 'src/common/providers/cache.service';
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
-import { RequestStatus } from 'src/delivery-requests/enums/requestStatus.enum';
-import { Order } from 'src/orders/entities/order.entity';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
-import { OrderStatus } from 'src/orders/enums/orderStatus.enum';
-import { Quote } from 'src/quotes/entities/quote.entity';
-import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { CacheService } from '../../common/providers/cache.service';
+import { DeliveryRequest } from '../../delivery-requests/entities/delivery-request.entity';
+import { RequestStatus } from '../../delivery-requests/enums/requestStatus.enum';
+import { Order } from '../../orders/entities/order.entity';
+import { OrderItem } from '../../orders/entities/orderItem.entity';
+import { OrderStatus } from '../../orders/enums/orderStatus.enum';
+import { Quote } from '../../quotes/entities/quote.entity';
+import { QuoteStatus } from '../../quotes/enums/quoteStatus.enum';
+import { Vendor } from '../../vendor/vendor.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

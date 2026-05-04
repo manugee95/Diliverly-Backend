@@ -3,25 +3,24 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Quote } from '../entities/quote.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Not, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
-import { DeliveryRequest } from 'src/delivery-requests/entities/delivery-request.entity';
+import { DeliveryRequest } from '../../delivery-requests/entities/delivery-request.entity';
 import { CreateQuoteDto } from '../dtos/create-quote.dto';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Vendor } from '../../vendor/vendor.entity';
 import { QuoteStatus } from '../enums/quoteStatus.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { CacheService } from 'src/common/providers/cache.service';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { CacheService } from '../../common/providers/cache.service';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { GetQuoteDto } from '../dtos/get-quote.dto';
-import { Agent } from 'src/agent/agent.entity';
-import { MailerService } from 'src/mailer/providers/mailer.service';
-import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
-import { DeliveryRequestsCacheProvider } from 'src/delivery-requests/providers/delivery-requests.provider';
+import { Agent } from '../../agent/agent.entity';
+import { MailerService } from '../../mailer/providers/mailer.service';
+import { DashboardCacheProvider } from '../../dashboard-overview/providers/dashboard-overview.provider';
+import { DeliveryRequestsCacheProvider } from '../../delivery-requests/providers/delivery-requests.provider';
 import { QuotesCacheProvider } from './quotes.provider';
 
 @Injectable()
@@ -97,83 +96,6 @@ export class QuotesService {
   /**
    * Method to create a quote for a delivery request
    */
-
-  // async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
-  //   const { requestId, deliveryCosts } = dto;
-
-  //   const agent = await this.agentRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-  //   if (!agent) throw new NotFoundException('Agent not found');
-
-  //   const request = await this.deliveryRequestRepo.findOne({
-  //     where: { id: requestId },
-  //     relations: ['deliveries', 'vendor', 'vendor.user'],
-  //   });
-  //   if (!request) throw new NotFoundException('Delivery request not found');
-
-  //   const existingQuote = await this.quoteRepo.findOne({
-  //     where: {
-  //       agent: { id: agent.id },
-  //       request: { id: request.id },
-  //     },
-  //   });
-
-  //   if (existingQuote) {
-  //     throw new BadRequestException(
-  //       'You have already submitted a quote for this delivery request',
-  //     );
-  //   }
-
-  //   const validDeliveryIds = request.deliveries.map((d) => d.id);
-
-  //   for (const { deliveryId } of deliveryCosts) {
-  //     if (!validDeliveryIds.includes(deliveryId)) {
-  //       throw new BadRequestException(
-  //         `Delivery ${deliveryId} does not belong to this request`,
-  //       );
-  //     }
-  //   }
-
-  //   const subtotal = deliveryCosts.reduce((sum, d) => sum + Number(d.cost), 0);
-
-  //   // Map real delivery entities
-  //   const deliveriesMap = new Map(request.deliveries.map((d) => [d.id, d]));
-
-  //   const quote = this.quoteRepo.create({
-  //     agent,
-  //     request,
-  //     subtotal,
-  //     deliveryCost: deliveryCosts.map((item) => ({
-  //       delivery: deliveriesMap.get(item.deliveryId),
-  //       cost: item.cost,
-  //     })),
-  //   });
-
-  //   await this.dashboardCacheProvider.invalidateAgent(agent.id);
-
-  //   await this.quotesCacheProvider.invalidateAgentQuotes(agent.id);
-  //   await this.quotesCacheProvider.invalidateVendorRequestQuotes(
-  //     request.vendor.id,
-  //     request.id,
-  //   );
-
-  //   // Send email notification to vendor
-  //   this.mailService.sendTemplate(
-  //     request.vendor.user.email,
-  //     'New Quote Received for Your Delivery Request',
-  //     'vendor-new-quotes',
-  //     {
-  //       vendorName:
-  //         request.vendor.businessName || request.vendor.user.firstName,
-  //       requestTitle: request.title,
-  //       agentName: agent.businessName || agent.user.firstName,
-  //     },
-  //   );
-
-  //   return await this.quoteRepo.save(quote);
-  // }
-
   async createQuote(userId: number, dto: CreateQuoteDto): Promise<Quote> {
     const { requestId, deliveryCosts } = dto;
 

@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TransactionsService } from 'src/transactions/providers/transactions.service';
-import { WalletsService } from 'src/wallets/providers/wallets.service';
+import { TransactionsService } from '../../transactions/providers/transactions.service';
+import { WalletsService } from '../../wallets/providers/wallets.service';
 import { DataSource, EntityManager } from 'typeorm';
-import { OrderItem } from 'src/orders/entities/orderItem.entity';
+import { OrderItem } from '../../orders/entities/orderItem.entity';
 import { Escrow } from '../escrow.entity';
 import { EscrowStatus } from '../enums/escrowStatus.enum';
-import { Wallet } from 'src/wallets/entities/wallet.entity';
-import { TransactionType } from 'src/transactions/enums/transactionType.enum';
-import { TransactionStatus } from 'src/transactions/enums/transactionStatus.enum';
-import { CurrencyConvertProvider } from 'src/common/providers/currency-convert.provider';
+import { Wallet } from '../../wallets/entities/wallet.entity';
+import { TransactionType } from '../../transactions/enums/transactionType.enum';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
+import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
 
 @Injectable()
 export class EscrowService {

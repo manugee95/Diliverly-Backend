@@ -9,17 +9,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DeliveryRequest } from '../entities/delivery-request.entity';
 import { In, Repository } from 'typeorm';
 import { Delivery } from '../entities/delivery.entity';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Vendor } from '../../vendor/vendor.entity';
 import { CreateDeliveryRequestDto } from '../dtos/create-delivery-request.dto';
 import { RequestStatus } from '../enums/requestStatus.enum';
 import { GetDeliveryRequestsDto } from '../dtos/get-delivery-requests.dto';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { QuoteStatus } from 'src/quotes/enums/quoteStatus.enum';
-import { Agent } from 'src/agent/agent.entity';
-import { MailerService } from 'src/mailer/providers/mailer.service';
-import { FavoriteAgent } from 'src/favorites/favorite-agent.entity';
-import { DashboardCacheProvider } from 'src/dashboard-overview/providers/dashboard-overview.provider';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
+import { QuoteStatus } from '../../quotes/enums/quoteStatus.enum';
+import { Agent } from '../../agent/agent.entity';
+import { MailerService } from '../../mailer/providers/mailer.service';
+import { FavoriteAgent } from '../../favorites/favorite-agent.entity';
+import { DashboardCacheProvider } from '../../dashboard-overview/providers/dashboard-overview.provider';
 import { DeliveryRequestsCacheProvider } from './delivery-requests.provider';
 
 @Injectable()

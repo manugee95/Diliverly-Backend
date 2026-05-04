@@ -14,8 +14,8 @@ import { CreateOrderDto } from './dtos/createOrder.dto';
 import { GetOrdersDto } from './dtos/getOrders.dto';
 import { MarkDeliveredDto } from './dtos/markDelivered.dto';
 import { CancelOrderItemDto } from './dtos/cancelOrderItem.dto';
-import { VendorGuard } from 'src/auth/guards/roles/vendor.guard';
-import { AgentGuard } from 'src/auth/guards/roles/agent.guard';
+import { VendorGuard } from '../auth/guards/roles/vendor.guard';
+import { AgentGuard } from '../auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
 @Controller('orders')

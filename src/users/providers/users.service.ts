@@ -14,24 +14,24 @@ import { User } from '../user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GetUsersDto } from '../dtos/get-users.dto';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
+import { Paginated } from '../../common/pagination/interfaces/paginated.interface';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { UpdateUserDto } from '../dtos/patch-user.dto';
 import { UserStatus } from '../enums/userStatus.enum';
-import { MailerService } from 'src/mailer/providers/mailer.service';
+import { MailerService } from '../../mailer/providers/mailer.service';
 import { VerifyEmailDto } from '../dtos/verify-email.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { CacheService } from 'src/common/providers/cache.service';
-import { CacheTTL } from 'src/common/cache/cacheTTL';
+import { CacheService } from '../../common/providers/cache.service';
+import { CacheTTL } from '../../common/cache/cacheTTL';
 import { DataSource } from 'typeorm';
-import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
+import { GenerateTokensProvider } from '../../auth/providers/generate-tokens.provider';
 import { UserRole } from '../enums/userRole.enum';
-import { Vendor } from 'src/vendor/vendor.entity';
+import { Vendor } from '../../vendor/vendor.entity';
 import { Response } from 'express';
-import { Agent } from 'src/agent/agent.entity';
-import { generateVerificationCode } from 'src/common/utils/verification-code.util';
+import { Agent } from '../../agent/agent.entity';
+import { generateVerificationCode } from '../../common/utils/verification-code.util';
 import { ResendCodeDto } from '../dtos/resend-code.dto';
-import { S3Service } from 'src/s3/providers/s3.service';
+import { S3Service } from '../../s3/providers/s3.service';
 
 @Injectable()
 export class UsersService {
@@ -411,21 +411,6 @@ export class UsersService {
   /**
    * Method to update a user
    */
-
-  // public async updateUser(userId: number, dto: UpdateUserDto): Promise<User> {
-  //   const user = await this.userRepository.findOne({
-  //     where: { id: userId },
-  //   });
-
-  //   if (!user) {
-  //     throw new NotFoundException('User not found');
-  //   }
-
-  //   Object.assign(user, dto);
-
-  //   return this.userRepository.save(user);
-  // }
-
   public async updateUser(
     userId: number,
     dto: UpdateUserDto,
@@ -448,8 +433,6 @@ export class UsersService {
     if (file) {
       const imageUrl = await this.s3Service.uploadFile(file);
       user.profileImageUrl = imageUrl;
-
-      console.log('Profile image uploaded to S3:', imageUrl);
     }
 
     Object.assign(user, dto);

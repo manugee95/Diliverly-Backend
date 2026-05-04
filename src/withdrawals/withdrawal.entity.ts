@@ -14,35 +14,35 @@ import { Transaction } from '../transactions/transaction.entity';
 @Entity()
 export class Withdrawal {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => User, { eager: true })
-  user: User;
+  user!: User;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column()
-  reference: string;
+  reference!: string;
 
   @Column({ nullable: true })
-  paystackTransferCode: string;
+  paystackTransferCode!: string;
 
   @Column({
     type: 'enum',
     enum: WithdrawalStatus,
     default: WithdrawalStatus.PROCESSING,
   })
-  status: WithdrawalStatus;
+  status!: WithdrawalStatus;
 
   @OneToOne(() => Transaction, (transaction) => transaction.withdrawal, {
     nullable: true,
   })
-  transaction: Transaction;
+  transaction!: Transaction;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

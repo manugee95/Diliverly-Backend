@@ -1,9 +1,9 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { CacheTTL } from 'src/common/cache/cacheTTL';
-import { CacheService } from 'src/common/providers/cache.service';
-import { REDIS } from 'src/common/providers/redis.provider';
+import { CacheTTL } from '../../common/cache/cacheTTL';
+import { CacheService } from '../../common/providers/cache.service';
+import { REDIS } from '../../common/providers/redis.provider';
 
 @Injectable()
 export class OrdersCacheProvider {

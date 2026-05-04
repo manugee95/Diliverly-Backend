@@ -14,15 +14,15 @@ import { DeliveryCost } from '../../quotes/entities/deliveryCost.entity';
 @Entity()
 export class Delivery {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => DeliveryRequest, (request) => request.deliveries, {
     onDelete: 'CASCADE', nullable: false,
   })
-  request: DeliveryRequest;
+  request!: DeliveryRequest;
 
   @Column({ type: 'varchar', length: 512 })
-  address: string;
+  address!: string;
 
   @Column({
     type: 'enum',
@@ -32,11 +32,11 @@ export class Delivery {
   deliveryType?: DeliveryType;
 
   @OneToMany(() => DeliveryCost, (dc) => dc.delivery, { cascade: true })
-  deliveryCost: DeliveryCost[];
+  deliveryCost!: DeliveryCost[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

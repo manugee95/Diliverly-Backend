@@ -22,28 +22,28 @@ import { Agent } from '../../agent/agent.entity';
 @Index('idx_delivery_request_assigned_agent', ['assignedAgent'])
 export class DeliveryRequest {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Vendor, (vendor) => vendor.delivery_request, {
     onDelete: 'CASCADE',
   })
-  vendor: Vendor;
+  vendor!: Vendor;
 
   @Column({
     type: 'varchar',
     length: 512,
     nullable: false,
   })
-  title: string;
+  title!: string;
 
   @Column({
     type: 'text',
     nullable: true,
   })
-  description: string;
+  description!: string;
 
   @Column({ type: 'varchar', length: 100 })
-  state: string;
+  state!: string;
 
   @Column({
     type: 'enum',
@@ -51,28 +51,28 @@ export class DeliveryRequest {
     nullable: false,
     default: RequestStatus.OPEN,
   })
-  status: RequestStatus;
+  status!: RequestStatus;
 
   @OneToMany(() => Delivery, (delivery) => delivery.request, {
     cascade: ['insert'],
   })
-  deliveries: Delivery[];
+  deliveries!: Delivery[];
 
   @Column({ type: 'varchar', length: 512, default: 'a' }) 
-  pickUpAddress: string;
+  pickUpAddress!: string;
 
   @ManyToOne(() => Agent, { nullable: true, onDelete: 'SET NULL' })
-  assignedAgent: Agent;
+  assignedAgent!: Agent;
 
   @Column({ default: false })
-  isDirect: boolean;
+  isDirect!: boolean;
 
   @OneToMany(() => Quote, (quote) => quote.request)
-  quotes: Quote[];
+  quotes!: Quote[];
 
   @OneToOne(() => Order, (order) => order.request)
-  order: Order;
+  order!: Order;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

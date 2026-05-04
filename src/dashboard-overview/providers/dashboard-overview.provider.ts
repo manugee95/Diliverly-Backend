@@ -1,6 +1,6 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
-import { CacheService } from 'src/common/providers/cache.service';
+import { CacheService } from '../../common/providers/cache.service';
 
 @Injectable()
 export class DashboardCacheProvider {

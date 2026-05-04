@@ -1,8 +1,8 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { DashboardOverviewService } from './providers/dashboard-overview.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Vendor } from 'src/vendor/vendor.entity';
-import { Agent } from 'src/agent/agent.entity';
+import { Vendor } from '../vendor/vendor.entity';
+import { Agent } from '../agent/agent.entity';
 
 @Controller('dashboard-overview')
 export class DashboardOverviewController {
