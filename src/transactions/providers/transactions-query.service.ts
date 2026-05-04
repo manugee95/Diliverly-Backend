@@ -40,7 +40,7 @@ export class TransactionsQueryService {
       },
     );
 
-    // Format amounts to 2 decimal places
+    // Format amounts to Naira
     const formattedData = transactions.data.map((tx) => ({
       ...tx,
       amount: this.currencyConvert.formatNaira(tx.amount),

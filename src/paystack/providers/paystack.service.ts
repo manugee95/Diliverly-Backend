@@ -111,7 +111,7 @@ export class PaystackService {
     }
 
     // checks
-    const amount = requestBody.amount;
+    const amount = Number(requestBody.amount);
     const reference = requestBody.reference;
 
     // My rules (IMPORTANT)
@@ -128,7 +128,7 @@ export class PaystackService {
     if (tx.status !== TransactionStatus.PENDING) return false;
 
     // 3. Wallet balance validation
-    if (tx.amount !== amount) return false;
+    if (Number(tx.amount) !== amount) return false;
 
     // // 4. Validate recipient code
     // if (tx.recipientCode !== recipient) {
