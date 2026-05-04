@@ -34,6 +34,10 @@ export class PaystackController {
     @Headers('x-paystack-signature') signature: string,
   ) {
     try {
+
+      console.log('Approve transfer hit');
+      console.log('Signature:', signature);
+
       // 1. Verify request is truly from Paystack
       await this.paystack.verifyWebhookSignature(req.rawBody, signature);
 
