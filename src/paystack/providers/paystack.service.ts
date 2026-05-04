@@ -103,45 +103,51 @@ export class PaystackService {
   // }
 
   async handleTransferApproval(event: any): Promise<boolean> {
-    const requestBody = event.details?.body;
-    const transfer = event.transfers?.[0];
+    try {
+      // console.log('Incoming approval payload:', event);
 
-    // if (!requestBody || !transfer) {
-    //   return false;
-    // }
+      // Use direct payload
+      const amount = Number(event.amount);
+      const reference = event.reference;
+      // const recipient = event.recipient;
 
-    console.log('Handling transfer approval with request body:', requestBody);
-    console.log('Transfer details:', transfer);
+      console.log('Extracted details - Amount:', amount, 'Reference:', reference);
 
-    // checks
-    const amount = Number(requestBody.amount);
-    const reference = requestBody.reference;
+      if (!amount || !reference) {
+        return false;
+      }
 
-    // My rules (IMPORTANT)
-    // ------------------------
+      // -------------------------------
+      // 1. Check if transaction exists
+      // -------------------------------
+      const tx = await this.transactionRepo.findOne({
+        where: { reference },
+      });
 
-    // 1. Check if transaction exists
-    const tx = await this.transactionRepo.findOne({
-      where: { reference },
-    });
+      if (!tx) return false;
 
-    if (!tx) return false;
+      // -------------------------------
+      // 2. Prevent double processing
+      // -------------------------------
+      if (tx.status !== TransactionStatus.PENDING) return false;
 
-    // console.log(`typeof amount: ${typeof amount}, amount: ${amount}`);
-    // console.log(`typeof tx.amount: ${typeof tx.amount}, tx.amount: ${tx.amount}`);
+      // -------------------------------
+      // 3. Validate amount
+      // -------------------------------
+      if (Number(tx.amount) !== amount) return false;
 
-    // 2. Prevent double processing
-    if (tx.status !== TransactionStatus.PENDING) return false;
+      // -------------------------------
+      // 4. Validate recipient (optional but recommended)
+      // -------------------------------
+      // if (tx.recipientCode && tx.recipientCode !== recipient) {
+      //   return false;
+      // }
 
-    // 3. Wallet balance validation
-    if (Number(tx.amount) !== amount) return false;
-
-    // // 4. Validate recipient code
-    // if (tx.recipientCode !== recipient) {
-    //   return false;
-    // }
-
-    return true;
+      return true;
+    } catch (error) {
+      console.error('Approval error:', error);
+      return false;
+    }
   }
 
   async createCustomer(user: User) {
