@@ -177,11 +177,13 @@ export class WalletFundingService {
    * Paystack webhook handler core logic.
    * Call this from controller after verifying signature.
    */
-
   async handleSuccessfulCharge(data: any) {
     if (!data) return;
 
-    const reference = data.reference;
+    console.log(data.amount);
+    
+
+    const reference = data.reference; 
     if (!reference) return;
 
     // Ensure it's actually successful
