@@ -64,7 +64,7 @@ export class WithdrawalsService {
     accountName: string | undefined;
     accountNumber: string | undefined;
     bankName: string | undefined;
-    amount: string;
+    amount: number;
   }) {
     try {
       await this.mailService.sendTemplate(
@@ -219,7 +219,7 @@ export class WithdrawalsService {
         accountName: user.bank_account.accountName,
         accountNumber: user.bank_account.accountNumber,
         bankName: user.bank_account.bankName,
-        amount: Number(savedWithdrawal.amount).toFixed(2),
+        amount: netAmount,
         orderReference: savedWithdrawal.reference,
       });
 

@@ -128,7 +128,7 @@ export class PaystackService {
       // 1. Check if transaction exists
       // -------------------------------
       const tx = await this.transactionRepo.findOne({
-        where: { reference },
+        where: { reference: reference },
       });
 
       if (!tx) {
