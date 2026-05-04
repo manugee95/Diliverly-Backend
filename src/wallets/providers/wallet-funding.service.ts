@@ -37,8 +37,8 @@ export class WalletFundingService {
 
   private async finalizeFunding(
     reference: string,
-    amountPaidNaira: number,
-    data: any, 
+    amountPaid: number,
+    data: any,
   ) {
     await this.dataSource.transaction(async (manager) => {
       const fundingRepo = manager.getRepository(WalletFunding);
@@ -62,7 +62,7 @@ export class WalletFundingService {
       if (!userId) return;
 
       // Validate amount (important security check)
-      if (Number(funding.amount) !== amountPaidNaira) {
+      if (funding.amount !== amountPaid) {
         return;
       }
 
@@ -79,8 +79,8 @@ export class WalletFundingService {
       if (!wallet) return;
 
       // Use KOBO (integer)
-      const amountPaidKobo = this.currencyConvert.toKobo(amountPaidNaira);
       const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
+      const amountPaidKobo = Number(funding.amount);
       const newBalanceKobo = currentBalanceKobo + amountPaidKobo;
 
       wallet.availableBalance = newBalanceKobo;
@@ -98,7 +98,7 @@ export class WalletFundingService {
         {
           user: { id: userId } as User,
           type: TransactionType.CREDIT,
-          amount: amountPaidKobo,
+          amount: amountPaid,
           description: 'Wallet funding via Paystack',
           reference,
           status: TransactionStatus.SUCCESSFUL,
@@ -156,22 +156,22 @@ export class WalletFundingService {
    * Verify payment and fund wallet. (temporary method for dev, webhook is the source of truth in production)
    */
 
-  async verifyAndFundWallet(reference: string) {
-    const verification = await this.paystack.verifyTransaction(reference);
+  // async verifyAndFundWallet(reference: string) {
+  //   const verification = await this.paystack.verifyTransaction(reference);
 
-    const ok = verification?.status === true;
-    const status = verification?.data?.status; // 'success'
-    if (!ok || status !== 'success') {
-      return { verified: false, reference, verification };
-    }
+  //   const ok = verification?.status === true;
+  //   const status = verification?.data?.status; // 'success'
+  //   if (!ok || status !== 'success') {
+  //     return { verified: false, reference, verification };
+  //   }
 
-    const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
+  //   const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
 
-    //This is the temporary replacement for webhook in dev
-    await this.finalizeFunding(reference, amountPaidNaira, verification);
+  //   //This is the temporary replacement for webhook in dev
+  //   await this.finalizeFunding(reference, amountPaidNaira, verification);
 
-    return { verified: true, reference };
-  }
+  //   return { verified: true, reference };
+  // }
 
   /**
    * Paystack webhook handler core logic.
@@ -181,17 +181,16 @@ export class WalletFundingService {
     if (!data) return;
 
     console.log(data.amount);
-    
 
-    const reference = data.reference; 
+    const reference = data.reference;
     if (!reference) return;
 
     // Ensure it's actually successful
     if (data.status !== 'success') return;
 
     // Paystack sends amount in kobo → convert to naira
-    const amountPaidNaira = Number(data.amount ?? 0) / 100;
+    const amountPaid = data.amount;
 
-    await this.finalizeFunding(reference, amountPaidNaira, data);
+    await this.finalizeFunding(reference, amountPaid, data);
   }
 }
