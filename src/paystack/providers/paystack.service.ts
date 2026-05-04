@@ -104,11 +104,11 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     const requestBody = event.details?.body;
-    const transfer = event.transfers?.[0];
+    // const transfer = event.transfers?.[0];
 
-    if (!requestBody || !transfer) {
-      return false;
-    }
+    // if (!requestBody || !transfer) {
+    //   return false;
+    // }
 
     // checks
     const amount = Number(requestBody.amount);
@@ -123,6 +123,9 @@ export class PaystackService {
     });
 
     if (!tx) return false;
+
+    console.log(`typeof amount: ${typeof amount}, amount: ${amount}`);
+    console.log(`typeof tx.amount: ${typeof tx.amount}, tx.amount: ${tx.amount}`);
 
     // 2. Prevent double processing
     if (tx.status !== TransactionStatus.PENDING) return false;
