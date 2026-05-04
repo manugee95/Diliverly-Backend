@@ -62,8 +62,10 @@ export class WalletFundingService {
       if (!userId) return;
 
       // Validate amount (important security check)
-      if (funding.amount !== amountPaid) {
-        console.log(`Amount mismatch: expected ${funding.amount}, got ${amountPaid}`);
+      if (Number(funding.amount) !== amountPaid) {
+        console.log(
+          `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
+        );
         return;
       }
 
@@ -188,7 +190,7 @@ export class WalletFundingService {
     if (data.status !== 'success') return;
 
     // Paystack sends amount in kobo → convert to naira
-    const amountPaid = data.amount;
+    const amountPaid = Number(data.amount ?? 0);
 
     await this.finalizeFunding(reference, amountPaid, data);
   }
