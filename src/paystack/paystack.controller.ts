@@ -33,7 +33,7 @@ export class PaystackController {
     console.log('Approve transfer hit');
 
     // 2. Extract transfer details
-    const event = req.body;
+    const event = req.body.event;
 
     console.log(event);
     
