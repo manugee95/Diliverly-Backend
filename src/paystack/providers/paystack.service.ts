@@ -104,7 +104,6 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
-      console.log('Incoming approval payload:', JSON.stringify(event, null, 2));
 
       // Extract relevant details from the event
       const payload = event?.data?.details?.body;
@@ -121,6 +120,7 @@ export class PaystackService {
       console.log('Extracted:', { amount, reference });
 
       if (!amount || !reference) {
+        console.log('Missing amount or reference');
         return false;
       }
 
@@ -131,17 +131,26 @@ export class PaystackService {
         where: { reference },
       });
 
-      if (!tx) return false;
+      if (!tx) {
+        console.log('Transaction not found');
+        return false;
+      }
 
       // -------------------------------
       // 2. Prevent double processing
       // -------------------------------
-      if (tx.status !== TransactionStatus.PENDING) return false;
+      if (tx.status !== TransactionStatus.PENDING) {
+        console.log('Transaction is not pending');
+        return false;
+      }
 
       // -------------------------------
       // 3. Validate amount
       // -------------------------------
-      if (Number(tx.amount) !== amount) return false;
+      if (Number(tx.amount) !== amount) {
+        console.log('Amount mismatch');
+        return false;
+      }
 
       // -------------------------------
       // 4. Validate recipient (optional but recommended)
