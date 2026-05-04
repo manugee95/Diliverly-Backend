@@ -63,6 +63,7 @@ export class WalletFundingService {
 
       // Validate amount (important security check)
       if (funding.amount !== amountPaid) {
+        console.log(`Amount mismatch: expected ${funding.amount}, got ${amountPaid}`);
         return;
       }
 
@@ -179,8 +180,6 @@ export class WalletFundingService {
    */
   async handleSuccessfulCharge(data: any) {
     if (!data) return;
-
-    console.log(data.amount);
 
     const reference = data.reference;
     if (!reference) return;
