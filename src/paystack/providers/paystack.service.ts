@@ -104,7 +104,7 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
-      // console.log('Incoming approval payload:', event);
+      console.log('Incoming approval payload:', event);
 
       // Use direct payload
       const amount = Number(event.amount);
