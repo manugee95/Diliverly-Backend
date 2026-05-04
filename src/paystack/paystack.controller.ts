@@ -35,6 +35,9 @@ export class PaystackController {
     // 2. Extract transfer details
     const event = req.body;
 
+    console.log(event);
+    
+
     // 3. Run business logic
     const approved = await this.paystack.handleTransferApproval(event);
 

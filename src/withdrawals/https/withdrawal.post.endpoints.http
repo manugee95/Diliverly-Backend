@@ -3,7 +3,7 @@ Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NzkyNTc0NSwiZXhwIjoxNzc3OTI5MzQ1LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.uYMH1BglC3aWTzGL3IGlQUvkJ3KBVsEQ0wokMhuOwlU
 
 {
-    "amount": 1600
+    "amount": 1400
 }
 
 POST http://localhost:3000/withdrawals/finalize
