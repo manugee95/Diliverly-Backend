@@ -290,6 +290,8 @@ export class WithdrawalsService {
         transferCode: transferRes.data.data.transfer_code,
       };
     } catch (error) {
+      console.log(error);
+      
       throw new BadRequestException('Transfer initiation failed');
     }
   }

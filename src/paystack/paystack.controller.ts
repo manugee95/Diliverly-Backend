@@ -28,18 +28,9 @@ export class PaystackController {
    */
   @Auth(AuthType.None)
   @Post('approve-transfer')
-  async approveTransfer(
-    @Req() req,
-    @Res() res,
-    @Headers('x-paystack-signature') signature: string,
-  ) {
+  async approveTransfer(@Req() req, @Res() res) {
     try {
-
       console.log('Approve transfer hit');
-      console.log('Signature:', signature);
-
-      // 1. Verify request is truly from Paystack
-      await this.paystack.verifyWebhookSignature(req.rawBody, signature);
 
       // 2. Extract transfer details
       const event = req.body;
@@ -48,9 +39,11 @@ export class PaystackController {
       const approved = await this.paystack.handleTransferApproval(event);
 
       if (approved) {
-        return res.sendStatus(200); // ✅ approve
+        // Return 200 to approve
+        return res.status(200).json({ status: 'success' });
       } else {
-        return res.sendStatus(400); // ❌ reject
+        // Return 400 to reject
+        return res.status(400).json({ status: 'failed' });
       }
     } catch (error) {
       return res.sendStatus(400);
