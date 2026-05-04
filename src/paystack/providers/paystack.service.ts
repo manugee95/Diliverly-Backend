@@ -105,6 +105,9 @@ export class PaystackService {
   async handleTransferApproval(event: any): Promise<boolean> {
     const transfer = event.data;
 
+    console.log(transfer);
+    
+
     // Example checks
     const amount = transfer.amount;
     const reference = transfer.reference;
