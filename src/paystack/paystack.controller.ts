@@ -6,6 +6,7 @@ import {
   Get,
   Query,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { PaystackService } from './providers/paystack.service';
 import { Auth } from '../auth/decorators/auth.decorator';
@@ -28,25 +29,19 @@ export class PaystackController {
    */
   @Auth(AuthType.None)
   @Post('approve-transfer')
-  async approveTransfer(@Req() req, @Res() res) {
-    try {
-      console.log('Approve transfer hit');
+  async approveTransfer(@Req() req) {
+    console.log('Approve transfer hit');
 
-      // 2. Extract transfer details
-      const event = req.body;
+    // 2. Extract transfer details
+    const event = req.body;
 
-      // 3. Run business logic
-      const approved = await this.paystack.handleTransferApproval(event);
+    // 3. Run business logic
+    const approved = await this.paystack.handleTransferApproval(event);
 
-      if (approved) {
-        // Return 200 to approve
-        return res.status(200).json({ status: 'success' });
-      } else {
-        // Return 400 to reject
-        return res.status(400).json({ status: 'failed' });
-      }
-    } catch (error) {
-      return res.sendStatus(400);
+    if (!approved) {
+      throw new BadRequestException();
     }
+
+    return;
   }
 }
