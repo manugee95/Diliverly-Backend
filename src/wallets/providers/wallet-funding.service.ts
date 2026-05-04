@@ -156,22 +156,22 @@ export class WalletFundingService {
    * Verify payment and fund wallet. (temporary method for dev, webhook is the source of truth in production)
    */
 
-  // async verifyAndFundWallet(reference: string) {
-  //   const verification = await this.paystack.verifyTransaction(reference);
+  async verifyAndFundWallet(reference: string) {
+    const verification = await this.paystack.verifyTransaction(reference);
 
-  //   const ok = verification?.status === true;
-  //   const status = verification?.data?.status; // 'success'
-  //   if (!ok || status !== 'success') {
-  //     return { verified: false, reference, verification };
-  //   }
+    const ok = verification?.status === true;
+    const status = verification?.data?.status; // 'success'
+    if (!ok || status !== 'success') {
+      return { verified: false, reference, verification };
+    }
 
-  //   const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
+    const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
 
-  //   //This is the temporary replacement for webhook in dev
-  //   await this.finalizeFunding(reference, amountPaidNaira, verification);
+    //This is the temporary replacement for webhook in dev
+    await this.finalizeFunding(reference, amountPaidNaira, verification);
 
-  //   return { verified: true, reference };
-  // }
+    return { verified: true, reference };
+  }
 
   /**
    * Paystack webhook handler core logic.
