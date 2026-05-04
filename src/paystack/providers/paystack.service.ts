@@ -104,14 +104,21 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
-      console.log('Incoming approval payload:', event);
+      console.log('Incoming approval payload:', JSON.stringify(event, null, 2));
 
-      // Use direct payload
-      const amount = Number(event.amount);
-      const reference = event.reference;
-      // const recipient = event.recipient;
+      // Extract relevant details from the event
+      const payload = event?.data?.details?.body;
+      const transfer = event?.data?.transfers?.[0];
 
-      console.log('Extracted details - Amount:', amount, 'Reference:', reference);
+      if (!payload || !transfer) {
+        console.log('Invalid payload structure');
+        return false;
+      }
+
+      const amount = Number(payload.amount);
+      const reference = payload.reference;
+
+      console.log('Extracted:', { amount, reference });
 
       if (!amount || !reference) {
         return false;
