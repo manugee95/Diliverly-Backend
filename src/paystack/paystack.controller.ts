@@ -43,6 +43,6 @@ export class PaystackController {
     }
 
     // return 200 response to Paystack
-    return res.status(200).send({ status: 'success' }); 
+    return res.status(200); 
   } 
 }
