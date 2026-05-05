@@ -104,7 +104,6 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
-
       // Extract relevant details from the event
       const payload = event?.data?.details?.body;
       const transfer = event?.data?.transfers?.[0];
@@ -115,7 +114,12 @@ export class PaystackService {
       }
 
       const amount = Number(payload.amount);
-      const reference = payload.reference;
+      const reference = String(payload.reference).trim();
+
+      console.log('Incoming reference:', reference);
+      console.log('Type:', typeof reference);
+      console.log('Length:', reference?.length);
+      console.log('Raw:', JSON.stringify(reference));
 
       console.log('Extracted:', { amount, reference });
 
