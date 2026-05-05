@@ -17,6 +17,10 @@ import { Delivery } from '../../delivery-requests/entities/delivery.entity';
 import { DeliveryCost } from '../entities/deliveryCost.entity';
 import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
 import { generateOrderRef } from '../../common/utils/reference.util';
+import { TransactionsService } from '../../transactions/providers/transactions.service';
+import { TransactionStatus } from '../../transactions/enums/transactionStatus.enum';
+import { TransactionType } from '../../transactions/enums/transactionType.enum';
+import { User } from '../../users/user.entity';
 
 @Injectable()
 export class QuotePaymentService {
@@ -24,6 +28,7 @@ export class QuotePaymentService {
     /** Injecting required repositories and services */
     private readonly dataSource: DataSource,
     private readonly currencyConvert: CurrencyConvertProvider,
+    private readonly txService: TransactionsService,
 
     @InjectRepository(Vendor)
     private readonly vendorRepo: Repository<Vendor>,
@@ -209,6 +214,19 @@ export class QuotePaymentService {
       // 11. Mark request completed
       request.status = RequestStatus.ASSIGNED;
       await requestRepo.save(request);
+
+      // 12. Log transaction
+      await this.txService.logTransaction(
+        {
+          user: { id: input.vendor.user.id } as User,
+          type: TransactionType.DEBIT,
+          amount: totalKobo,
+          description: `Payment for quote on request ${request.title}`,
+          reference,
+          status: TransactionStatus.SUCCESSFUL,
+        },
+        manager,
+      );
 
       return {
         orderId: order.id,
