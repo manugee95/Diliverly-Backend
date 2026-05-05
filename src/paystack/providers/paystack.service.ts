@@ -117,8 +117,6 @@ export class PaystackService {
       const amount = Number(payload.amount);
       const reference = payload.reference;
 
-      console.log('Extracted:', { amount, reference });
-
       if (!amount || !reference) {
         console.log('Missing amount or reference');
         return false;
