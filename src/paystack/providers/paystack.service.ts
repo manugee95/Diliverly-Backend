@@ -104,6 +104,7 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
+
       // Extract relevant details from the event
       const payload = event?.data?.details?.body;
       const transfer = event?.data?.transfers?.[0];
@@ -114,15 +115,11 @@ export class PaystackService {
       }
 
       const amount = Number(payload.amount);
-      const normalizedRef = String(payload.reference).trim().replace(/\s/g, '');
+      const reference = payload.reference;
 
-      console.log('Normalized:', normalizedRef);
-      console.log(
-        'Char codes:',
-        [...normalizedRef].map((c) => c.charCodeAt(0)),
-      );
+      console.log('Extracted:', { amount, reference });
 
-      if (!amount || !normalizedRef) {
+      if (!amount || !reference) {
         console.log('Missing amount or reference');
         return false;
       }
@@ -130,10 +127,9 @@ export class PaystackService {
       // -------------------------------
       // 1. Check if transaction exists
       // -------------------------------
-      const tx = await this.transactionRepo
-        .createQueryBuilder('tx')
-        .where('TRIM(tx.reference) = :reference', { reference: normalizedRef })
-        .getOne();
+      const tx = await this.transactionRepo.findOne({
+        where: { reference },
+      });
 
       if (!tx) {
         console.log('Transaction not found');
