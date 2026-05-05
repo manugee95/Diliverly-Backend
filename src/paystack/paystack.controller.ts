@@ -29,20 +29,15 @@ export class PaystackController {
    */
   @Auth(AuthType.None)
   @Post('approve-transfer')
-  async approveTransfer(@Req() req, @Res() res) {
+  async approveTransfer(@Req() req): Promise<{ status: string }> {
     console.log('Approve transfer hit');
 
-    // 1. Extract transfer details
-    const event = req.body;
-
-    // 2. Run business logic
-    const approved = await this.paystack.handleTransferApproval(event);
-
-    if (!approved) {
-      throw new BadRequestException();
+    try {
+      await this.paystack.handleTransferApproval(req.body);
+      return { status: 'ok' };
+    } catch (error) {
+      console.error('Webhook error:', error);
+      return { status: 'handled' };
     }
-
-    // return 200 response to Paystack
-    return res.status(200).send('Transfer approved');
   }
 }
