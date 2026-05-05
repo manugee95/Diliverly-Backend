@@ -25,7 +25,7 @@ import { Response } from 'express';
 import { AdminGuard } from '../auth/guards/roles/admin.guard';
 import { ResendCodeDto } from './dtos/resend-code.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as multer from 'multer';
+// import * as multer from 'multer';
 
 @Controller('users')
 export class UsersController {
