@@ -32,13 +32,9 @@ export class PaystackController {
   @Post('approve-transfer')
   @UseInterceptors()
   async approveTransfer(@Req() req, @Res() res) {
-    try {
-      await this.paystack.handleTransferApproval(req.body);
-      return res.status(200).send('ok');
-    } catch (error) {
-      console.error(error);
-      return res.status(200).send('error handled');
-    }
+    this.paystack.handleTransferApproval(req.body).catch(console.error);
+
+    return res.status(200).send('ok');
   }
 
   // async approveTransfer(@Req() req, @Res() res) {
