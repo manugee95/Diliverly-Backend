@@ -11,6 +11,9 @@ export class CurrencyConvertProvider {
   };
 
   formatNaira = (kobo: number | string) => {
-    return (Number(kobo) / 100).toFixed(2);
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+    }).format(Number(kobo) / 100);
   };
 }

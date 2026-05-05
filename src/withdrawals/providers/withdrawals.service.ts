@@ -67,7 +67,7 @@ export class WithdrawalsService {
     accountName: string | undefined;
     accountNumber: string | undefined;
     bankName: string | undefined;
-    amount: number;
+    amount: string;
   }) {
     try {
       await this.mailService.sendTemplate(
@@ -154,6 +154,7 @@ export class WithdrawalsService {
 
     const netAmountKobo = amountKobo - feeKobo;
     const netAmount = this.currencyConvert.toNaira(netAmountKobo);
+    const formattedAmount = this.currencyConvert.formatNaira(amountKobo); 
 
     const reference = `WD-${generateTransactionRef()}`;
 
@@ -217,14 +218,14 @@ export class WithdrawalsService {
         paystackTransferCode: transfer.transferCode,
       });
 
-      // Fire and forget notification
+      // Send notification
       this.notifyUser({
         userEmail: user.email,
         userName: user.firstName,
         accountName: user.bank_account.accountName,
         accountNumber: user.bank_account.accountNumber,
         bankName: user.bank_account.bankName,
-        amount: netAmount,
+        amount: formattedAmount,
         orderReference: savedWithdrawal.reference,
       });
 
