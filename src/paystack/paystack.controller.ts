@@ -29,7 +29,7 @@ export class PaystackController {
    */
   @Auth(AuthType.None)
   @Post('approve-transfer')
-  async approveTransfer(@Req() req) {
+  async approveTransfer(@Req() req, @Res() res) {
     console.log('Approve transfer hit');
 
     // 1. Extract transfer details
@@ -42,6 +42,7 @@ export class PaystackController {
       throw new BadRequestException();
     }
 
-    return;
+    // return 200 response to Paystack
+    return res.status(200).send('Transfer approved');
   }
 }
