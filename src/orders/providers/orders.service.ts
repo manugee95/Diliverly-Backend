@@ -455,7 +455,7 @@ export class OrdersService {
 
       // Update order
       order.deliveryDetailsProvided = true;
-      order.status = OrderStatus.IN_PROGRESS;
+      order.status = OrderStatus.ACTIVE;
       await orderRepo.save(order);
 
       // Clear cache for vendor and agent dashboards

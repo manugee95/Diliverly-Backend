@@ -169,7 +169,7 @@ export class QuotesService {
     // Send email AFTER commit
     await this.mailService.sendTemplate(
       savedQuote.request.vendor.user.email,
-      'New Quote Received for Your Delivery Request',
+      'New Quote Received',
       'vendor-new-quotes',
       {
         vendorName:
