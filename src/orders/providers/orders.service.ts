@@ -141,6 +141,31 @@ export class OrdersService {
   }
 
   /**
+   * Method to notify agent of payment received
+   */
+  private async notifyAgentPaymentReceived(payload: {
+    agentEmail: string;
+    agentName: string;
+    amount: number;
+    reference: string;
+  }) {
+    try {
+      await this.mailService.sendTemplate(
+        payload.agentEmail,
+        'Payment Received – Delivery Completed',
+        'payment-received',
+        {
+          agentName: payload.agentName,
+          amount: payload.amount,
+          reference: payload.reference,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to send agent email:', error);
+    }
+  }
+
+  /**
    * Method to notify vendor of item delivered
    */
   private async notifyVendorDelivered(payload: {
@@ -548,6 +573,14 @@ export class OrdersService {
         orderItem.order.vendor.user.firstName,
     });
 
+    // Notify agent of payment received
+    await this.notifyAgentPaymentReceived({
+      agentEmail: orderItem.agent?.user?.email || '',
+      agentName: orderItem.agent?.businessName || 'Agent',
+      reference: orderItem.order.reference,
+      amount: orderItem.cost,
+    });
+
     return { message: 'Delivered successfully. Escrow released to agent.' };
   }
 
@@ -803,6 +836,14 @@ export class OrdersService {
         orderItem.order.vendor.user.firstName,
       amountPaid: orderItem.codAmount,
       deliveryItem: orderItem.itemName,
+    });
+
+    // Notify agent of payment received
+    await this.notifyAgentPaymentReceived({
+      agentEmail: orderItem.agent?.user?.email || '',
+      agentName: orderItem.agent?.businessName || 'Agent',
+      reference: orderItem.order.reference,
+      amount: orderItem.cost,
     });
 
     return {
