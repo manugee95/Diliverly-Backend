@@ -80,6 +80,7 @@ export class AuthController {
     description:
       'Refresh token is gotten from cookies and new tokens are issued',
   })
+  @Auth(AuthType.None)
   @Post('refresh-tokens')
   public async refresh(
     @Body() dto: RefreshTokenDto,
