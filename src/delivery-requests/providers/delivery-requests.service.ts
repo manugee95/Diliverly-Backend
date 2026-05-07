@@ -646,51 +646,52 @@ export class DeliveryRequestService {
   /**
    * Method to update a delivery request - only if it's still open and only the vendor who created it can update
    */
-  async updateDeliveryRequest(
-    userId: number,
-    requestId: number,
-    dto: CreateDeliveryRequestDto,
-  ) {
-    const vendor = await this.vendorRepo.findOne({
-      where: { user: { id: userId } },
-    });
 
-    if (!vendor) throw new NotFoundException('Vendor not found');
+  // async updateDeliveryRequest(
+  //   userId: number,
+  //   requestId: number,
+  //   dto: CreateDeliveryRequestDto,
+  // ) {
+  //   const vendor = await this.vendorRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
 
-    const request = await this.deliveryRequestRepo.findOne({
-      where: { id: requestId, vendor: { id: vendor.id } },
-      relations: ['deliveries', 'assignedAgent'],
-    });
+  //   if (!vendor) throw new NotFoundException('Vendor not found');
 
-    if (!request) throw new NotFoundException('Request not found');
+  //   const request = await this.deliveryRequestRepo.findOne({
+  //     where: { id: requestId, vendor: { id: vendor.id } },
+  //     relations: ['deliveries', 'assignedAgent'],
+  //   });
 
-    if (request.status !== RequestStatus.OPEN) {
-      throw new BadRequestException(
-        'Only open requests can be updated. This request is already being processed.',
-      );
-    }
+  //   if (!request) throw new NotFoundException('Request not found');
 
-    const { title, description, state, addresses, pickUpAddress } = dto;
+  //   if (request.status !== RequestStatus.OPEN) {
+  //     throw new BadRequestException(
+  //       'Only open requests can be updated. This request is already being processed.',
+  //     );
+  //   }
 
-    request.title = title;
-    request.description = description;
-    request.state = state;
-    request.pickUpAddress = pickUpAddress;
+  //   const { title, description, state, addresses, pickUpAddress } = dto;
 
-    // Update deliveries - for simplicity, we'll delete existing and create new ones
-    await this.deliveryRepo.delete({ request: { id: request.id } });
+  //   request.title = title;
+  //   request.description = description;
+  //   request.state = state;
+  //   request.pickUpAddress = pickUpAddress;
 
-    const newDeliveries = addresses.map((address) =>
-      this.deliveryRepo.create({
-        request,
-        address: address.address,
-        deliveryType: address.deliveryType,
-      }),
-    );
+  //   // Update deliveries - for simplicity, we'll delete existing and create new ones
+  //   await this.deliveryRepo.delete({ request: { id: request.id } });
 
-    request.deliveries = newDeliveries;
+  //   const newDeliveries = addresses.map((address) =>
+  //     this.deliveryRepo.create({
+  //       request,
+  //       address: address.address,
+  //       deliveryType: address.deliveryType,
+  //     }),
+  //   );
 
-    const updatedRequest = await this.deliveryRequestRepo.save(request);
-    return updatedRequest;
-  }
+  //   request.deliveries = newDeliveries;
+
+  //   const updatedRequest = await this.deliveryRequestRepo.save(request);
+  //   return updatedRequest;
+  // }
 }
