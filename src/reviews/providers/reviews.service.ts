@@ -57,6 +57,7 @@ export class ReviewsService {
           agentName: payload.agentName,
           vendorName: payload.vendorName,
         },
+        `You have a new review from ${payload.vendorName}!`
       );
     } catch (error) {
       console.error('Failed to send agent email:', error);

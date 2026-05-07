@@ -20,21 +20,25 @@ export class MailerService {
     subject: string,
     template: string,
     data: Record<string, any>,
+    preheader?: string,
   ) {
-    const layout = fs.readFileSync(
-      join(__dirname, 'templates/layout.html'),
-      'utf8',
-    );
+    const templatesPath = join(__dirname, 'templates');
+
+    const layout = fs.readFileSync(join(templatesPath, 'layout.html'), 'utf8');
 
     const body = fs.readFileSync(
-      join(__dirname, `templates/${template}.html`),
+      join(templatesPath, `${template}.html`),
       'utf8',
     );
 
-    const html = layout
-      .replace('{{body}}', this.interpolate(body, data))
-      .replace('{{subject}}', subject)
-      .replace('{{year}}', new Date().getFullYear().toString());
+    const mergedLayout = layout.replace('{{body}}', body);
+
+    const html = this.interpolate(mergedLayout, {
+      ...data,
+      subject,
+      preheader,
+      year: new Date().getFullYear(),
+    });
 
     await this.resend.emails.send({
       from: this.from,
@@ -48,4 +52,3 @@ export class MailerService {
     return template.replace(/{{(\w+)}}/g, (_, key) => data[key] ?? '');
   }
 }
-

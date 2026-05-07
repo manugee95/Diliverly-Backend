@@ -48,6 +48,7 @@ export class ForgotPasswordProvider {
         user: user.firstName,
         code: resetCode,
       },
+      `Your password reset code is ${resetCode}`,
     );
 
     return { message: 'Reset code sent to email.' };

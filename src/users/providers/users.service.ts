@@ -122,6 +122,7 @@ export class UsersService {
           name: firstName,
           code: verificationCode,
         },
+        `Please verify your email address to complete your signup`
       );
 
       return { message: 'Verification code sent to your email.' };
@@ -308,6 +309,7 @@ export class UsersService {
         name: createdUser.firstName,
         dashboardUrl: 'https://google.com', // TODO: Update with actual dashboard URL
       },
+      `Welcome to Dilivaly, ${createdUser.firstName}! Your account has been successfully created.`
     );
 
     return {

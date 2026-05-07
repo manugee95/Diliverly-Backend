@@ -134,6 +134,7 @@ export class OrdersService {
         {
           orderReference: payload.orderReference,
         },
+        `Your order ${payload.orderReference} has started`,
       );
     } catch (error) {
       console.error('Failed to send agent email:', error);
@@ -158,8 +159,9 @@ export class OrdersService {
           agentName: payload.agentName,
           amount: payload.amount,
           reference: payload.reference,
-        },
-      );
+        }, 
+        `You just earned ₦${payload.amount} for order ${payload.reference}`, 
+      ); 
     } catch (error) {
       console.error('Failed to send agent email:', error);
     }
@@ -176,12 +178,13 @@ export class OrdersService {
     try {
       await this.mailService.sendTemplate(
         payload.vendorEmail,
-        'Item Delivered 🚀',
+        'Item Delivered',
         'item-delivered',
         {
           orderReference: payload.orderReference,
           vendorName: payload.vendorName,
         },
+        `An item in your order ${payload.orderReference} has been delivered!`,
       );
     } catch (error) {
       console.error('Failed to send vendor email:', error);
@@ -205,6 +208,7 @@ export class OrdersService {
           orderReference: payload.orderReference,
           vendorName: payload.vendorName,
         },
+        `Your order ${payload.orderReference} has been completed!`,
       );
     } catch (error) {
       console.error('Failed to send vendor email:', error);
@@ -228,6 +232,7 @@ export class OrdersService {
           orderReference: payload.orderReference,
           vendorName: payload.vendorName,
         },
+        `An item in your order ${payload.orderReference} has been cancelled.`,
       );
     } catch (error) {
       console.error('Failed to send vendor email:', error);
@@ -255,7 +260,8 @@ export class OrdersService {
           amountPaid: payload.amountPaid,
           deliveryItem: payload.deliveryItem,
         },
-      );
+        `You just received a COD payment of ₦${payload.amountPaid}`,
+      ); 
     } catch (error) {
       console.error('Failed to send vendor email:', error);
     }
@@ -280,7 +286,8 @@ export class OrdersService {
           vendorName: payload.vendorName,
           orderUrl: payload.orderUrl,
         },
-      );
+        `Please provide delivery details for your order to get started`,
+      );  
     } catch (error) {
       console.error('Failed to send vendor email:', error);
     }

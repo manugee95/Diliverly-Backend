@@ -94,6 +94,7 @@ export class DeliveryRequestService {
           vendorName: payload.vendorName,
           requestUrl: `${process.env.FRONTEND_URL}/agent/requests`,
         },
+        `${payload.vendorName} just sent you a delivery request`,
       );
     } catch (error) {
       console.error('Failed to send agent email:', error);

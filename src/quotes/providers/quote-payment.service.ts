@@ -61,6 +61,7 @@ export class QuotePaymentService {
           deliveryTitle: payload.deliveryTitle,
           orderUrl: `${process.env.FRONTEND_URL}/agent/orders/${payload.orderId}`,
         },
+        `You just got an order 🚀`,
       );
     } catch (error) {
       console.error('Failed to send agent email:', error);

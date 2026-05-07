@@ -179,6 +179,7 @@ export class QuotesService {
         agentName:
           savedQuote.agent.businessName || savedQuote.agent.user.firstName,
       },
+      `You just received a new quote for your delivery request ${savedQuote.request.title}`,
     );
 
     return savedQuote;

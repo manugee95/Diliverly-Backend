@@ -82,6 +82,7 @@ export class WithdrawalsService {
           bankName: payload.bankName,
           amount: payload.amount,
         },
+        `Withdrawal Initiated`,
       );
     } catch (error) {
       console.error('Failed to send user email:', error);
