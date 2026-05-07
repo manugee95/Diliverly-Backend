@@ -12,11 +12,11 @@ import { ApiProperty } from '@nestjs/swagger';
 export class DeliveryAddressDto {
   @IsNotEmpty()
   @IsString()
-  address: string;
+  address!: string;
 
   @IsNotEmpty()
   @IsEnum(DeliveryType)
-  deliveryType: DeliveryType;
+  deliveryType!: DeliveryType;
 }
 
 export class CreateDeliveryRequestDto {
@@ -26,7 +26,7 @@ export class CreateDeliveryRequestDto {
   })
   @IsNotEmpty()
   @IsString()
-  title: string;
+  title!: string;
 
   @ApiProperty({
     description: 'description of the delivery request',
@@ -35,7 +35,7 @@ export class CreateDeliveryRequestDto {
   })
   @IsNotEmpty()
   @IsString()
-  description: string;
+  description!: string;
 
   @ApiProperty({
     description: 'state where the delivery will be made',
@@ -43,7 +43,7 @@ export class CreateDeliveryRequestDto {
   })
   @IsNotEmpty()
   @IsString()
-  state: string;
+  state!: string;
 
   @ApiProperty({
     description: 'pickup address for the delivery',
@@ -51,7 +51,7 @@ export class CreateDeliveryRequestDto {
   })
   @IsNotEmpty()
   @IsString()
-  pickUpAddress: string;
+  pickUpAddress!: string;
 
   @ApiProperty({
     description: 'list of delivery addresses',
@@ -61,5 +61,5 @@ export class CreateDeliveryRequestDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => DeliveryAddressDto)
-  addresses: DeliveryAddressDto[];
+  addresses!: DeliveryAddressDto[];
 }

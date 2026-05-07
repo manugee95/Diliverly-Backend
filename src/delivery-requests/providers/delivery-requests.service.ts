@@ -334,7 +334,7 @@ export class DeliveryRequestService {
       where: { id: requestId },
       relations: ['vendor', 'deliveries'],
     });
- 
+
     if (!request) {
       throw new NotFoundException('Delivery request not found');
     }
@@ -641,5 +641,56 @@ export class DeliveryRequestService {
     );
 
     return requests;
+  }
+
+  /**
+   * Method to update a delivery request - only if it's still open and only the vendor who created it can update
+   */
+  async updateDeliveryRequest(
+    userId: number,
+    requestId: number,
+    dto: CreateDeliveryRequestDto,
+  ) {
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!vendor) throw new NotFoundException('Vendor not found');
+
+    const request = await this.deliveryRequestRepo.findOne({
+      where: { id: requestId, vendor: { id: vendor.id } },
+      relations: ['deliveries', 'assignedAgent'],
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+
+    if (request.status !== RequestStatus.OPEN) {
+      throw new BadRequestException(
+        'Only open requests can be updated. This request is already being processed.',
+      );
+    }
+
+    const { title, description, state, addresses, pickUpAddress } = dto;
+
+    request.title = title;
+    request.description = description;
+    request.state = state;
+    request.pickUpAddress = pickUpAddress;
+
+    // Update deliveries - for simplicity, we'll delete existing and create new ones
+    await this.deliveryRepo.delete({ request: { id: request.id } });
+
+    const newDeliveries = addresses.map((address) =>
+      this.deliveryRepo.create({
+        request,
+        address: address.address,
+        deliveryType: address.deliveryType,
+      }),
+    );
+
+    request.deliveries = newDeliveries;
+
+    const updatedRequest = await this.deliveryRequestRepo.save(request);
+    return updatedRequest;
   }
 }
