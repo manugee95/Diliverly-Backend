@@ -36,6 +36,7 @@ import { CurrencyConvertProvider } from './common/providers/currency-convert.pro
 import { VirtualAccountModule } from './virtual-account/virtual-account.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { S3Module } from './s3/s3.module';
+import { VerificationsModule } from './verifications/verifications.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { S3Module } from './s3/s3.module';
     VirtualAccountModule,
     WebhookModule,
     S3Module,
+    VerificationsModule,
   ],
   controllers: [AppController],
   providers: [

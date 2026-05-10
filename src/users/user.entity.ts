@@ -82,6 +82,9 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   resetCodeExpiresAt?: Date;
 
+  @Column({ default: false })
+  isKycVerified!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 

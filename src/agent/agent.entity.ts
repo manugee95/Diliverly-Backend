@@ -57,6 +57,12 @@ export class Agent {
   @Column({ default: false })
   isVerified!: boolean;
 
+  @Column({ default: false })
+  isKybVerified!: boolean;
+
+  @Column({ default: false })
+  isProofOfAddressVerified!: boolean;
+
   @OneToMany(() => Quote, (quote) => quote.agent)
   quotes!: Quote[];
 

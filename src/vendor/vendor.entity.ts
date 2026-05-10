@@ -17,20 +17,20 @@ import {
 @Entity()
 export class Vendor {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @OneToOne(() => User, (user) => user.vendor, {
     onDelete: 'CASCADE',
     eager: true,
   })
   @JoinColumn()
-  user: User;
+  user!: User;
 
   @OneToMany(() => DeliveryRequest, (request) => request.vendor)
-  delivery_request: DeliveryRequest[];
+  delivery_request!: DeliveryRequest[];
 
   @OneToMany(() => Order, (order) => order.vendor)
-  orders: Order[];
+  orders!: Order[];
 
   @Column({ nullable: true })
   businessName?: string;
@@ -39,14 +39,14 @@ export class Vendor {
   address?: string;
 
   @OneToMany(() => Review, (review) => review.vendor)
-  reviews: Review[];
+  reviews!: Review[];
 
   @OneToMany(() => FavoriteAgent, (fav) => fav.vendor)
-  favoriteAgents: FavoriteAgent[];
+  favoriteAgents!: FavoriteAgent[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
