@@ -7,6 +7,7 @@ import {
   Post,
   Req,
   UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -17,6 +18,7 @@ import { VerificationStatus } from './enums/verificationStatus.enum';
 import { KycDto } from './dtos/kyc.dto';
 import { VerificationsService } from './providers/verifications.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('verifications')
 export class VerificationsController {
@@ -40,6 +42,11 @@ export class VerificationsController {
     status: 200,
     description: 'KYC verification initiated.',
   })
+  @UseInterceptors(
+    FileInterceptor('document', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
   @Post('/kyc')
   async verifyKyc(
     @Body() dto: KycDto,
@@ -55,20 +62,21 @@ export class VerificationsController {
    */
   @Post('/smile-callback')
   async handleSmileCallback(
+    @Req() req: any,
     @Body() body: any,
-
     @Headers('signature') signature: string,
-
     @Headers('timestamp') timestamp: string,
   ) {
     console.log('Smile callback received');
+
+    const rawBody = req.rawBody.toString();
 
     // ---------------------------------------------------
     // 1. VERIFY SIGNATURE
     // ---------------------------------------------------
 
     const isValidSignature = this.verifySmileSignature(
-      body,
+      rawBody,
       timestamp,
       signature,
     );
