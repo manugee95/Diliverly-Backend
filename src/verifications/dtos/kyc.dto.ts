@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class KycDto {
   @ApiProperty({
@@ -21,5 +21,6 @@ export class KycDto {
     example: 'https://example.com/document.pdf',
   })
   @IsString()
-  documentUrl!: string;
+  @IsOptional()
+  documentUrl?: string;
 }
