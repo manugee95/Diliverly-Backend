@@ -11,12 +11,58 @@ export class SmileIdService {
   private generateSignature(timestamp: string) {
     return crypto
       .createHmac('sha256', this.apiKey)
-      .update(timestamp)
-      .digest('hex');
+      .update(timestamp, 'utf-8')
+      .update(this.partnerId, 'utf-8')
+      .update('sid_request', 'utf-8')
+      .digest()
+      .toString('base64');
   }
 
   async verifyKyc(payload: {
     country: string;
+    first_name: string;
+    last_name: string;
+    id_type: string;
+    id_number: string;
+    callback_url: string;
+    partner_params: {
+      job_id: string;
+      user_id: string;
+      sandbox_result: number;
+    };
+  }) {
+    const timestamp = new Date().toISOString();
+
+    const signature = this.generateSignature(timestamp);
+
+    // 1. Merge authentication and SDK info into the request body
+    const fullPayload = {
+      ...payload,
+      partner_id: this.partnerId,
+      timestamp: timestamp,
+      signature: signature,
+      source_sdk: 'rest_api',
+      source_sdk_version: '1.0.0',
+    };
+
+    // 2. Send request to Smile API
+    const response = await axios.post(
+      `${this.baseUrl}/v1/async_id_verification`,
+      fullPayload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    // 3. Return response data
+    return response.data;
+  }
+
+  async verifyKyb(payload: {
+    country: string;
+    business_type: string;
     id_type: string;
     id_number: string;
     callback_url: string;
@@ -29,19 +75,28 @@ export class SmileIdService {
 
     const signature = this.generateSignature(timestamp);
 
+    // 1. Merge authentication and SDK info into the request body
+    const fullPayload = {
+      ...payload,
+      partner_id: this.partnerId,
+      timestamp: timestamp,
+      signature: signature,
+      source_sdk: 'rest_api',
+      source_sdk_version: '1.0.0',
+    };
+
+    // 2. Send request to Smile API
     const response = await axios.post(
-      `${this.baseUrl}/v1/async_id_verification`,
-      payload,
+      `${this.baseUrl}/v1/async_business_verification`,
+      fullPayload,
       {
         headers: {
-          partner_id: this.partnerId,
-          timestamp,
-          signature,
           'Content-Type': 'application/json',
         },
       },
     );
 
+    // 3. Return response data
     return response.data;
   }
 }

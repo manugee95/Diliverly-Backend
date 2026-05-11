@@ -19,6 +19,9 @@ import { KycDto } from './dtos/kyc.dto';
 import { VerificationsService } from './providers/verifications.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { KybDto } from './dtos/kyb.dto';
+import { Auth } from '../auth/decorators/auth.decorator';
+import { AuthType } from '../auth/enums/auth-type.enum';
 
 @Controller('verifications')
 export class VerificationsController {
@@ -58,8 +61,34 @@ export class VerificationsController {
   }
 
   /**
+   * Endpoint to verify KYB
+   */
+  @ApiOperation({
+    summary: 'Verify KYB',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'KYB verification initiated.',
+  })
+  @UseInterceptors(
+    FileInterceptor('document', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
+  @Post('/kyb')
+  async verifyKyb(
+    @Body() dto: KybDto,
+    @Req() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const userId = req.user.id;
+    return this.verificationsService.verifyKyb(userId, dto, file);
+  }
+
+  /**
    * Smile ID Callback Endpoint
    */
+  @Auth(AuthType.None)
   @Post('/smile-callback')
   async handleSmileCallback(
     @Req() req: any,
