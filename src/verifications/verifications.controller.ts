@@ -125,13 +125,14 @@ export class VerificationsController {
   async handleSmileCallback(
     @Req() req: any,
     @Body() body: any,
-    @Headers('smileid-signature') signature: string,
-    @Headers('smileid-timestamp') timestamp: string,
   ) {
     console.log('--- SMILE ID CALLBACK HEADERS ---');
-    console.log(req.headers);
-    console.log('--- SMILE ID CALLBACK BODY ---');
-    console.log(JSON.stringify(body, null, 2));
+
+    const signature = body?.signature;
+
+    const timestamp = body?.timestamp;
+
+    console.log(signature, timestamp);
 
     // 1. Verify Signature
     if (!this.verifySmileSignature(timestamp, signature)) {
