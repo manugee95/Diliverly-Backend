@@ -88,157 +88,88 @@ export class VerificationsController {
   /**
    * Smile ID Callback Endpoint
    */
+  private verifySmileSignature(
+    timestamp: string,
+    receivedSignature: string,
+  ): boolean {
+    try {
+      // 1. Replay Attack Prevention (Optional but recommended)
+      const now = Date.now();
+      const requestTime = new Date(timestamp).getTime();
+      const fiveMinutes = 5 * 60 * 1000;
+      if (Math.abs(now - requestTime) > fiveMinutes) return false;
+
+      // 2. Generate Local Signature
+      // Smile ID signatures are: HMAC_SHA256(apiKey, timestamp + partnerId + "sid_request")
+      const hmac = crypto.createHmac('sha256', process.env.SMILE_API_KEY!);
+      hmac.update(timestamp, 'utf8');
+      hmac.update(process.env.SMILE_PARTNER_ID!, 'utf8');
+      hmac.update('sid_request', 'utf8');
+
+      const generatedSignature = hmac.digest('base64');
+
+      // 3. Timing-safe comparison
+      const receivedBuffer = Buffer.from(receivedSignature, 'base64');
+      const generatedBuffer = Buffer.from(generatedSignature, 'base64');
+
+      if (receivedBuffer.length !== generatedBuffer.length) return false;
+      return crypto.timingSafeEqual(generatedBuffer, receivedBuffer);
+    } catch (error) {
+      console.error('Signature verification error:', error);
+      return false;
+    }
+  }
+
   @Auth(AuthType.None)
   @Post('/smile-callback')
   async handleSmileCallback(
     @Req() req: any,
     @Body() body: any,
-    @Headers('signature') signature: string,
-    @Headers('timestamp') timestamp: string,
+    @Headers('smileid-signature') signature: string,
+    @Headers('smileid-timestamp') timestamp: string,
   ) {
-    console.log('Smile callback received');
+    console.log('--- SMILE ID CALLBACK HEADERS ---');
+    console.log(req.headers);
+    console.log('--- SMILE ID CALLBACK BODY ---');
+    console.log(JSON.stringify(body, null, 2));
 
-    const rawBody = req.rawBody.toString();
-
-    // ---------------------------------------------------
-    // 1. VERIFY SIGNATURE
-    // ---------------------------------------------------
-
-    const isValidSignature = this.verifySmileSignature(
-      rawBody,
-      timestamp,
-      signature,
-    );
-
-    if (!isValidSignature) {
-      throw new HttpException(
-        'Invalid Smile signature',
-        HttpStatus.UNAUTHORIZED,
-      );
+    // 1. Verify Signature
+    if (!this.verifySmileSignature(timestamp, signature)) {
+      throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
     }
 
-    // ---------------------------------------------------
-    // 2. EXTRACT JOB ID
-    // ---------------------------------------------------
-
+    // 2. Extract Job ID (Smile uses PascalCase in callbacks)
     const jobId = body?.PartnerParams?.job_id || body?.partner_params?.job_id;
-
-    if (!jobId) {
+    if (!jobId)
       throw new HttpException('No job id found', HttpStatus.BAD_REQUEST);
-    }
-
-    // ---------------------------------------------------
-    // 3. FIND VERIFICATION RECORD
-    // ---------------------------------------------------
 
     const verification = await this.verificationRepo.findOne({
-      where: {
-        smileJobId: jobId,
-      },
+      where: { smileJobId: jobId },
       relations: ['user'],
     });
 
-    if (!verification) {
-      throw new HttpException(
-        'Verification record not found',
-        HttpStatus.NOT_FOUND,
-      );
-    }
+    if (!verification)
+      throw new HttpException('Record not found', HttpStatus.NOT_FOUND);
 
-    // ---------------------------------------------------
-    // 4. SAVE CALLBACK RESPONSE
-    // ---------------------------------------------------
+    // 3. Check Result Code
+    // 0810: Approved/Passed, 1012: Document Verified
+    const resultCode = body?.ResultCode || body?.result_code;
+    const isApproved = ['0810', '1012'].includes(resultCode?.toString());
 
     verification.smileResponse = body;
     verification.smileJobComplete = true;
 
-    // ---------------------------------------------------
-    // 5. CHECK RESULT
-    // ---------------------------------------------------
-
-    /**
-     * Smile success codes
-     *
-     * 0810 => Valid ID
-     * 1012 => Verification successful
-     */
-
-    const resultCode =
-      body?.ResultCode || body?.result_code || body?.Result?.ResultCode;
-
-    const success = resultCode === '0810' || resultCode === '1012';
-
-    if (success) {
+    if (isApproved) {
       verification.status = VerificationStatus.VERIFIED;
-
       verification.user.isKycVerified = true;
-
       await this.userRepo.save(verification.user);
     } else {
       verification.status = VerificationStatus.FAILED;
     }
 
-    // ---------------------------------------------------
-    // 6. SAVE FINAL STATUS
-    // ---------------------------------------------------
-
     await this.verificationRepo.save(verification);
 
-    return {
-      success: true,
-      message: 'Callback processed successfully',
-    };
-  }
-
-  /**
-   * Verify Smile ID Signature
-   */
-  private verifySmileSignature(
-    body: any,
-    timestamp: string,
-    receivedSignature: string,
-  ): boolean {
-    try {
-      // ---------------------------------------------------
-      // OPTIONAL: PREVENT REPLAY ATTACKS
-      // ---------------------------------------------------
-
-      const now = Date.now();
-
-      const requestTime = new Date(timestamp).getTime();
-
-      const fiveMinutes = 5 * 60 * 1000;
-
-      if (Math.abs(now - requestTime) > fiveMinutes) {
-        console.log('Expired callback timestamp');
-
-        return false;
-      }
-
-      // ---------------------------------------------------
-      // GENERATE HMAC SIGNATURE
-      // ---------------------------------------------------
-
-      const generatedSignature = crypto
-        .createHmac('sha256', process.env.SMILE_API_KEY!)
-        .update(timestamp, 'utf-8')
-        .update(process.env.SMILE_PARTNER_ID!, 'utf-8')
-        .update('sid_request', 'utf-8')
-        .digest()
-        .toString('base64');
-
-      // ---------------------------------------------------
-      // COMPARE SIGNATURES
-      // ---------------------------------------------------
-
-      return crypto.timingSafeEqual(
-        Buffer.from(generatedSignature),
-        Buffer.from(receivedSignature),
-      );
-    } catch (error) {
-      console.log('Signature verification error', error);
-
-      return false;
-    }
+    // 4. Smile ID expects a 200 OK to stop retries
+    return { success: true };
   }
 }
