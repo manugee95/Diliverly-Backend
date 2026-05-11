@@ -216,25 +216,16 @@ export class VerificationsController {
       }
 
       // ---------------------------------------------------
-      // RECREATE PAYLOAD
-      // ---------------------------------------------------
-
-      /**
-       * Smile signs:
-       *
-       * timestamp + requestBody
-       */
-
-      const payload = `${timestamp}${JSON.stringify(body)}`;
-
-      // ---------------------------------------------------
       // GENERATE HMAC SIGNATURE
       // ---------------------------------------------------
 
       const generatedSignature = crypto
         .createHmac('sha256', process.env.SMILE_API_KEY!)
-        .update(payload)
-        .digest('hex');
+        .update(timestamp, 'utf-8')
+        .update(process.env.SMILE_PARTNER_ID!, 'utf-8')
+        .update('sid_request', 'utf-8')
+        .digest()
+        .toString('base64');
 
       // ---------------------------------------------------
       // COMPARE SIGNATURES
