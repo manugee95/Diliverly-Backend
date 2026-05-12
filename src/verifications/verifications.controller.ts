@@ -120,8 +120,7 @@ export class VerificationsController {
   /**
    * Smile ID Callback Endpoint
    */
-  @Auth(AuthType.None)
-  @Post('/smile-callback')
+
   //   async handleSmileCallback(@Req() req: any, @Body() body: any) {
   //     console.log('--- SMILE CALLBACK RECEIVED ---');
 
@@ -274,7 +273,8 @@ export class VerificationsController {
 
   //     return { success: true };
   //   }
-
+  @Auth(AuthType.None)
+  @Post('/smile-callback')
   async handleSmileCallback(@Req() req: any, @Body() body: any) {
     console.log('--- SMILE CALLBACK RECEIVED ---');
 
@@ -289,7 +289,7 @@ export class VerificationsController {
     if (!this.verifySmileSignature(timestamp, signature)) {
       throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
     }
-    
+
     // -----------------------------------
     // 2. EXTRACT JOB ID
     // -----------------------------------
@@ -378,7 +378,7 @@ export class VerificationsController {
         // AUTO APPROVE KYC
         // -------------------------------
 
-        verification.status = VerificationStatus.VERIFIED; 
+        verification.status = VerificationStatus.VERIFIED;
 
         verification.rejectionReason = undefined;
 
