@@ -16,6 +16,7 @@ import { KybDto } from '../dtos/kyb.dto';
 import { Agent } from '../../agent/agent.entity';
 import { S3Service } from '../../s3/providers/s3.service';
 import { first } from 'rxjs';
+import { PoaDto } from '../dtos/poa.dto';
 
 @Injectable()
 export class VerificationsService {
@@ -223,6 +224,134 @@ export class VerificationsService {
       // -----------------------------------
 
       const result = await this.smileService.verifyKyb(payload);
+
+      // -----------------------------------
+      // 7. SAVE REQUEST/RESPONSE
+      // -----------------------------------
+
+      verification.smileRequest = payload;
+
+      verification.smileResponse = result;
+
+      /**
+       * Verification still pending
+       * until callback confirms success
+       */
+
+      await this.verificationRepo.save(verification);
+
+      return {
+        message: 'Verification submitted successfully',
+
+        verificationId: verification.id,
+
+        status: verification.status,
+      };
+    } catch (error: any) {
+      console.log(
+        'SMILE VERIFICATION ERROR:',
+        error?.response?.data || error.message,
+      );
+
+      // -----------------------------------
+      // 8. UPDATE STATUS TO FAILED
+      // -----------------------------------
+
+      verification.status = VerificationStatus.FAILED;
+
+      verification.smileResponse = error?.response?.data || {
+        message: error.message,
+      };
+
+      verification.smileJobComplete = true;
+
+      await this.verificationRepo.save(verification);
+
+      // -----------------------------------
+      // 9. THROW CLEAN ERROR
+      // -----------------------------------
+
+      if (error?.response?.data) {
+        throw new BadRequestException({
+          message: 'Smile verification failed',
+
+          error: error.response.data,
+        });
+      }
+
+      throw new InternalServerErrorException(
+        'Unable to process KYB verification',
+      );
+    }
+  }
+
+  async verifyPoa(userId: number, dto: PoaDto, file: Express.Multer.File) {
+    // -----------------------------------
+    // 1. FIND USER
+    // -----------------------------------
+
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // -----------------------------------
+    // 2. UPLOAD DOCUMENT
+    // -----------------------------------
+
+    const documentUrl = await this.s3Service.uploadFile(file);
+
+    // -----------------------------------
+    // 3. GENERATE JOB ID
+    // -----------------------------------
+
+    const jobId = `KYC_${user.id}_${Date.now()}`;
+
+    // -----------------------------------
+    // 4. CREATE VERIFICATION RECORD
+    // -----------------------------------
+
+    const verification = this.verificationRepo.create({
+      user,
+      type:
+        dto.idType === 'Proof of Address'
+          ? VerificationType.PROOF_OF_ADDRESS
+          : VerificationType.PROOF_OF_ADDRESS,
+      idNumber: dto.utility_number,
+      documentUrl,
+      status: VerificationStatus.PENDING,
+      smileJobId: jobId,
+      smileJobComplete: false,
+    });
+
+    await this.verificationRepo.save(verification);
+
+    try {
+      // -----------------------------------
+      // 5. PREPARE SMILE PAYLOAD
+      // -----------------------------------
+
+      const payload = {
+        country: 'NG',
+        address: dto.address,
+        utility_number: dto.utility_number,
+        utility_provider: dto.utility_provider,
+        utility_type: dto.utility_type,
+        callback_url: process.env.SMILE_CALLBACK_URL!,
+        partner_params: { 
+          job_id: jobId,
+          user_id: String(user.id),
+        },
+      };
+
+      // -----------------------------------
+      // 6. SEND TO SMILE
+      // -----------------------------------
+
+      const result = await this.smileService.verifyPoa(payload);
 
       // -----------------------------------
       // 7. SAVE REQUEST/RESPONSE

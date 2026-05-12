@@ -23,6 +23,7 @@ import { KybDto } from './dtos/kyb.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { AuthType } from '../auth/enums/auth-type.enum';
 import { VerificationType } from './enums/verificationType.enum';
+import { PoaDto } from './dtos/poa.dto';
 
 @Controller('verifications')
 export class VerificationsController {
@@ -87,61 +88,35 @@ export class VerificationsController {
   }
 
   /**
+   * Endpoint to verify POA
+   */
+  @ApiOperation({
+    summary: 'Verify POA',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'POA verification initiated.',
+  })
+  @UseInterceptors(
+    FileInterceptor('document', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    }),
+  )
+  @Post('/poa')
+  async verifyPoa(
+    @Body() dto: PoaDto,
+    @Req() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const userId = req.user.id;
+    return this.verificationsService.verifyPoa(userId, dto, file);
+  }
+
+  /**
    * Smile ID Callback Endpoint
    */
   @Auth(AuthType.None)
   @Post('/smile-callback')
-  //   async handleSmileCallback(
-  //     @Req() req: any,
-  //     @Body() body: any,
-  //   ) {
-  //     console.log('--- SMILE ID CALLBACK HEADERS ---');
-
-  //     const signature = body?.signature;
-
-  //     const timestamp = body?.timestamp;
-
-  //     console.log(signature, timestamp);
-
-  //     // 1. Verify Signature
-  //     if (!this.verifySmileSignature(timestamp, signature)) {
-  //       throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
-  //     }
-
-  //     // 2. Extract Job ID (Smile uses PascalCase in callbacks)
-  //     const jobId = body?.PartnerParams?.job_id || body?.partner_params?.job_id;
-  //     if (!jobId)
-  //       throw new HttpException('No job id found', HttpStatus.BAD_REQUEST);
-
-  //     const verification = await this.verificationRepo.findOne({
-  //       where: { smileJobId: jobId },
-  //       relations: ['user'],
-  //     });
-
-  //     if (!verification)
-  //       throw new HttpException('Record not found', HttpStatus.NOT_FOUND);
-
-  //     // 3. Check Result Code
-  //     // 0810: Approved/Passed, 1012: Document Verified
-  //     const resultCode = body?.ResultCode || body?.result_code;
-  //     const isApproved = ['0810', '1012'].includes(resultCode?.toString());
-
-  //     verification.smileResponse = body;
-  //     verification.smileJobComplete = true;
-
-  //     if (isApproved) {
-  //       verification.status = VerificationStatus.VERIFIED;
-  //       verification.user.isKycVerified = true;
-  //       await this.userRepo.save(verification.user);
-  //     } else {
-  //       verification.status = VerificationStatus.FAILED;
-  //     }
-
-  //     await this.verificationRepo.save(verification);
-
-  //     // 4. Smile ID expects a 200 OK to stop retries
-  //     return { success: true };
-  //   }
   async handleSmileCallback(@Req() req: any, @Body() body: any) {
     console.log('--- SMILE CALLBACK RECEIVED ---');
 
@@ -194,6 +169,9 @@ export class VerificationsController {
     verification.smileResponse = body;
 
     verification.smileJobComplete = true;
+
+    console.log(verification.type);
+    console.log(signature);
 
     // -----------------------------------
     // 5. CHECK SMILE RESULT
@@ -271,9 +249,7 @@ export class VerificationsController {
       // ===================================
 
       case VerificationType.PROOF_OF_ADDRESS: {
-        passed = this.validateProofOfAddress(verification, body);
-
-        if (passed) {
+        if (isApproved) {
           verification.status = VerificationStatus.VERIFIED;
         } else {
           verification.status = VerificationStatus.FAILED;
@@ -357,16 +333,16 @@ export class VerificationsController {
     return this.normalize(smileRcNumber) === this.normalize(submittedRcNumber);
   }
 
-  private validateProofOfAddress(
-    verification: Verification,
-    body: any,
-  ): boolean {
-    const smileAddress = body?.address || '';
+  //   private validateProofOfAddress(
+  //     verification: Verification,
+  //     body: any,
+  //   ): boolean {
+  //     const smileAddress = body?.address || '';
 
-    const submittedAddress = verification.smileRequest.address || '';
+  //     const submittedAddress = verification.smileRequest.address || '';
 
-    return this.normalize(smileAddress) === this.normalize(submittedAddress);
-  }
+  //     return this.normalize(smileAddress) === this.normalize(submittedAddress);
+  //   }
 
   private normalize(value: string): string {
     return value

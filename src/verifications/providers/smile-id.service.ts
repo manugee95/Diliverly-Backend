@@ -99,4 +99,50 @@ export class SmileIdService {
     // 3. Return response data
     return response.data;
   }
+
+  async verifyPoa(payload: {
+    country: string;
+    callback_url: string;
+    address: string;
+    utility_number: string;
+    utility_provider: string;
+    utility_type: string;
+    partner_params: {
+      job_id: string;
+      user_id: string;
+    };
+  }) {
+    const timestamp = new Date().toISOString();
+
+    const signature = this.generateSignature(timestamp);
+
+    // 1. Merge authentication and SDK info into the request body
+    // const fullPayload = {
+    //   ...payload,
+    //   partner_id: this.partnerId,
+    //   timestamp: timestamp,
+    //   signature: signature,
+    //   source_sdk: 'rest_api',
+    //   source_sdk_version: '1.0.0',
+    // };
+
+    // 2. Send request to Smile API
+    const response = await axios.post(
+      `${this.baseUrl}/v2/async-verify-address`,
+      payload,
+      {
+        headers: {
+          'smileid-partner-id': this.partnerId,
+          'smileid-request-signature': signature,
+          'smileid-timestamp': timestamp,
+          'smileid-source-sdk': 'rest_api',
+          'smileid-source-sdk-version': '0.0.1',
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    // 3. Return response data
+    return response.data;
+  }
 }
