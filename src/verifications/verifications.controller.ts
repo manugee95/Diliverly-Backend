@@ -22,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { KybDto } from './dtos/kyb.dto';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { AuthType } from '../auth/enums/auth-type.enum';
+import { VerificationType } from './enums/verificationType.enum';
 
 @Controller('verifications')
 export class VerificationsController {
@@ -47,7 +48,7 @@ export class VerificationsController {
   })
   @UseInterceptors(
     FileInterceptor('document', {
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     }),
   )
   @Post('/kyc')
@@ -72,7 +73,7 @@ export class VerificationsController {
   })
   @UseInterceptors(
     FileInterceptor('document', {
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     }),
   )
   @Post('/kyb')
@@ -88,6 +89,216 @@ export class VerificationsController {
   /**
    * Smile ID Callback Endpoint
    */
+  @Auth(AuthType.None)
+  @Post('/smile-callback')
+  //   async handleSmileCallback(
+  //     @Req() req: any,
+  //     @Body() body: any,
+  //   ) {
+  //     console.log('--- SMILE ID CALLBACK HEADERS ---');
+
+  //     const signature = body?.signature;
+
+  //     const timestamp = body?.timestamp;
+
+  //     console.log(signature, timestamp);
+
+  //     // 1. Verify Signature
+  //     if (!this.verifySmileSignature(timestamp, signature)) {
+  //       throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
+  //     }
+
+  //     // 2. Extract Job ID (Smile uses PascalCase in callbacks)
+  //     const jobId = body?.PartnerParams?.job_id || body?.partner_params?.job_id;
+  //     if (!jobId)
+  //       throw new HttpException('No job id found', HttpStatus.BAD_REQUEST);
+
+  //     const verification = await this.verificationRepo.findOne({
+  //       where: { smileJobId: jobId },
+  //       relations: ['user'],
+  //     });
+
+  //     if (!verification)
+  //       throw new HttpException('Record not found', HttpStatus.NOT_FOUND);
+
+  //     // 3. Check Result Code
+  //     // 0810: Approved/Passed, 1012: Document Verified
+  //     const resultCode = body?.ResultCode || body?.result_code;
+  //     const isApproved = ['0810', '1012'].includes(resultCode?.toString());
+
+  //     verification.smileResponse = body;
+  //     verification.smileJobComplete = true;
+
+  //     if (isApproved) {
+  //       verification.status = VerificationStatus.VERIFIED;
+  //       verification.user.isKycVerified = true;
+  //       await this.userRepo.save(verification.user);
+  //     } else {
+  //       verification.status = VerificationStatus.FAILED;
+  //     }
+
+  //     await this.verificationRepo.save(verification);
+
+  //     // 4. Smile ID expects a 200 OK to stop retries
+  //     return { success: true };
+  //   }
+  async handleSmileCallback(@Req() req: any, @Body() body: any) {
+    console.log('--- SMILE CALLBACK RECEIVED ---');
+
+    // -----------------------------------
+    // Find User
+    // -----------------------------------
+    // const userId = req.user?.id;
+
+    // -----------------------------------
+    // 1. VERIFY SIGNATURE
+    // -----------------------------------
+
+    const signature = body?.signature;
+
+    const timestamp = body?.timestamp;
+
+    if (!this.verifySmileSignature(timestamp, signature)) {
+      throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
+    }
+
+    // -----------------------------------
+    // 2. EXTRACT JOB ID
+    // -----------------------------------
+
+    const jobId = body?.PartnerParams?.job_id || body?.partner_params?.job_id;
+
+    if (!jobId) {
+      throw new HttpException('No job id found', HttpStatus.BAD_REQUEST);
+    }
+
+    // -----------------------------------
+    // 3. FIND VERIFICATION
+    // -----------------------------------
+
+    const verification = await this.verificationRepo.findOne({
+      where: {
+        smileJobId: jobId,
+      },
+      relations: ['user'],
+    });
+
+    if (!verification) {
+      throw new HttpException('Verification not found', HttpStatus.NOT_FOUND);
+    }
+
+    // -----------------------------------
+    // 4. SAVE RAW RESPONSE
+    // -----------------------------------
+
+    verification.smileResponse = body;
+
+    verification.smileJobComplete = true;
+
+    // -----------------------------------
+    // 5. CHECK SMILE RESULT
+    // -----------------------------------
+
+    const resultCode = body?.ResultCode || body?.result_code;
+
+    const isApproved = ['0810', '1012'].includes(resultCode?.toString());
+
+    // -----------------------------------
+    // 6. HANDLE FAILURE
+    // -----------------------------------
+
+    if (!isApproved) {
+      verification.status = VerificationStatus.FAILED;
+
+      verification.rejectionReason = body?.ResultText || 'Verification failed';
+
+      await this.verificationRepo.save(verification);
+
+      return { success: true };
+    }
+
+    // -----------------------------------
+    // 7. PRODUCT-SPECIFIC VALIDATION
+    // -----------------------------------
+
+    let passed = false;
+
+    switch (verification.type) {
+      // ===================================
+      // KYC
+      // ===================================
+
+      case VerificationType.NIN:
+
+      case VerificationType.VOTER_ID: {
+        passed = this.validateKycNames(verification, body);
+
+        if (passed) {
+          verification.status = VerificationStatus.VERIFIED;
+
+          verification.user.isKycVerified = true;
+
+          await this.userRepo.save(verification.user);
+        } else {
+          verification.status = VerificationStatus.FAILED;
+
+          verification.rejectionReason = 'Name mismatch';
+        }
+
+        break;
+      }
+
+      // ===================================
+      // KYB
+      // ===================================
+
+      case VerificationType.CAC: {
+        passed = this.validateBusinessRegistration(verification, body);
+
+        if (passed) {
+          verification.status = VerificationStatus.VERIFIED;
+        } else {
+          verification.status = VerificationStatus.FAILED;
+
+          verification.rejectionReason = 'Business registration mismatch';
+        }
+
+        break;
+      }
+
+      // ===================================
+      // PROOF OF ADDRESS
+      // ===================================
+
+      case VerificationType.PROOF_OF_ADDRESS: {
+        passed = this.validateProofOfAddress(verification, body);
+
+        if (passed) {
+          verification.status = VerificationStatus.VERIFIED;
+        } else {
+          verification.status = VerificationStatus.FAILED;
+
+          verification.rejectionReason = 'Address mismatch';
+        }
+
+        break;
+      }
+
+      default:
+        verification.status = VerificationStatus.FAILED;
+
+        verification.rejectionReason = 'Unsupported verification type';
+    }
+
+    // -----------------------------------
+    // 8. SAVE FINAL RESULT
+    // -----------------------------------
+
+    await this.verificationRepo.save(verification);
+
+    return { success: true };
+  }
+
   private verifySmileSignature(
     timestamp: string,
     receivedSignature: string,
@@ -120,57 +331,48 @@ export class VerificationsController {
     }
   }
 
-  @Auth(AuthType.None)
-  @Post('/smile-callback')
-  async handleSmileCallback(
-    @Req() req: any,
-    @Body() body: any,
-  ) {
-    console.log('--- SMILE ID CALLBACK HEADERS ---');
+  private validateKycNames(verification: Verification, body: any): boolean {
+    const smileFirstName = body?.FirstName || body?.first_name || '';
 
-    const signature = body?.signature;
+    const smileLastName = body?.LastName || body?.last_name || '';
 
-    const timestamp = body?.timestamp;
+    const requestFirstName = verification.smileRequest.first_name || '';
 
-    console.log(signature, timestamp);
+    const requestLastName = verification.smileRequest.last_name || '';
 
-    // 1. Verify Signature
-    if (!this.verifySmileSignature(timestamp, signature)) {
-      throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
-    }
+    return (
+      this.normalize(smileFirstName) === this.normalize(requestFirstName) &&
+      this.normalize(smileLastName) === this.normalize(requestLastName)
+    );
+  }
 
-    // 2. Extract Job ID (Smile uses PascalCase in callbacks)
-    const jobId = body?.PartnerParams?.job_id || body?.partner_params?.job_id;
-    if (!jobId)
-      throw new HttpException('No job id found', HttpStatus.BAD_REQUEST);
+  private validateBusinessRegistration(
+    verification: Verification,
+    body: any,
+  ): boolean {
+    const smileRcNumber = body?.company_information?.registration_number || '';
 
-    const verification = await this.verificationRepo.findOne({
-      where: { smileJobId: jobId },
-      relations: ['user'],
-    });
+    const submittedRcNumber = verification.smileRequest.id_number || '';
 
-    if (!verification)
-      throw new HttpException('Record not found', HttpStatus.NOT_FOUND);
+    return this.normalize(smileRcNumber) === this.normalize(submittedRcNumber);
+  }
 
-    // 3. Check Result Code
-    // 0810: Approved/Passed, 1012: Document Verified
-    const resultCode = body?.ResultCode || body?.result_code;
-    const isApproved = ['0810', '1012'].includes(resultCode?.toString());
+  private validateProofOfAddress(
+    verification: Verification,
+    body: any,
+  ): boolean {
+    const smileAddress = body?.address || '';
 
-    verification.smileResponse = body;
-    verification.smileJobComplete = true;
+    const submittedAddress = verification.smileRequest.address || '';
 
-    if (isApproved) {
-      verification.status = VerificationStatus.VERIFIED;
-      verification.user.isKycVerified = true;
-      await this.userRepo.save(verification.user);
-    } else {
-      verification.status = VerificationStatus.FAILED;
-    }
+    return this.normalize(smileAddress) === this.normalize(submittedAddress);
+  }
 
-    await this.verificationRepo.save(verification);
-
-    // 4. Smile ID expects a 200 OK to stop retries
-    return { success: true };
+  private normalize(value: string): string {
+    return value
+      ?.trim()
+      ?.toLowerCase()
+      ?.replace(/\s+/g, '')
+      ?.replace(/[^\w]/g, '');
   }
 }
