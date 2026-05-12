@@ -230,7 +230,7 @@ export class VerificationsController {
       // KYB
       // ===================================
 
-      case VerificationType.CAC: {
+      case VerificationType.BUSINESS_REGISTRATION: {
         passed = this.validateBusinessRegistration(verification, body);
 
         if (passed) {

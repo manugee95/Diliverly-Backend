@@ -189,10 +189,7 @@ export class VerificationsService {
 
     const verification = this.verificationRepo.create({
       user,
-      type:
-        dto.idType === 'BUSINESS_REGISTRATION'
-          ? VerificationType.CAC
-          : VerificationType.CAC,
+      type: VerificationType.BUSINESS_REGISTRATION,
       idNumber: dto.idNumber,
       documentUrl,
       status: VerificationStatus.PENDING,
@@ -209,7 +206,7 @@ export class VerificationsService {
 
       const payload = {
         country: 'NG',
-        id_type: dto.idType,
+        id_type: VerificationType.BUSINESS_REGISTRATION,
         business_type: dto.businessType,
         id_number: dto.idNumber,
         callback_url: process.env.SMILE_CALLBACK_URL!,
@@ -316,10 +313,7 @@ export class VerificationsService {
 
     const verification = this.verificationRepo.create({
       user,
-      type:
-        dto.idType === 'Proof of Address'
-          ? VerificationType.PROOF_OF_ADDRESS
-          : VerificationType.PROOF_OF_ADDRESS,
+      type: VerificationType.PROOF_OF_ADDRESS, 
       idNumber: dto.utility_number,
       documentUrl,
       status: VerificationStatus.PENDING,

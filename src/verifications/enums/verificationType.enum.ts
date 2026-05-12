@@ -1,6 +1,6 @@
 export enum VerificationType {
   NIN = 'NIN',
   VOTER_ID = 'VOTER_ID',
-  CAC = 'CAC',
+  BUSINESS_REGISTRATION = 'BUSINESS_REGISTRATION',
   PROOF_OF_ADDRESS = 'PROOF_OF_ADDRESS',
 }

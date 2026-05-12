@@ -17,13 +17,6 @@ export class KybDto {
   businessName!: string;
 
   @ApiProperty({
-    description: 'Type of ID (e.g., BUSINESS_REGISTRATION)',
-    example: 'BUSINESS_REGISTRATION',
-  })
-  @IsString()
-  idType!: string;
-
-  @ApiProperty({
     description: 'CAC registration number',
     example: '12345678',
   })

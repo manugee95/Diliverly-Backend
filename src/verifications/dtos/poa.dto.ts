@@ -10,13 +10,6 @@ export class PoaDto {
   address!: string;
 
   @ApiProperty({
-    description: 'Type of ID',
-    example: 'Proof of Address',
-  })
-  @IsString()
-  idType!: string;
-
-  @ApiProperty({
     description: 'Meter or account number from the utility bill',
     example: '123456789',
   })
