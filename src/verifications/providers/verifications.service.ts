@@ -15,20 +15,28 @@ import { KycDto } from '../dtos/kyc.dto';
 import { KybDto } from '../dtos/kyb.dto';
 import { Agent } from '../../agent/agent.entity';
 import { S3Service } from '../../s3/providers/s3.service';
-import { first } from 'rxjs';
 import { PoaDto } from '../dtos/poa.dto';
+import {
+  AdminVerificationAction,
+  AdminVerificationDecisionDto,
+} from '../dtos/av.dto';
 
 @Injectable()
 export class VerificationsService {
   constructor(
     private readonly smileService: SmileIdService,
+    private readonly s3Service: S3Service,
     @InjectRepository(Verification)
     private readonly verificationRepo: Repository<Verification>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    private readonly s3Service: S3Service,
+    @InjectRepository(Agent)
+    private readonly agentRepo: Repository<Agent>,
   ) {}
 
+  // ======================================================
+  // KYC VERIFICATION LOGIC
+  // ======================================================
   async verifyKyc(userId: number, dto: KycDto, file: Express.Multer.File) {
     // -----------------------------------
     // 1. FIND USER
@@ -158,6 +166,9 @@ export class VerificationsService {
     }
   }
 
+  // ======================================================
+  // KYB VERIFICATION LOGIC
+  // ======================================================
   async verifyKyb(userId: number, dto: KybDto, file: Express.Multer.File) {
     // -----------------------------------
     // 1. FIND USER
@@ -282,6 +293,9 @@ export class VerificationsService {
     }
   }
 
+  // ======================================================
+  // POA VERIFICATION LOGIC
+  // ======================================================
   async verifyPoa(userId: number, dto: PoaDto, file: Express.Multer.File) {
     // -----------------------------------
     // 1. FIND USER
@@ -313,7 +327,7 @@ export class VerificationsService {
 
     const verification = this.verificationRepo.create({
       user,
-      type: VerificationType.PROOF_OF_ADDRESS, 
+      type: VerificationType.PROOF_OF_ADDRESS,
       idNumber: dto.utility_number,
       documentUrl,
       status: VerificationStatus.PENDING,
@@ -335,7 +349,7 @@ export class VerificationsService {
         utility_provider: dto.utility_provider,
         utility_type: dto.utility_type,
         callback_url: process.env.SMILE_CALLBACK_URL!,
-        partner_params: { 
+        partner_params: {
           job_id: jobId,
           user_id: String(user.id),
         },
@@ -405,5 +419,143 @@ export class VerificationsService {
         'Unable to process KYB verification',
       );
     }
+  }
+
+  // ======================================================
+  // ADMIN REVIEW FOR KYB + POA
+  // ======================================================
+  async adminReviewVerification(
+    verificationId: number,
+    dto: AdminVerificationDecisionDto,
+    adminUserId: number,
+  ) {
+    // --------------------------------------------------
+    // 1. FIND VERIFICATION
+    // --------------------------------------------------
+
+    const verification = await this.verificationRepo.findOne({
+      where: {
+        id: verificationId,
+      },
+      relations: ['user'],
+    });
+
+    if (!verification) {
+      throw new NotFoundException('Verification record not found');
+    }
+
+    // --------------------------------------------------
+    // 2. ONLY KYB + POA REQUIRE ADMIN REVIEW
+    // --------------------------------------------------
+
+    const allowedTypes = [
+      VerificationType.BUSINESS_REGISTRATION,
+      VerificationType.PROOF_OF_ADDRESS,
+    ];
+
+    if (!allowedTypes.includes(verification.type)) {
+      throw new BadRequestException(
+        'This verification does not require admin approval',
+      );
+    }
+
+    // --------------------------------------------------
+    // 3. FIND AGENT
+    // --------------------------------------------------
+
+    const agent = await this.agentRepo.findOne({
+      where: {
+        user: {
+          id: verification.user.id,
+        },
+      },
+      relations: ['user'],
+    });
+
+    if (!agent) {
+      throw new NotFoundException('Agent profile not found');
+    }
+
+    // --------------------------------------------------
+    // 4. HANDLE REJECTION
+    // --------------------------------------------------
+
+    if (dto.action === AdminVerificationAction.REJECT) {
+      verification.status = VerificationStatus.REJECTED;
+
+      verification.rejectionReason =
+        dto.rejectionReason || 'Verification rejected by admin';
+
+      await this.verificationRepo.save(verification);
+
+      return {
+        success: true,
+        message: 'Verification rejected successfully',
+      };
+    }
+
+    // --------------------------------------------------
+    // 5. HANDLE APPROVAL
+    // --------------------------------------------------
+
+    verification.status = VerificationStatus.VERIFIED;
+
+    verification.rejectionReason = undefined;
+
+    verification.reviewedByAdminId = adminUserId;
+
+    verification.reviewedAt = new Date();
+
+    await this.verificationRepo.save(verification);
+
+    // --------------------------------------------------
+    // 6. UPDATE AGENT FLAGS
+    // --------------------------------------------------
+
+    if (verification.type === VerificationType.BUSINESS_REGISTRATION) {
+      agent.isKybVerified = true;
+    }
+
+    if (verification.type === VerificationType.PROOF_OF_ADDRESS) {
+      agent.isProofOfAddressVerified = true;
+    }
+
+    // --------------------------------------------------
+    // 7. FINAL AGENT APPROVAL CHECK
+    // --------------------------------------------------
+
+    /**
+     * Agent becomes fully verified ONLY IF:
+     *
+     * - User KYC completed
+     * - KYB approved
+     * - POA approved
+     */
+
+    const userKycVerified = verification.user.isKycVerified;
+
+    const kybVerified = agent.isKybVerified;
+
+    const poaVerified = agent.isProofOfAddressVerified;
+
+    if (userKycVerified && kybVerified && poaVerified) {
+      agent.isVerified = true;
+    }
+
+    await this.agentRepo.save(agent);
+
+    return {
+      success: true,
+      message: 'Verification approved successfully',
+
+      data: {
+        agentId: agent.id,
+        isKybVerified: agent.isKybVerified,
+
+        isProofOfAddressVerified: agent.isProofOfAddressVerified,
+
+        isVerified: agent.isVerified,
+      },
+    };
   }
 }

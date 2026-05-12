@@ -3,4 +3,5 @@ export enum VerificationStatus {
   VERIFIED = 'VERIFIED',
   FAILED = 'FAILED',
   REJECTED = 'REJECTED',
+  REVIEW_REQUIRED = 'REVIEW_REQUIRED',
 }

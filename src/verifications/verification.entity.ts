@@ -62,6 +62,12 @@ export class Verification {
   @Column({ nullable: true })
   rejectionReason?: string;
 
+  @Column({ nullable: true })
+  reviewedByAdminId?: number;
+
+  @Column({ nullable: true })
+  reviewedAt?: Date;
+
   @CreateDateColumn()
   createdAt!: Date;
 
