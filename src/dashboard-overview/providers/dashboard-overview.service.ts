@@ -115,50 +115,108 @@ export class DashboardOverviewService {
   }
 
   // Method to get agent dashboard data
+
+  // private async buildAgentDashboard(userId: number) {
+  //   const agent = await this.agentRepo.findOne({
+  //     where: { user: { id: userId } },
+  //   });
+
+  //   if (!agent) throw new NotFoundException('Agent not found');
+
+  //   const result = await this.orderItemRepo
+  //     .createQueryBuilder('item')
+  //     .leftJoin('item.order', 'order')
+  //     .leftJoin('order.request', 'request')
+  //     .leftJoin('request.quotes', 'quote')
+  //     .select([
+  //       `COUNT(DISTINCT CASE
+  //     WHEN request.status = :open
+  //     THEN request.id END) AS "totalAvailableDeliveryRequests"`,
+
+  //       `COUNT(DISTINCT CASE
+  //     WHEN item.status = :active
+  //     THEN item.id END) AS "totalActiveOrders"`,
+
+  //       `COUNT(DISTINCT CASE
+  //     WHEN quote.agentId = :agentId
+  //     THEN quote.id END) AS "totalQuotesSent"`,
+
+  //       `COUNT(DISTINCT CASE
+  //     WHEN item.status = :delivered
+  //     THEN item.id END) AS "totalDeliveredItems"`,
+  //     ])
+  //     .setParameters({
+  //       open: RequestStatus.OPEN,
+  //       active: OrderStatus.IN_PROGRESS,
+  //       delivered: OrderStatus.DELIVERED,
+  //       agentId: agent.id,
+  //     })
+  //     .getRawOne();
+
+  //   return {
+  //     totalAvailableDeliveryRequests: Number(
+  //       result.totalAvailableDeliveryRequests || 0,
+  //     ),
+  //     totalActiveOrders: Number(result.totalActiveOrders || 0),
+  //     totalQuotesSent: Number(result.totalQuotesSent || 0),
+  //     totalDeliveredItems: Number(result.totalDeliveredItems || 0),
+  //   };
+  // }
+
   private async buildAgentDashboard(userId: number) {
     const agent = await this.agentRepo.findOne({
       where: { user: { id: userId } },
     });
 
-    if (!agent) throw new NotFoundException('Agent not found');
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
 
-    const result = await this.orderItemRepo
-      .createQueryBuilder('item')
-      .leftJoin('item.order', 'order')
-      .leftJoin('order.request', 'request')
-      .leftJoin('request.quotes', 'quote')
-      .select([
-        `COUNT(DISTINCT CASE 
-      WHEN request.status = :open 
-      THEN request.id END) AS "totalAvailableDeliveryRequests"`,
+    /**
+     * Total Available Delivery Requests
+     */
+    const totalAvailableDeliveryRequests = await this.deliveryRequestRepo.count(
+      {
+        where: {
+          status: RequestStatus.OPEN,
+        },
+      },
+    );
 
-        `COUNT(DISTINCT CASE 
-      WHEN item.status = :active 
-      THEN item.id END) AS "totalActiveOrders"`,
+    /**
+     * Total Quotes Sent By Agent
+     */
+    const totalQuotesSent = await this.quoteRepo.count({
+      where: {
+        agent: {
+          id: agent.id,
+        },
+      },
+    });
 
-        `COUNT(DISTINCT CASE 
-      WHEN quote.agentId = :agentId 
-      THEN quote.id END) AS "totalQuotesSent"`,
+    /**
+     * Total Active Orders
+     */
+    const totalActiveOrders = await this.orderItemRepo.count({
+      where: {
+        status: OrderStatus.IN_PROGRESS,
+      },
+    });
 
-        `COUNT(DISTINCT CASE 
-      WHEN item.status = :delivered 
-      THEN item.id END) AS "totalDeliveredItems"`,
-      ])
-      .setParameters({
-        open: RequestStatus.OPEN,
-        active: OrderStatus.IN_PROGRESS,
-        delivered: OrderStatus.DELIVERED,
-        agentId: agent.id,
-      })
-      .getRawOne();
+    /**
+     * Total Delivered Items
+     */
+    const totalDeliveredItems = await this.orderItemRepo.count({
+      where: {
+        status: OrderStatus.DELIVERED,
+      },
+    });
 
     return {
-      totalAvailableDeliveryRequests: Number(
-        result.totalAvailableDeliveryRequests || 0,
-      ),
-      totalActiveOrders: Number(result.totalActiveOrders || 0),
-      totalQuotesSent: Number(result.totalQuotesSent || 0),
-      totalDeliveredItems: Number(result.totalDeliveredItems || 0),
+      totalAvailableDeliveryRequests,
+      totalQuotesSent,
+      totalActiveOrders,
+      totalDeliveredItems,
     };
   }
 
