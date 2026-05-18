@@ -28,6 +28,12 @@ export class ReviewsService {
     private readonly reviewRepo: Repository<Review>,
 
     /**
+     * Inject vendor repository
+     */
+    @InjectRepository(Vendor)
+    private readonly vendorRepo: Repository<Vendor>,
+
+    /**
      * Inject Pagination Provider
      */
     private readonly paginationProvider: PaginationProvider,
@@ -57,7 +63,7 @@ export class ReviewsService {
           agentName: payload.agentName,
           vendorName: payload.vendorName,
         },
-        `You have a new review from ${payload.vendorName}!`
+        `You have a new review from ${payload.vendorName}!`,
       );
     } catch (error) {
       console.error('Failed to send agent email:', error);
@@ -185,5 +191,30 @@ export class ReviewsService {
     );
 
     return reviews;
+  }
+
+  /**
+   * Check if vendor already reviewed agent
+   */
+  async hasVendorReviewedAgent(
+    userId: number,
+    orderId: number,
+  ): Promise<boolean> {
+    const vendor = await this.vendorRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    const existingReview = await this.reviewRepo.findOne({
+      where: {
+        vendor: {
+          id: vendor?.id,
+        },
+        order: {
+          id: orderId,
+        },
+      },
+    });
+
+    return !!existingReview;
   }
 }

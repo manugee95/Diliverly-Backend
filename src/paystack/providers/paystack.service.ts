@@ -85,23 +85,6 @@ export class PaystackService {
       throw new UnauthorizedException('Invalid Paystack signature');
   }
 
-  // async finalizeTransfer(transferCode: string, otp: string) {
-  //   const res = await axios.post(
-  //     `${this.baseUrl}/transfer/finalize_transfer`,
-  //     {
-  //       transfer_code: transferCode,
-  //       otp,
-  //     },
-  //     {
-  //       headers: {
-  //         Authorization: `Bearer ${this.config.get('PAYSTACK_SECRET_KEY')}`,
-  //       },
-  //     },
-  //   );
-
-  //   return res.data;
-  // }
-
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
 

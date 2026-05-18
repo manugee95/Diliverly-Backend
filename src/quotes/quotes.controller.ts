@@ -71,7 +71,7 @@ export class QuotesController {
     return this.quotesService.getQuotesForAgent(userId, dto);
   }
 
-   /**
+  /**
    * Endpoint to get a single quote by ID
    */
   @ApiOperation({
@@ -177,5 +177,30 @@ export class QuotesController {
       userId,
       requestId,
     );
+  }
+
+  /**
+   * Check if logged in agent already submitted quote
+   */
+  @ApiOperation({
+    summary: 'Check if an agent has already submitted quote',
+  })
+  @ApiParam({
+    name: 'id',
+    type: 'number',
+    required: false,
+    description: 'The ID of the request associated with the accepted quote',
+    example: 5,
+  })
+  @UseGuards(AgentGuard)
+  @Get('/check-submission/:requestId')
+  async checkQuoteSubmission(
+    @Req() req,
+    @Param('requestId')
+    requestId: number,
+  ) {
+    const agentId = req.user.id;
+
+    return await this.quotesService.hasAgentSubmittedQuote(agentId, requestId);
   }
 }

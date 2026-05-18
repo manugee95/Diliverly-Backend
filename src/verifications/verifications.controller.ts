@@ -1,13 +1,14 @@
 import {
   Body,
   Controller,
-  Headers,
+  Get,
   HttpException,
   HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseInterceptors,
@@ -28,7 +29,7 @@ import { AuthType } from '../auth/enums/auth-type.enum';
 import { VerificationType } from './enums/verificationType.enum';
 import { PoaDto } from './dtos/poa.dto';
 import { AdminVerificationDecisionDto } from './dtos/av.dto';
-import { log } from 'console';
+import { GetVerificationsDto } from './dtos/getVerifications.dto';
 
 @Controller('verifications')
 export class VerificationsController {
@@ -120,159 +121,6 @@ export class VerificationsController {
   /**
    * Smile ID Callback Endpoint
    */
-
-  //   async handleSmileCallback(@Req() req: any, @Body() body: any) {
-  //     console.log('--- SMILE CALLBACK RECEIVED ---');
-
-  //     // -----------------------------------
-  //     // 1. VERIFY SIGNATURE
-  //     // -----------------------------------
-
-  //     const signature = body?.signature;
-
-  //     const timestamp = body?.timestamp;
-
-  //     if (!this.verifySmileSignature(timestamp, signature)) {
-  //       throw new HttpException('Invalid signature', HttpStatus.UNAUTHORIZED);
-  //     }
-
-  //     // -----------------------------------
-  //     // 2. EXTRACT JOB ID
-  //     // -----------------------------------
-
-  //     const jobId = body?.PartnerParams?.job_id || body?.partner_params?.job_id;
-
-  //     if (!jobId) {
-  //       throw new HttpException('No job id found', HttpStatus.BAD_REQUEST);
-  //     }
-
-  //     // -----------------------------------
-  //     // 3. FIND VERIFICATION
-  //     // -----------------------------------
-
-  //     const verification = await this.verificationRepo.findOne({
-  //       where: {
-  //         smileJobId: jobId,
-  //       },
-  //       relations: ['user'],
-  //     });
-
-  //     if (!verification) {
-  //       throw new HttpException('Verification not found', HttpStatus.NOT_FOUND);
-  //     }
-
-  //     // -----------------------------------
-  //     // 4. SAVE RAW RESPONSE
-  //     // -----------------------------------
-
-  //     verification.smileResponse = body;
-
-  //     verification.smileJobComplete = true;
-
-  //     console.log(verification.type);
-  //     console.log(signature);
-
-  //     // -----------------------------------
-  //     // 5. CHECK SMILE RESULT
-  //     // -----------------------------------
-
-  //     const resultCode = body?.ResultCode || body?.result_code;
-
-  //     const isApproved = ['0810', '1012'].includes(resultCode?.toString());
-
-  //     // -----------------------------------
-  //     // 6. HANDLE FAILURE
-  //     // -----------------------------------
-
-  //     if (!isApproved) {
-  //       verification.status = VerificationStatus.FAILED;
-
-  //       verification.rejectionReason = body?.ResultText || 'Verification failed';
-
-  //       await this.verificationRepo.save(verification);
-
-  //       return { success: true };
-  //     }
-
-  //     // -----------------------------------
-  //     // 7. PRODUCT-SPECIFIC VALIDATION
-  //     // -----------------------------------
-
-  //     let passed = false;
-
-  //     switch (verification.type) {
-  //       // ===================================
-  //       // KYC
-  //       // ===================================
-
-  //       case VerificationType.NIN:
-
-  //       case VerificationType.VOTER_ID: {
-  //         passed = this.validateKycNames(verification, body);
-
-  //         if (passed) {
-  //           verification.status = VerificationStatus.VERIFIED;
-
-  //           verification.user.isKycVerified = true;
-
-  //           await this.userRepo.save(verification.user);
-  //         } else {
-  //           verification.status = VerificationStatus.FAILED;
-
-  //           verification.rejectionReason = 'Name mismatch';
-  //         }
-
-  //         break;
-  //       }
-
-  //       // ===================================
-  //       // KYB
-  //       // ===================================
-
-  //       case VerificationType.BUSINESS_REGISTRATION: {
-  //         passed = this.validateBusinessRegistration(verification, body);
-
-  //         if (passed) {
-  //           verification.status = VerificationStatus.VERIFIED;
-  //         } else {
-  //           verification.status = VerificationStatus.FAILED;
-
-  //           verification.rejectionReason = 'Business registration mismatch';
-  //         }
-
-  //         break;
-  //       }
-
-  //       // ===================================
-  //       // PROOF OF ADDRESS
-  //       // ===================================
-
-  //       case VerificationType.PROOF_OF_ADDRESS: {
-  //         if (isApproved) {
-  //           verification.status = VerificationStatus.VERIFIED;
-  //         } else {
-  //           verification.status = VerificationStatus.FAILED;
-
-  //           verification.rejectionReason = 'Address mismatch';
-  //         }
-
-  //         break;
-  //       }
-
-  //       default:
-  //         verification.status = VerificationStatus.FAILED;
-
-  //         verification.rejectionReason = 'Unsupported verification type';
-  //     }
-
-  //     // -----------------------------------
-  //     // 8. SAVE FINAL RESULT
-  //     // -----------------------------------
-
-  //     await this.verificationRepo.save(verification);
-
-  //     return { success: true };
-  //   }
   @Auth(AuthType.None)
   @Post('/smile-callback')
   async handleSmileCallback(@Req() req: any, @Body() body: any) {
@@ -565,5 +413,40 @@ export class VerificationsController {
       dto,
       req.user.id,
     );
+  }
+
+  /**
+   * Get user verification status
+   */
+  @ApiOperation({
+    summary: 'Get user verification status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User verification status retrieved successfully.',
+  })
+  @Get('status')
+  async getVerificationStatus(@Req() req) {
+    return this.verificationsService.getUserVerificationStatus(req.user.id);
+  }
+
+  /**
+   * Get All verifications
+   */
+  @ApiOperation({
+    summary: 'Get all user verifications',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User verification status retrieved successfully.',
+  })
+  @Get('admin')
+  async adminGetVerifications(
+    @Query()
+    dto: GetVerificationsDto,
+
+    @Req() req,
+  ) {
+    return this.verificationsService.getAllVerifications(req.user.id, dto);
   }
 }

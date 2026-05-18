@@ -420,4 +420,25 @@ export class QuotesService {
 
     return { message: 'Quote accepted successfully' };
   }
+
+  /**
+   * Check if an agent already submitted a quote
+   */
+  async hasAgentSubmittedQuote(
+    agentId: number,
+    requestId: number,
+  ): Promise<boolean> {
+    const existingQuote = await this.quoteRepo.findOne({
+      where: {
+        agent: {
+          id: agentId,
+        },
+        request: {
+          id: requestId,
+        },
+      },
+    });
+
+    return !!existingQuote;
+  }
 }

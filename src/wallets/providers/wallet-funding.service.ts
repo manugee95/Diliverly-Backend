@@ -13,6 +13,7 @@ import { PaystackService } from '../../paystack/providers/paystack.service';
 import { ConfigService } from '@nestjs/config';
 import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
 import { generateTransactionRef } from '../../common/utils/reference.util';
+import { VirtualAccount } from '../../virtual-account/virtual-account.entity';
 
 @Injectable()
 export class WalletFundingService {
@@ -35,6 +36,82 @@ export class WalletFundingService {
    * Core logic to finalize funding after Paystack verification.
    */
 
+  // private async finalizeFunding(
+  //   reference: string,
+  //   amountPaid: number,
+  //   data: any,
+  // ) {
+  //   await this.dataSource.transaction(async (manager) => {
+  //     const fundingRepo = manager.getRepository(WalletFunding);
+  //     const walletRepo = manager.getRepository(Wallet);
+
+  //     const funding = await fundingRepo.findOne({
+  //       where: { reference },
+  //       lock: { mode: 'pessimistic_write' },
+  //     });
+
+  //     if (!funding) return;
+
+  //     // Idempotency + strict state control
+  //     if (funding.status !== FundingStatus.PENDING) return;
+
+  //     // Move to processing (prevents race conditions)
+  //     funding.status = FundingStatus.PROCESSING;
+  //     await fundingRepo.save(funding);
+
+  //     const userId = funding.userId ?? funding.user?.id;
+  //     if (!userId) return;
+
+  //     // Validate amount (important security check)
+  //     if (Number(funding.amount) !== amountPaid) {
+  //       console.log(
+  //         `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
+  //       );
+  //       return;
+  //     }
+
+  //     // Validate currency using data (not rawPayload.data)
+  //     if (data?.currency !== 'NGN') {
+  //       return;
+  //     }
+
+  //     const wallet = await walletRepo.findOne({
+  //       where: { userId },
+  //       lock: { mode: 'pessimistic_write' },
+  //     });
+
+  //     if (!wallet) return;
+
+  //     // Use KOBO (integer)
+  //     const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
+  //     const amountPaidKobo = Number(funding.amount);
+  //     const newBalanceKobo = currentBalanceKobo + amountPaidKobo;
+
+  //     wallet.availableBalance = newBalanceKobo;
+  //     await walletRepo.save(wallet);
+
+  //     // Mark success
+  //     funding.status = FundingStatus.SUCCESS;
+  //     funding.paystackReference = data.reference; // better than using param blindly
+  //     funding.raw = data; // store only relevant payload
+
+  //     await fundingRepo.save(funding);
+
+  //     // Log transaction
+  //     await this.txService.logTransaction(
+  //       {
+  //         user: { id: userId } as User,
+  //         type: TransactionType.CREDIT,
+  //         amount: amountPaid,
+  //         description: 'Wallet funding via Paystack',
+  //         reference,
+  //         status: TransactionStatus.SUCCESSFUL,
+  //       },
+  //       manager,
+  //     );
+  //   });
+  // }
+
   private async finalizeFunding(
     reference: string,
     amountPaid: number,
@@ -43,66 +120,172 @@ export class WalletFundingService {
     await this.dataSource.transaction(async (manager) => {
       const fundingRepo = manager.getRepository(WalletFunding);
       const walletRepo = manager.getRepository(Wallet);
+      const virtualAccountRepo = manager.getRepository(VirtualAccount);
 
-      const funding = await fundingRepo.findOne({
+      // ---------------------------------------------------
+      // CHECK IF THIS IS A VIRTUAL ACCOUNT TRANSFER
+      // ---------------------------------------------------
+
+      const receiverAccountNumber =
+        data?.authorization?.receiver_bank_account_number;
+
+      let virtualAccount: VirtualAccount | null = null;
+
+      if (receiverAccountNumber) {
+        virtualAccount = await virtualAccountRepo.findOne({
+          where: {
+            accountNumber: receiverAccountNumber,
+          },
+        });
+      }
+
+      const isVirtualAccountFunding = !!virtualAccount;
+
+      // ---------------------------------------------------
+      // FIND EXISTING FUNDING RECORD
+      // ---------------------------------------------------
+
+      let funding = await fundingRepo.findOne({
         where: { reference },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!funding) return;
+      // ---------------------------------------------------
+      // HANDLE VIRTUAL ACCOUNT FUNDING
+      // ---------------------------------------------------
 
-      // Idempotency + strict state control
-      if (funding.status !== FundingStatus.PENDING) return;
+      if (!funding && isVirtualAccountFunding) {
+        funding = fundingRepo.create({
+          userId: virtualAccount!.userId,
+          amount: amountPaid,
+          reference,
+          paystackReference: reference,
+          status: FundingStatus.PENDING,
+          raw: data,
+        });
 
-      // Move to processing (prevents race conditions)
+        await fundingRepo.save(funding);
+      }
+
+      // ---------------------------------------------------
+      // IF STILL NO FUNDING RECORD → INVALID
+      // ---------------------------------------------------
+
+      if (!funding) {
+        console.log(`Funding record not found for ${reference}`);
+        return;
+      }
+
+      // ---------------------------------------------------
+      // IDEMPOTENCY CHECK
+      // ---------------------------------------------------
+
+      if (
+        funding.status === FundingStatus.SUCCESS ||
+        funding.status === FundingStatus.PROCESSING
+      ) {
+        return;
+      }
+
+      // ---------------------------------------------------
+      // MOVE TO PROCESSING
+      // ---------------------------------------------------
+
       funding.status = FundingStatus.PROCESSING;
       await fundingRepo.save(funding);
 
       const userId = funding.userId ?? funding.user?.id;
-      if (!userId) return;
 
-      // Validate amount (important security check)
-      if (Number(funding.amount) !== amountPaid) {
-        console.log(
-          `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
-        );
+      if (!userId) {
+        funding.status = FundingStatus.FAILED;
+        await fundingRepo.save(funding);
         return;
       }
 
-      // Validate currency using data (not rawPayload.data)
+      // ---------------------------------------------------
+      // VALIDATE AMOUNT
+      // ONLY FOR NORMAL CHECKOUT PAYMENTS
+      // ---------------------------------------------------
+
+      if (!isVirtualAccountFunding) {
+        if (Number(funding.amount) !== Number(amountPaid)) {
+          console.log(
+            `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
+          );
+
+          funding.status = FundingStatus.FAILED;
+          await fundingRepo.save(funding);
+
+          return;
+        }
+      }
+
+      // ---------------------------------------------------
+      // VALIDATE CURRENCY
+      // ---------------------------------------------------
+
       if (data?.currency !== 'NGN') {
+        funding.status = FundingStatus.FAILED;
+        await fundingRepo.save(funding);
+
         return;
       }
+
+      // ---------------------------------------------------
+      // LOCK WALLET
+      // ---------------------------------------------------
 
       const wallet = await walletRepo.findOne({
         where: { userId },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!wallet) return;
+      if (!wallet) {
+        funding.status = FundingStatus.FAILED;
+        await fundingRepo.save(funding);
 
-      // Use KOBO (integer)
-      const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
-      const amountPaidKobo = Number(funding.amount);
-      const newBalanceKobo = currentBalanceKobo + amountPaidKobo;
+        return;
+      }
 
-      wallet.availableBalance = newBalanceKobo;
+      // ---------------------------------------------------
+      // CREDIT CORRECT BALANCE
+      // ---------------------------------------------------
+
+      const amountKobo = Number(amountPaid);
+
+      if (isVirtualAccountFunding) {
+        // CREDIT ESCROW
+        wallet.escrowBalance = Number(wallet.escrowBalance ?? 0) + amountKobo;
+      } else {
+        // CREDIT AVAILABLE BALANCE
+        wallet.availableBalance =
+          Number(wallet.availableBalance ?? 0) + amountKobo;
+      }
+
       await walletRepo.save(wallet);
 
-      // Mark success
+      // ---------------------------------------------------
+      // MARK SUCCESS
+      // ---------------------------------------------------
+
       funding.status = FundingStatus.SUCCESS;
-      funding.paystackReference = data.reference; // better than using param blindly
-      funding.raw = data; // store only relevant payload
+      funding.paystackReference = reference;
+      funding.raw = data;
 
       await fundingRepo.save(funding);
 
-      // Log transaction
+      // ---------------------------------------------------
+      // LOG TRANSACTION
+      // ---------------------------------------------------
+
       await this.txService.logTransaction(
         {
           user: { id: userId } as User,
           type: TransactionType.CREDIT,
           amount: amountPaid,
-          description: 'Wallet funding via Paystack',
+          description: isVirtualAccountFunding
+            ? 'Funding via virtual account'
+            : 'Wallet funding via Paystack',
           reference,
           status: TransactionStatus.SUCCESSFUL,
         },
@@ -154,27 +337,6 @@ export class WalletFundingService {
       authorizationUrl: init.authorizationUrl,
     };
   }
-
-  /**
-   * Verify payment and fund wallet. (temporary method for dev, webhook is the source of truth in production)
-   */
-
-  // async verifyAndFundWallet(reference: string) {
-  //   const verification = await this.paystack.verifyTransaction(reference);
-
-  //   const ok = verification?.status === true;
-  //   const status = verification?.data?.status; // 'success'
-  //   if (!ok || status !== 'success') {
-  //     return { verified: false, reference, verification };
-  //   }
-
-  //   const amountPaidNaira = Number(verification?.data?.amount ?? 0) / 100;
-
-  //   //This is the temporary replacement for webhook in dev
-  //   await this.finalizeFunding(reference, amountPaidNaira, verification);
-
-  //   return { verified: true, reference };
-  // }
 
   /**
    * Paystack webhook handler core logic.

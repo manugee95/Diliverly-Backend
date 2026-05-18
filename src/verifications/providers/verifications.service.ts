@@ -20,6 +20,8 @@ import {
   AdminVerificationAction,
   AdminVerificationDecisionDto,
 } from '../dtos/av.dto';
+import { GetVerificationsDto } from '../dtos/getVerifications.dto';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 
 @Injectable()
 export class VerificationsService {
@@ -32,6 +34,10 @@ export class VerificationsService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(Agent)
     private readonly agentRepo: Repository<Agent>,
+    /**
+     * Injecting Pagination Provider
+     */
+    private readonly paginationProvider: PaginationProvider,
   ) {}
 
   // ======================================================
@@ -422,6 +428,61 @@ export class VerificationsService {
   }
 
   // ======================================================
+  // Get user verification status
+  // ======================================================
+  async getUserVerificationStatus(userId: number) {
+    const user = await this.userRepo.findOne({
+      where: {
+        id: userId,
+      },
+      relations: ['agent'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const verifications = await this.verificationRepo.find({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    const kyc = verifications.find((v) => v.type === VerificationType.NIN);
+
+    const kyb = verifications.find(
+      (v) => v.type === VerificationType.BUSINESS_REGISTRATION,
+    );
+
+    const poa = verifications.find(
+      (v) => v.type === VerificationType.PROOF_OF_ADDRESS,
+    );
+
+    return {
+      userId: user.id,
+
+      isKycVerified: user.isKycVerified,
+
+      isAgent: user.isAgent,
+
+      kyc,
+
+      kyb,
+
+      poa,
+
+      isKybVerified: user.agent?.isKybVerified ?? false,
+
+      isProofOfAddressVerified: user.agent?.isProofOfAddressVerified ?? false,
+    };
+  }
+
+  // ======================================================
   // ADMIN REVIEW FOR KYB + POA
   // ======================================================
   async adminReviewVerification(
@@ -557,5 +618,41 @@ export class VerificationsService {
         isVerified: agent.isVerified,
       },
     };
+  }
+
+  // ======================================================
+  // Admin get all verifications with filters
+  // ======================================================
+  async getAllVerifications(
+    userId: number,
+    verificationsQuery: GetVerificationsDto,
+  ) {
+    const admin = await this.userRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!admin) throw new BadRequestException('admin access only');
+
+    const page = verificationsQuery.page || 1;
+    const limit = verificationsQuery.limit || 10;
+
+    const where: any = {
+      user: { id: userId },
+    };
+
+    if (verificationsQuery.status) {
+      where.status = verificationsQuery.status;
+    }
+
+    const verifications = await this.paginationProvider.paginateQuery(
+      { page, limit },
+      this.verificationRepo,
+      {
+        where,
+        order: { createdAt: 'DESC' },
+      },
+    );
+
+    return verifications;
   }
 }

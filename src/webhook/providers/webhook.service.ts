@@ -9,16 +9,16 @@ export class WebhookService {
     private readonly vaService: VirtualAccountService,
   ) {}
 
-  async process(event: string, payload: any) {
-    switch (event) {
-      case 'charge.success':
-        return this.walletService.handleSuccessfulCharge(payload);
+  // async process(event: string, payload: any) {
+  //   switch (event) {
+  //     case 'charge.success':
+  //       return this.walletService.handleSuccessfulCharge(payload);
 
-    //   case 'transfer.success':
-    //     return this.transferService.handleTransferSuccess(payload);
+  //   //   case 'transfer.success':
+  //   //     return this.transferService.handleTransferSuccess(payload);
 
-      case 'dedicatedaccount.assign.success':
-        return this.vaService.handleSuccessfulCharge(payload);
-    }
-  }
+  //     case 'dedicatedaccount.assign.success':
+  //       return this.vaService.handleSuccessfulCharge(payload);
+  //   }
+  // }
 }

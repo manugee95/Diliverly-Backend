@@ -83,7 +83,7 @@ export class VirtualAccountService {
       if (!funding) {
         funding = fundingRepo.create({
           userId,
-          amount: data.amount / 100,
+          amount: data.amount,
           reference,
           paystackReference: data.reference,
           status: FundingStatus.PENDING,
@@ -116,7 +116,7 @@ export class VirtualAccountService {
         transactionRepo.create({
           user: { id: userId } as any,
           type: TransactionType.CREDIT,
-          amount: data.amount / 100,
+          amount: data.amount,
           status: TransactionStatus.SUCCESSFUL,
           reference,
           description: 'COD payment via virtual account',

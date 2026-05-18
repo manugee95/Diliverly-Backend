@@ -15,12 +15,4 @@ export class KycDto {
   })
   @IsString()
   idNumber!: string;
-
-  @ApiProperty({
-    description: 'URL of the uploaded document',
-    example: 'https://example.com/document.pdf',
-  })
-  @IsString()
-  @IsOptional()
-  documentUrl?: string;
 }

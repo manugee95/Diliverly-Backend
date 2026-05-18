@@ -76,4 +76,33 @@ export class ReviewsController {
   ) {
     return this.reviewsService.findReviewsByAgent(agentId, dto);
   }
+
+  /**
+   * Check if vendor already reviewed agent
+   */
+  @ApiOperation({
+    summary: 'Check if a vendor already reviewed agent',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Review checked successfully',
+  })
+  @ApiParam({
+    name: 'id',
+    type: 'number',
+    required: false,
+    description: 'ID of the order',
+    example: 5,
+  })
+  @UseGuards(VendorGuard)
+  @Get('check-review/:orderId')
+  async checkReview(
+    @Req() req,
+    @Param('orderId')
+    orderId: number,
+  ) {
+    const vendorId = req.user.id;
+
+    return await this.reviewsService.hasVendorReviewedAgent(vendorId, orderId);
+  }
 }
