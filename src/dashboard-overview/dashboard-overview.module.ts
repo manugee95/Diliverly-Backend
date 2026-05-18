@@ -8,6 +8,7 @@ import { Quote } from '../quotes/entities/quote.entity';
 import { Order } from '../orders/entities/order.entity';
 import { DeliveryRequest } from '../delivery-requests/entities/delivery-request.entity';
 import { DashboardCacheProvider } from './providers/dashboard-overview.provider';
+import { Agent } from '../agent/agent.entity';
 
 @Module({
   controllers: [DashboardOverviewController],
@@ -19,6 +20,7 @@ import { DashboardCacheProvider } from './providers/dashboard-overview.provider'
       Order,
       Quote,
       OrderItem,
+      Agent
     ]),
   ],
   exports: [DashboardOverviewService, DashboardCacheProvider],

@@ -1,5 +1,10 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CacheService } from '../../common/providers/cache.service';
 import { DeliveryRequest } from '../../delivery-requests/entities/delivery-request.entity';
@@ -10,7 +15,8 @@ import { OrderStatus } from '../../orders/enums/orderStatus.enum';
 import { Quote } from '../../quotes/entities/quote.entity';
 import { QuoteStatus } from '../../quotes/enums/quoteStatus.enum';
 import { Vendor } from '../../vendor/vendor.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { Agent } from '../../agent/agent.entity';
 
 @Injectable()
 export class DashboardOverviewService {
@@ -42,8 +48,8 @@ export class DashboardOverviewService {
     /**
      * Inject Agent Repository
      */
-    @InjectRepository(Vendor)
-    private readonly agentRepo: Repository<Vendor>,
+    @InjectRepository(Agent)
+    private readonly agentRepo: Repository<Agent>,
 
     /**
      * Inject OrderItem Repository
@@ -61,43 +67,73 @@ export class DashboardOverviewService {
   // Method to get vendor dashboard data
   private async buildVendorDashboard(userId: number) {
     const vendor = await this.vendorRepo.findOne({
-      where: { user: { id: userId } },
+      where: {
+        user: {
+          id: userId,
+        },
+      },
     });
 
-    if (!vendor) throw new NotFoundException('Vendor not found');
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
 
-    const result = await this.orderRepo
-      .createQueryBuilder('order')
-      .leftJoin('order.request', 'request')
-      .leftJoin('request.quotes', 'quote')
-      .where('order.vendorId = :vendorId', { vendorId: vendor.id })
-      .select([
-        'COUNT(DISTINCT request.id) AS "totalDeliveryRequests"',
+    /**
+     * Total Delivery Requests
+     */
+    const totalDeliveryRequests = await this.deliveryRequestRepo.count({
+      where: {
+        vendor: {
+          id: vendor.id,
+        },
+      },
+    });
 
-        `COUNT(DISTINCT CASE 
-        WHEN order.status = :active 
-        THEN order.id END) AS "totalActiveOrders"`,
+    /**
+     * Total Active Orders
+     */
+    const totalActiveOrders = await this.orderRepo.count({
+      where: {
+        vendor: {
+          id: vendor.id,
+        },
+        status: OrderStatus.IN_PROGRESS,
+      },
+    });
 
-        `COUNT(DISTINCT CASE 
-        WHEN order.status = :completed 
-        THEN order.id END) AS "totalCompletedOrders"`,
+    /**
+     * Total Completed Orders
+     */
+    const totalCompletedOrders = await this.orderRepo.count({
+      where: {
+        vendor: {
+          id: vendor.id,
+        },
+        status: OrderStatus.COMPLETE,
+      },
+    });
 
-        `COUNT(DISTINCT CASE 
-        WHEN quote.status = :pending 
-        THEN quote.id END) AS "totalPendingQuotes"`,
-      ])
-      .setParameters({
-        active: OrderStatus.IN_PROGRESS,
-        completed: OrderStatus.COMPLETE,
-        pending: QuoteStatus.PENDING,
+    /**
+     * Total Pending Quotes
+     *
+     * Quotes attached to this vendor's requests
+     */
+    const totalPendingQuotes = await this.quoteRepo
+      .createQueryBuilder('quote')
+      .innerJoin('quote.request', 'request')
+      .where('request.vendorId = :vendorId', {
+        vendorId: vendor.id,
       })
-      .getRawOne();
+      .andWhere('quote.status = :status', {
+        status: QuoteStatus.PENDING,
+      })
+      .getCount();
 
     return {
-      totalDeliveryRequests: Number(result.totalDeliveryRequests || 0),
-      totalActiveOrders: Number(result.totalActiveOrders || 0),
-      totalCompletedOrders: Number(result.totalCompletedOrders || 0),
-      totalPendingQuotes: Number(result.totalPendingQuotes || 0),
+      totalDeliveryRequests,
+      totalActiveOrders,
+      totalCompletedOrders,
+      totalPendingQuotes,
     };
   }
 
@@ -115,61 +151,23 @@ export class DashboardOverviewService {
   }
 
   // Method to get agent dashboard data
-
-  // private async buildAgentDashboard(userId: number) {
-  //   const agent = await this.agentRepo.findOne({
-  //     where: { user: { id: userId } },
-  //   });
-
-  //   if (!agent) throw new NotFoundException('Agent not found');
-
-  //   const result = await this.orderItemRepo
-  //     .createQueryBuilder('item')
-  //     .leftJoin('item.order', 'order')
-  //     .leftJoin('order.request', 'request')
-  //     .leftJoin('request.quotes', 'quote')
-  //     .select([
-  //       `COUNT(DISTINCT CASE
-  //     WHEN request.status = :open
-  //     THEN request.id END) AS "totalAvailableDeliveryRequests"`,
-
-  //       `COUNT(DISTINCT CASE
-  //     WHEN item.status = :active
-  //     THEN item.id END) AS "totalActiveOrders"`,
-
-  //       `COUNT(DISTINCT CASE
-  //     WHEN quote.agentId = :agentId
-  //     THEN quote.id END) AS "totalQuotesSent"`,
-
-  //       `COUNT(DISTINCT CASE
-  //     WHEN item.status = :delivered
-  //     THEN item.id END) AS "totalDeliveredItems"`,
-  //     ])
-  //     .setParameters({
-  //       open: RequestStatus.OPEN,
-  //       active: OrderStatus.IN_PROGRESS,
-  //       delivered: OrderStatus.DELIVERED,
-  //       agentId: agent.id,
-  //     })
-  //     .getRawOne();
-
-  //   return {
-  //     totalAvailableDeliveryRequests: Number(
-  //       result.totalAvailableDeliveryRequests || 0,
-  //     ),
-  //     totalActiveOrders: Number(result.totalActiveOrders || 0),
-  //     totalQuotesSent: Number(result.totalQuotesSent || 0),
-  //     totalDeliveredItems: Number(result.totalDeliveredItems || 0),
-  //   };
-  // }
-
   private async buildAgentDashboard(userId: number) {
     const agent = await this.agentRepo.findOne({
-      where: { user: { id: userId } },
+      where: {
+        user: {
+          id: userId,
+        },
+      },
     });
 
     if (!agent) {
       throw new NotFoundException('Agent not found');
+    }
+
+    const statesCovered = agent.statesCovered ?? [];
+
+    if (!statesCovered.length) {
+      throw new BadRequestException('No states covered by this agent');
     }
 
     /**
@@ -177,14 +175,26 @@ export class DashboardOverviewService {
      */
     const totalAvailableDeliveryRequests = await this.deliveryRequestRepo.count(
       {
-        where: {
-          status: RequestStatus.OPEN,
-        },
+        where: [
+          {
+            state: In(statesCovered),
+            status: RequestStatus.OPEN,
+            isDirect: false,
+          },
+          {
+            state: In(statesCovered),
+            status: RequestStatus.OPEN,
+            isDirect: true,
+            assignedAgent: {
+              id: agent.id,
+            },
+          },
+        ],
       },
     );
 
     /**
-     * Total Quotes Sent By Agent
+     * Total Quotes Sent
      */
     const totalQuotesSent = await this.quoteRepo.count({
       where: {
@@ -197,17 +207,26 @@ export class DashboardOverviewService {
     /**
      * Total Active Orders
      */
-    const totalActiveOrders = await this.orderItemRepo.count({
-      where: {
-        status: OrderStatus.IN_PROGRESS,
-      },
-    });
+    const totalActiveOrders = await this.orderRepo
+      .createQueryBuilder('order')
+      .innerJoin('order.items', 'item')
+      .where('item.agentId = :agentId', {
+        agentId: agent.id,
+      })
+      .andWhere('order.status = :status', {
+        status: OrderStatus.ACTIVE,
+      })
+      .distinct(true)
+      .getCount();
 
     /**
      * Total Delivered Items
      */
     const totalDeliveredItems = await this.orderItemRepo.count({
       where: {
+        agent: {
+          id: agent.id,
+        },
         status: OrderStatus.DELIVERED,
       },
     });

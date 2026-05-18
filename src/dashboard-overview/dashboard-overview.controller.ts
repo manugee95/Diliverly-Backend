@@ -21,22 +21,22 @@ export class DashboardOverviewController {
   @UseGuards(Vendor)
   @Get('vendor')
   async getVendorDashboardData(@Req() req) {
-    const vendorId = req.user.vendorId;
-    return await this.dashboardOverviewService.getVendorDashboard(vendorId);
+    const userId = req.user.id;
+    return await this.dashboardOverviewService.getVendorDashboard(userId);
   }
 
   /**
    * Endpoint to get agent dashboard data
    */
-    @ApiOperation({ summary: 'Get agent dashboard data' })
-    @ApiResponse({
-      status: 200,
-      description: 'Dashboard data retrieved successfully',
-    })
-    @UseGuards(Agent)
-    @Get('agent')
-    async getAgentDashboardData(@Req() req) {
-      const agentId = req.user.agentId;
-      return await this.dashboardOverviewService.getAgentDashboard(agentId);
-    }
+  @ApiOperation({ summary: 'Get agent dashboard data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard data retrieved successfully',
+  })
+  @UseGuards(Agent)
+  @Get('agent')
+  async getAgentDashboardData(@Req() req) {
+    const userId = req.user.id;
+    return await this.dashboardOverviewService.getAgentDashboard(userId);
+  }
 }
