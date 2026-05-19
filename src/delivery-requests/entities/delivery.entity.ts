@@ -17,7 +17,8 @@ export class Delivery {
   id!: number;
 
   @ManyToOne(() => DeliveryRequest, (request) => request.deliveries, {
-    onDelete: 'CASCADE', nullable: false,
+    onDelete: 'CASCADE',
+    nullable: false,
   })
   request!: DeliveryRequest;
 

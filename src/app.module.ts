@@ -23,7 +23,7 @@ import { RedisCacheModule } from './rediscache/rediscache.module';
 import { MailerModule } from './mailer/mailer.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { TransactionsModule } from './transactions/transactions.module';
-// import { ScheduleModule } from '@nestjs/schedule';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { HealthModule } from './health/health.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
@@ -37,6 +37,7 @@ import { VirtualAccountModule } from './virtual-account/virtual-account.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { S3Module } from './s3/s3.module';
 import { VerificationsModule } from './verifications/verifications.module';
+import { DisputeModule } from './dispute/dispute.module';
 
 @Module({
   imports: [
@@ -81,7 +82,7 @@ import { VerificationsModule } from './verifications/verifications.module';
     MailerModule,
     ReviewsModule,
     TransactionsModule,
-    // ScheduleModule.forRoot(),
+    ScheduleModule.forRoot(),
     WithdrawalsModule,
     HealthModule,
     BankAccountModule,
@@ -94,6 +95,7 @@ import { VerificationsModule } from './verifications/verifications.module';
     WebhookModule,
     S3Module,
     VerificationsModule,
+    DisputeModule,
   ],
   controllers: [AppController],
   providers: [

@@ -117,13 +117,24 @@ export class DeliveryRequestService {
 
     const { title, description, state, addresses, pickUpAddress } = dto;
 
-    // Create the base request
+    // Validate deadline
+    const now = new Date();
+
+    const deadline = new Date(
+      now.getTime() + dto.estimatedCompletionHours * 60 * 60 * 1000,
+    );
+
+    if (deadline <= now) {
+      throw new BadRequestException('Delivery deadline must be in the future');
+    }
+
     const deliveryRequest = this.deliveryRequestRepo.create({
       vendor,
       title,
       description,
       state,
       pickUpAddress,
+      estimatedCompletionHours: dto.estimatedCompletionHours,
       status: RequestStatus.OPEN,
       isDirect: false,
     });
@@ -196,18 +207,42 @@ export class DeliveryRequestService {
       );
     }
 
+    // const { title, description, state, addresses, pickUpAddress } = dto;
+
+    // // Create DIRECT request
+    // const deliveryRequest = this.deliveryRequestRepo.create({
+    //   vendor,
+    //   title,
+    //   description,
+    //   state,
+    //   pickUpAddress,
+    //   status: RequestStatus.OPEN,
+    //   isDirect: true,
+    //   assignedAgent: agent,
+    // });
+
     const { title, description, state, addresses, pickUpAddress } = dto;
 
-    // Create DIRECT request
+    // Validate deadline
+    const now = new Date();
+
+    const deadline = new Date(
+      now.getTime() + dto.estimatedCompletionHours * 60 * 60 * 1000,
+    );
+
+    if (deadline <= now) {
+      throw new BadRequestException('Delivery deadline must be in the future');
+    }
+
     const deliveryRequest = this.deliveryRequestRepo.create({
       vendor,
       title,
       description,
       state,
       pickUpAddress,
+      estimatedCompletionHours: dto.estimatedCompletionHours,
       status: RequestStatus.OPEN,
-      isDirect: true,
-      assignedAgent: agent,
+      isDirect: false,
     });
 
     const savedRequest = await this.deliveryRequestRepo.save(deliveryRequest);

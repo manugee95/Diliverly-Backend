@@ -54,6 +54,18 @@ export class Order {
   @Column({ default: false })
   deliveryDetailsProvided!: boolean;
 
+  @Column({ type: 'timestamp', nullable: true })
+  startedAt!: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deliveryDeadline!: Date;
+
+  @Column({ default: 0 })
+  remainingExtensionHours!: number;
+
+  @Column({ default: false })
+  isExtended!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 

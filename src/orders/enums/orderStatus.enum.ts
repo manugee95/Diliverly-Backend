@@ -5,5 +5,7 @@ export enum OrderStatus {
   COMPLETE = 'completed',
   PENDING = 'pending',
   ACTIVE = 'active',
-  DECLINED = 'declined'
+  DECLINED = 'declined',
+  OVERDUE = "overdue",
+  DISPUTE = "dispute"
 }

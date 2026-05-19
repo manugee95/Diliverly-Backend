@@ -53,7 +53,7 @@ export class OrderItem {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   codAmount?: number;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ nullable: true })
   deliveryPin?: string;
 
   @Column({

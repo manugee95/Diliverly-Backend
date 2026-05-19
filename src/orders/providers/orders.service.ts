@@ -39,6 +39,9 @@ import { OrdersCacheProvider } from './orders.provider';
 import { CurrencyConvertProvider } from '../../common/providers/currency-convert.provider';
 import { generateTransactionRef } from '../../common/utils/reference.util';
 import { calculateTrustScore } from '../../common/utils/trust-score.util';
+import { RequestExtensionDto } from '../dtos/requestExtension.dto';
+import { OrderTimeExtension } from '../entities/orderTimeExtension.entity';
+import { ExtensionStatus } from '../enums/orderExtension.enum';
 
 @Injectable()
 export class OrdersService {
@@ -71,6 +74,12 @@ export class OrdersService {
      */
     @InjectRepository(Agent)
     private readonly agentRepo: Repository<Agent>,
+
+    /**
+     * Inject Extension Repo
+     */
+    @InjectRepository(OrderTimeExtension)
+    private readonly extensionRepo: Repository<OrderTimeExtension>,
 
     /**
      * Injecting Pagination Provider
@@ -159,9 +168,9 @@ export class OrdersService {
           agentName: payload.agentName,
           amount: payload.amount,
           reference: payload.reference,
-        }, 
-        `You just earned ₦${payload.amount} for order ${payload.reference}`, 
-      ); 
+        },
+        `You just earned ₦${payload.amount} for order ${payload.reference}`,
+      );
     } catch (error) {
       console.error('Failed to send agent email:', error);
     }
@@ -261,7 +270,7 @@ export class OrdersService {
           deliveryItem: payload.deliveryItem,
         },
         `You just received a COD payment of ₦${payload.amountPaid}`,
-      ); 
+      );
     } catch (error) {
       console.error('Failed to send vendor email:', error);
     }
@@ -287,7 +296,7 @@ export class OrdersService {
           orderUrl: payload.orderUrl,
         },
         `Please provide delivery details for your order to get started`,
-      );  
+      );
     } catch (error) {
       console.error('Failed to send vendor email:', error);
     }
@@ -460,7 +469,16 @@ export class OrdersService {
       // Mark order ACTIVE after vendor completes details
       await orderRepo.update(order.id, { status: OrderStatus.ACTIVE });
 
+      const now = new Date();
+
+      const deadline = new Date(
+        now.getTime() + request.estimatedCompletionHours * 60 * 60 * 1000,
+      );
+
       // Update order
+      order.startedAt = now;
+      order.deliveryDeadline = deadline;
+      order.remainingExtensionHours = 0;
       order.deliveryDetailsProvided = true;
       order.status = OrderStatus.ACTIVE;
       await orderRepo.save(order);
@@ -1261,6 +1279,105 @@ export class OrdersService {
 
     return {
       message: 'Reminder sent successfully',
+    };
+  }
+
+  /**
+   * Method to request for time extension
+   */
+  async requestOrderExtension(
+    userId: number,
+    orderId: number,
+    dto: RequestExtensionDto,
+  ) {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!agent) throw new NotFoundException('Agent not found');
+
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Check for existing pending extension
+    const existingPendingRequest = await this.extensionRepo.findOne({
+      where: {
+        order: { id: order.id },
+        agent: { id: agent.id },
+        status: ExtensionStatus.PENDING,
+      },
+    });
+
+    // Block duplicate request
+    if (existingPendingRequest) {
+      throw new BadRequestException(
+        'You already have a pending extension request for this order',
+      );
+    }
+
+    const extension = this.extensionRepo.create({
+      order,
+      agent,
+      requestedHours: dto.requestedHours,
+      reason: dto.reason,
+    });
+
+    return await this.extensionRepo.save(extension);
+  }
+
+  /**
+   * Method to approve time extension request
+   */
+  async approveExtension(userId: number, extensionId: number) {
+    const vendor = await this.vendorRepo.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+
+    if (!vendor) {
+      throw new NotFoundException('Vendor not found');
+    }
+
+    const extension = await this.extensionRepo.findOne({
+      where: { id: extensionId },
+      relations: ['order'],
+    });
+
+    if (!extension) {
+      throw new NotFoundException('Extension request not found');
+    }
+
+    if (extension.status !== ExtensionStatus.PENDING) {
+      throw new BadRequestException('Extension already processed');
+    }
+
+    const order = extension.order;
+
+    const newDeadline = new Date(
+      order.deliveryDeadline.getTime() +
+        extension.requestedHours * 60 * 60 * 1000,
+    );
+
+    order.deliveryDeadline = newDeadline;
+    order.isExtended = true;
+    order.remainingExtensionHours += extension.requestedHours;
+
+    extension.status = ExtensionStatus.APPROVED;
+
+    await this.orderRepo.save(order);
+    await this.extensionRepo.save(extension);
+
+    return {
+      message: 'Extension approved successfully',
+      newDeadline,
     };
   }
 }

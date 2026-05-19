@@ -73,6 +73,9 @@ export class DeliveryRequest {
   @OneToOne(() => Order, (order) => order.request)
   order!: Order;
 
+  @Column({ type: 'int', default: 24 })
+  estimatedCompletionHours!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

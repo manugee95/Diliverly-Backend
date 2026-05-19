@@ -17,10 +17,12 @@ import { DashboardOverviewModule } from '../dashboard-overview/dashboard-overvie
 import { OrdersCacheProvider } from './providers/orders.provider';
 import { redisProvider } from '../common/providers/redis.provider';
 import { CurrencyConvertProvider } from '../common/providers/currency-convert.provider';
+import { OrderTimeExtension } from './entities/orderTimeExtension.entity';
+import { OrderschedulerProvider } from './providers/orderscheduler.provider';
 
 @Module({
   controllers: [OrdersController],
-  providers: [OrdersService, OrdersCacheProvider, redisProvider, CurrencyConvertProvider],
+  providers: [OrdersService, OrdersCacheProvider, redisProvider, CurrencyConvertProvider, OrderschedulerProvider],
   imports: [
     TypeOrmModule.forFeature([
       Order,
@@ -29,6 +31,7 @@ import { CurrencyConvertProvider } from '../common/providers/currency-convert.pr
       DeliveryRequest,
       Agent,
       Transaction,
+      OrderTimeExtension,
     ]),
     PaginationModule,
     TransactionsModule,

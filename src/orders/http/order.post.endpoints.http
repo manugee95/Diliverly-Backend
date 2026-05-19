@@ -1,41 +1,41 @@
 POST http://localhost:3000/orders/create-order-items
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3NzAzMjI3MiwiZXhwIjoxNzc3MDM1ODcyLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.jnubvpma3oUWiwR74bhcZeZjC4VuaR13r1gHow6w0QY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3OTE3ODE2MCwiZXhwIjoxNzc5MTgxNzYwLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.OQGLPK5nzj9CUk5Lya5CCULpe5f_KcswVOj0mlTJ1-I
 
 {
-    "requestId": 22,
+    "requestId": 45,
     "items": [
         {
-            "deliveryId": 69,
+            "deliveryId": 106,
             "itemName": "Wireless Mouse",
             "quantity": 2,
             "buyerName": "John Doe",
             "buyerPhone": "+1234567890"
-        },
-        {
-            "deliveryId": 70,
-            "itemName": "Keyboard",
-            "quantity": 1,
-            "buyerName": "Jane Smith",
-            "buyerPhone": "+0987654321",
-            "codAmount": 1000
-        },
-        {
-            "deliveryId": 71,
-            "itemName": "USB-C Cable",
-            "quantity": 3,
-            "buyerName": "Alice Johnson",
-            "buyerPhone": "+1122334455",
-            "codAmount": 1500
-        },
-        {
-            "deliveryId": 72,
-            "itemName": "USB-C Cable",
-            "quantity": 3,
-            "buyerName": "Alice Johnson",
-            "buyerPhone": "+1122334455",
-            "codAmount": 1500
         }
+        // {
+        //     "deliveryId": 70,
+        //     "itemName": "Keyboard",
+        //     "quantity": 1,
+        //     "buyerName": "Jane Smith",
+        //     "buyerPhone": "+0987654321",
+        //     "codAmount": 1000
+        // },
+        // {
+        //     "deliveryId": 71,
+        //     "itemName": "USB-C Cable",
+        //     "quantity": 3,
+        //     "buyerName": "Alice Johnson",
+        //     "buyerPhone": "+1122334455",
+        //     "codAmount": 1500
+        // },
+        // {
+        //     "deliveryId": 72,
+        //     "itemName": "USB-C Cable",
+        //     "quantity": 3,
+        //     "buyerName": "Alice Johnson",
+        //     "buyerPhone": "+1122334455",
+        //     "codAmount": 1500
+        // }
     ]
 }
 
@@ -60,3 +60,17 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiO
 POST http://localhost:3000/orders/21/remind-vendor
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc3NzE3Mzg3LCJleHAiOjE3Nzc3MjA5ODcsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.fSN3CpIwTy8fcocLSyO_KcBsj4G0CyPesjt784akPbw
+
+
+POST http://localhost:3000/orders/time-extension/39
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc5MTgwNTg3LCJleHAiOjE3NzkxODQxODcsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.3DsuN_2E9Uyc4U676xyMzec3pJuUgFp1Y24AlMeQo9k
+
+{
+    "requestedHours": 48,
+    "reason": "Customer rescheduled"
+}
+
+
+POST http://localhost:3000/orders/approve-extension/2
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3OTE3ODE2MCwiZXhwIjoxNzc5MTgxNzYwLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.OQGLPK5nzj9CUk5Lya5CCULpe5f_KcswVOj0mlTJ1-I

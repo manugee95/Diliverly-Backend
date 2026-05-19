@@ -1,0 +1,26 @@
+POST http://localhost:3000/dispute/39/open-dispute
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3OTIxMDIyMiwiZXhwIjoxNzc5MjEzODIyLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.NMtmZTNS83G_ObKpUdIzzznGASrCXVrYgiuh7SIt89A
+Content-Type: application/json
+
+{
+    "disputeType": "lost_package",
+    "reason": "It has been 1 week now and this agent claims he has misplaced my package and he's not doing anything about it"
+}
+
+
+POST http://localhost:3000/dispute/1/send-message
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJseWRpYW1jZ2lsbDIyQGdtYWlsLmNvbSIsImlzQWdlbnQiOnRydWUsImlzVmVuZG9yIjpmYWxzZSwiYWN0aXZlUm9sZSI6ImFnZW50IiwiaWF0IjoxNzc5MjEwMTMwLCJleHAiOjE3NzkyMTM3MzAsImF1ZCI6ImxvY2FsaG9zdDozMDAwIiwiaXNzIjoibG9jYWxob3N0OjMwMDAifQ.6K6RkDLsVBAoihLrWMmVQrNFIHlVJW_dqv6Fis7ToxE
+Content-Type: application/json
+
+{
+    "message": "I never said I was not going to pay, I just need a little more time."
+}
+
+
+POST http://localhost:3000/dispute/1/send-message
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3OTIxMDIyMiwiZXhwIjoxNzc5MjEzODIyLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.NMtmZTNS83G_ObKpUdIzzznGASrCXVrYgiuh7SIt89A
+Content-Type: application/json
+
+{
+    "message": "It's either you pay me my money, or you send me back my products."
+}

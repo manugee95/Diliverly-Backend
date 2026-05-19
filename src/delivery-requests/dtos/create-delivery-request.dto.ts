@@ -1,8 +1,11 @@
 import {
   IsArray,
+  IsDateString,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { DeliveryType } from '../enums/deliveryType.enum';
@@ -52,6 +55,14 @@ export class CreateDeliveryRequestDto {
   @IsNotEmpty()
   @IsString()
   pickUpAddress!: string;
+
+  @ApiProperty({
+    description: 'Expected completion timeframe in hours',
+    example: 48,
+  })
+  @IsNumber()
+  @Min(1)
+  estimatedCompletionHours!: number;
 
   @ApiProperty({
     description: 'list of delivery addresses',

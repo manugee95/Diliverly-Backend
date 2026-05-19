@@ -17,6 +17,7 @@ import { CancelOrderItemDto } from './dtos/cancelOrderItem.dto';
 import { VendorGuard } from '../auth/guards/roles/vendor.guard';
 import { AgentGuard } from '../auth/guards/roles/agent.guard';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { RequestExtensionDto } from './dtos/requestExtension.dto';
 
 @Controller('orders')
 export class OrdersController {
@@ -174,12 +175,53 @@ export class OrdersController {
   })
   @UseGuards(AgentGuard)
   @Post(':orderId/remind-vendor')
-  async sendReminder(
+  async sendReminder(@Param('orderId') orderId: number, @Req() req) {
+    const userId = req.user.id;
+
+    return this.ordersService.sendDeliveryDetailsReminder(userId, orderId);
+  }
+
+  /**
+   * Endpoint to request for time extension
+   */
+  @ApiOperation({
+    summary: 'Request for time extension',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Request sent successfully.',
+  })
+  @UseGuards(AgentGuard)
+  @Post('/time-extension/:orderId')
+  async requestOrderExtension(
     @Param('orderId') orderId: number,
+    @Req() req,
+    @Body() dto: RequestExtensionDto,
+  ) {
+    const userId = req.user.id;
+
+    return this.ordersService.requestOrderExtension(userId, orderId, dto);
+  }
+
+
+  /**
+   * Endpoint to approve time extension
+   */
+  @ApiOperation({
+    summary: 'Approve time extension',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Approval sent successfully.',
+  })
+  @UseGuards(VendorGuard)
+  @Post('/approve-extension/:extensionId')
+  async approveExtension(
+    @Param('orderId') extensionId: number,
     @Req() req,
   ) {
     const userId = req.user.id;
 
-    return this.ordersService.sendDeliveryDetailsReminder(userId, orderId);
+    return this.ordersService.approveExtension(userId, extensionId);
   }
 }
