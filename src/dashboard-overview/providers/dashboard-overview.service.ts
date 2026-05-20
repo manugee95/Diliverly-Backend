@@ -125,7 +125,7 @@ export class DashboardOverviewService {
         vendorId: vendor.id,
       })
       .andWhere('quote.status = :status', {
-        status: QuoteStatus.ACCEPTED,
+        status: QuoteStatus.PENDING,
       })
       .getCount();
 
