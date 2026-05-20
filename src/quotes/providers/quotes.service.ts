@@ -231,7 +231,7 @@ export class QuotesService {
       this.quoteRepo,
       {
         where: { request: { id: requestId } },
-        relations: ['agent', 'deliveryCost', 'deliveryCost.delivery'],
+        relations: ['agent', 'agent.user', 'deliveryCost', 'deliveryCost.delivery'],
         order: { createdAt: 'ASC' },
       },
     );
