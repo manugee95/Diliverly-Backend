@@ -34,6 +34,7 @@ export class VirtualAccountService {
       // Create DVA
       const dva = await this.paystack.createDedicatedAccount(
         customer.customer_code,
+        user
       );
 
       // Save

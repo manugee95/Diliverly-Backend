@@ -87,7 +87,6 @@ export class PaystackService {
 
   async handleTransferApproval(event: any): Promise<boolean> {
     try {
-
       // Extract relevant details from the event
       const payload = event?.data?.details?.body;
       const transfer = event?.data?.transfers?.[0];
@@ -170,13 +169,15 @@ export class PaystackService {
     }
   }
 
-  async createDedicatedAccount(customerCode: string) {
+  async createDedicatedAccount(customerCode: string, user: User) {
     try {
       const response = await axios.post(
         `${this.baseUrl}/dedicated_account`,
         {
           customer: customerCode,
-          preferred_bank: 'wema-bank',
+          preferred_bank: 'test-bank',
+          first_name: user.firstName,
+          last_name: user.lastName,
         },
         {
           headers: this.headers,

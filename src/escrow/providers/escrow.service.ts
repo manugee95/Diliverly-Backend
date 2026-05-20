@@ -98,7 +98,7 @@ export class EscrowService {
           user: oi.agent.user,
           type: TransactionType.CREDIT,
           amount: agentEarningKobo,
-          description: `Escrow released for delivery item #${oi.id}`,
+          description: `Escrow released for delivery item in order ${oi.order.reference}`,
           reference: `ESCROW-REL-${oi.id}`,
           status: TransactionStatus.SUCCESSFUL,
           order: oi.order,

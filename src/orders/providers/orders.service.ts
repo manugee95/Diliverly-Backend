@@ -745,9 +745,9 @@ export class OrdersService {
       if (!agentWallet) throw new Error('Agent wallet not found');
       if (!vendorWallet) throw new Error('Vendor wallet not found');
 
-      if (Number(agentWallet.availableBalance) < codAmount) {
+      if (Number(agentWallet.escrowBalance) < codAmount) {
         throw new BadRequestException(
-          'Insufficient wallet balance to settle COD, Fund your wallet and try again.',
+          'Insufficient balance in escrow',
         );
       }
 
@@ -755,15 +755,15 @@ export class OrdersService {
       const codAmountKobo = this.currencyConvert.toKobo(Number(oi.codAmount));
 
       // Normalize bigint-safe values
-      const agentBalanceKobo = Number(agentWallet.availableBalance ?? 0);
+      const agentBalanceKobo = Number(agentWallet.escrowBalance ?? 0);
       const vendorBalanceKobo = Number(vendorWallet.availableBalance ?? 0);
 
       if (agentBalanceKobo < codAmountKobo) {
-        throw new BadRequestException('Insufficient wallet balance');
+        throw new BadRequestException('Insufficient balance in escrow');
       }
 
       // Safe transfer in KOBO
-      agentWallet.availableBalance = agentBalanceKobo - codAmountKobo;
+      agentWallet.escrowBalance = agentBalanceKobo - codAmountKobo;
       vendorWallet.availableBalance = vendorBalanceKobo + codAmountKobo;
 
       await walletRepo.save([agentWallet, vendorWallet]);
@@ -836,7 +836,7 @@ export class OrdersService {
             user: vendorUserEntity,
             type: TransactionType.CREDIT,
             amount: codAmountKobo,
-            description: `COD received from agent for order #${oi.order.reference}, item #${oi.id}`,
+            description: `COD received from agent for an item in order #${oi.order.reference}`,
             orderItem: oi,
             reference: transactionRef,
             status: TransactionStatus.SUCCESSFUL,
