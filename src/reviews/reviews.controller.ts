@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -13,6 +15,10 @@ import { RateAgentDto } from './dtos/rate-agent.dto';
 import { GetReviewsDto } from './dtos/get-review.dto';
 import { VendorGuard } from '../auth/guards/roles/vendor.guard';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { AgentGuard } from '../auth/guards/roles/agent.guard';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Agent } from '../agent/agent.entity';
+import { Repository } from 'typeorm';
 
 @Controller('reviews')
 export class ReviewsController {
@@ -21,6 +27,9 @@ export class ReviewsController {
      * Inject Reviews Service
      */
     private readonly reviewsService: ReviewsService,
+
+    @InjectRepository(Agent)
+    private readonly agentRepo: Repository<Agent>,
   ) {}
 
   /**
@@ -49,6 +58,30 @@ export class ReviewsController {
   ) {
     const userId = req.user.id;
     return this.reviewsService.rateAgent(userId, orderId, dto);
+  }
+
+  /**
+   * Endpoint to get agent reviews
+   */
+  @ApiOperation({
+    summary: 'Get reviews for a specific agent',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reviews retrieved successfully.',
+  })
+  @UseGuards(AgentGuard)
+  @Get('/me')
+  async reviewsByAgent(@Req() req, @Query() dto: GetReviewsDto) {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: req.user.id } },
+    });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    return this.reviewsService.findReviewsByAgent(agent.id, dto);
   }
 
   /**
