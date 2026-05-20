@@ -97,7 +97,7 @@ export class DashboardOverviewService {
         vendor: {
           id: vendor.id,
         },
-        status: OrderStatus.IN_PROGRESS,
+        status: OrderStatus.ACTIVE,
       },
     });
 
@@ -125,7 +125,7 @@ export class DashboardOverviewService {
         vendorId: vendor.id,
       })
       .andWhere('quote.status = :status', {
-        status: QuoteStatus.PENDING,
+        status: QuoteStatus.ACCEPTED,
       })
       .getCount();
 
