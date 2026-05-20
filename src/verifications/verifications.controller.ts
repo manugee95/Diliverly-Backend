@@ -62,10 +62,9 @@ export class VerificationsController {
   async verifyKyc(
     @Body() dto: KycDto,
     @Req() req,
-    @UploadedFile() file: Express.Multer.File,
   ) {
     const userId = req.user.id;
-    return this.verificationsService.verifyKyc(userId, dto, file);
+    return this.verificationsService.verifyKyc(userId, dto);
   }
 
   /**

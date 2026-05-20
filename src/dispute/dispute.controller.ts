@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -13,6 +15,8 @@ import { DisputeService } from './providers/dispute.service';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/guards/roles/admin.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { GetDisputesDto } from './dtos/getDisputes.dto';
+import { GetDisputeMessagesDto } from './dtos/getDisputeMessages.dto';
 
 @Controller('dispute')
 export class DisputeController {
@@ -68,13 +72,13 @@ export class DisputeController {
     @Req() req,
     @Param('disputeId') disputeId: number,
     @Body() message: string,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     return await this.disputeService.sendDisputeMessage(
       req.user.id,
       disputeId,
       message,
-      file
+      file,
     );
   }
 
@@ -99,6 +103,44 @@ export class DisputeController {
       req.user.id,
       disputeId,
       resolution,
+    );
+  }
+
+  /**
+   * Endpoint to get all disputes
+   */
+  @ApiOperation({
+    summary: 'Get all disputes',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'disputes fetched successfully.',
+  })
+  @Get('')
+  async getAllDisputes(@Req() req, @Query() query: GetDisputesDto) {
+    return await this.disputeService.getAllDisputes(req.user.id, query);
+  }
+
+  /**
+   * Endpoint to get all messages for a dispute
+   */
+  @ApiOperation({
+    summary: 'Get all messges for a dispute',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'messages fetched successfully.',
+  })
+  @Get('/:disputeId/messages')
+  async getDisputeMessages(
+    @Req() req,
+    @Param('disputeId') disputeId: number,
+    @Query() query: GetDisputeMessagesDto,
+  ) {
+    return await this.disputeService.getDisputeMessages(
+      req.user.id,
+      disputeId,
+      query,
     );
   }
 }

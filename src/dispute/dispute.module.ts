@@ -9,6 +9,8 @@ import { Vendor } from '../vendor/vendor.entity';
 import { Agent } from '../agent/agent.entity';
 import { DisputeMessage } from './entities/disputeMessage.entity';
 import { S3Module } from '../s3/s3.module';
+import { User } from '../users/user.entity';
+import { PaginationModule } from '../common/pagination/pagination.module';
 
 @Module({
   controllers: [DisputeController],
@@ -21,8 +23,10 @@ import { S3Module } from '../s3/s3.module';
       Order,
       Vendor,
       Agent,
+      User,
     ]),
     S3Module,
+    PaginationModule,
   ],
 })
 export class DisputeModule {}

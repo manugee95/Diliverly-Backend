@@ -1,16 +1,16 @@
 POST http://localhost:3000/delivery-request
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3OTE3ODE2MCwiZXhwIjoxNzc5MTgxNzYwLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.OQGLPK5nzj9CUk5Lya5CCULpe5f_KcswVOj0mlTJ1-I
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEsImVtYWlsIjoid2V4bGVya2ltYmVybHk5MEBnbWFpbC5jb20iLCJpc0FnZW50IjpmYWxzZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJ2ZW5kb3IiLCJpYXQiOjE3NzkyMTM5MDcsImV4cCI6MTc3OTIxNzUwNywiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.zQ5igmPP3le-yFWPjk_atrYyU8g7Gx54dm5HJGCM9qg
 
 {
-    "title": "Edo Delivery Agent Needed",
-    "description": "I need a reliable delivery agent in Edo for multiple deliveries",
-    "state": "Edo",
-    "pickUpAddress": "Lekki Phase 1, admiralty way Edo",
+    "title": "Lagos Delivery Agent Needed",
+    "description": "I need a reliable delivery agent in Lagos for multiple deliveries",
+    "state": "Lagos",
+    "pickUpAddress": "Lekki Phase 1, admiralty way Lagos",
     "estimatedCompletionHours": 48,
     "addresses": [
-        { "address": "Lekki Phase 1, admiralty way Edo", "deliveryType": "prepaid" }
-        // { "address": "26, Isaac John stree, Ikeja GRA Edo", "deliveryType": "cod" },
+        { "address": "Lekki Phase 1, admiralty way Lagos", "deliveryType": "prepaid" }
+        // { "address": "26, Isaac John stree, Ikeja GRA Lagos", "deliveryType": "cod" },
         // { "address": "27, Isaac John stree, Ikeja GRA Edo", "deliveryType": "cod" }
     ]
 }

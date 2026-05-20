@@ -43,7 +43,7 @@ export class VerificationsService {
   // ======================================================
   // KYC VERIFICATION LOGIC
   // ======================================================
-  async verifyKyc(userId: number, dto: KycDto, file: Express.Multer.File) {
+  async verifyKyc(userId: number, dto: KycDto) {
     // -----------------------------------
     // 1. FIND USER
     // -----------------------------------
@@ -60,7 +60,7 @@ export class VerificationsService {
     // 2. UPLOAD DOCUMENT
     // -----------------------------------
 
-    const documentUrl = await this.s3Service.uploadFile(file);
+    // const documentUrl = await this.s3Service.uploadFile(file);
 
     // -----------------------------------
     // 3. GENERATE JOB ID
@@ -79,7 +79,6 @@ export class VerificationsService {
           ? VerificationType.VOTER_ID
           : VerificationType.NIN,
       idNumber: dto.idNumber,
-      documentUrl,
       status: VerificationStatus.PENDING,
       smileJobId: jobId,
       smileJobComplete: false,

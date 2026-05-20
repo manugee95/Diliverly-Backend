@@ -27,6 +27,9 @@ export class User {
   @Column({ default: false })
   isVendor!: boolean;
 
+  @Column({ default: false })
+  isAdmin!: boolean;
+
   @Column({ unique: true, type: 'varchar', length: 96 })
   email!: string;
 

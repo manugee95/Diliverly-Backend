@@ -17,10 +17,10 @@ Content-Type: application/json
 }
 
 
-POST http://localhost:3000/dispute/1/send-message
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJtYW51Z3RlY2hAZ21haWwuY29tIiwiaXNBZ2VudCI6dHJ1ZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJhZ2VudCIsImlhdCI6MTc3OTIxMDIyMiwiZXhwIjoxNzc5MjEzODIyLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.NMtmZTNS83G_ObKpUdIzzznGASrCXVrYgiuh7SIt89A
+POST http://localhost:3000/dispute/2/send-message
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTEsImVtYWlsIjoid2V4bGVya2ltYmVybHk5MEBnbWFpbC5jb20iLCJpc0FnZW50IjpmYWxzZSwiaXNWZW5kb3IiOnRydWUsImFjdGl2ZVJvbGUiOiJ2ZW5kb3IiLCJpYXQiOjE3NzkyMTM5MDcsImV4cCI6MTc3OTIxNzUwNywiYXVkIjoibG9jYWxob3N0OjMwMDAiLCJpc3MiOiJsb2NhbGhvc3Q6MzAwMCJ9.zQ5igmPP3le-yFWPjk_atrYyU8g7Gx54dm5HJGCM9qg
 Content-Type: application/json
 
 {
-    "message": "It's either you pay me my money, or you send me back my products."
+    "message": "I don't have anyymore time to give you. Just return my items"
 }
