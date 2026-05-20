@@ -1133,6 +1133,7 @@ export class OrdersService {
           'vendor',
           'request.quotes',
           'request.quotes.agent',
+          'request.quotes.agent.user',
           'request.quotes.deliveryCost',
           'request.quotes.deliveryCost.delivery',
         ],
@@ -1161,6 +1162,7 @@ export class OrdersService {
 
     const items = await this.orderItemRepo.find({
       where: { order: { id: orderId } },
+      relations: ['delivery']
     });
 
     await this.ordersCacheProvider.setOrderItems(orderId, items);
