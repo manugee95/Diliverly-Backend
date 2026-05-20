@@ -44,66 +44,172 @@ export class WalletFundingService {
   //   await this.dataSource.transaction(async (manager) => {
   //     const fundingRepo = manager.getRepository(WalletFunding);
   //     const walletRepo = manager.getRepository(Wallet);
+  //     const virtualAccountRepo = manager.getRepository(VirtualAccount);
 
-  //     const funding = await fundingRepo.findOne({
+  //     // ---------------------------------------------------
+  //     // CHECK IF THIS IS A VIRTUAL ACCOUNT TRANSFER
+  //     // ---------------------------------------------------
+
+  //     const receiverAccountNumber =
+  //       data?.authorization?.receiver_bank_account_number;
+
+  //     let virtualAccount: VirtualAccount | null = null;
+
+  //     if (receiverAccountNumber) {
+  //       virtualAccount = await virtualAccountRepo.findOne({
+  //         where: {
+  //           accountNumber: receiverAccountNumber,
+  //         },
+  //       });
+  //     }
+
+  //     const isVirtualAccountFunding = !!virtualAccount;
+
+  //     // ---------------------------------------------------
+  //     // FIND EXISTING FUNDING RECORD
+  //     // ---------------------------------------------------
+
+  //     let funding = await fundingRepo.findOne({
   //       where: { reference },
   //       lock: { mode: 'pessimistic_write' },
   //     });
 
-  //     if (!funding) return;
+  //     // ---------------------------------------------------
+  //     // HANDLE VIRTUAL ACCOUNT FUNDING
+  //     // ---------------------------------------------------
 
-  //     // Idempotency + strict state control
-  //     if (funding.status !== FundingStatus.PENDING) return;
+  //     if (!funding && isVirtualAccountFunding) {
+  //       funding = fundingRepo.create({
+  //         userId: virtualAccount!.userId,
+  //         amount: amountPaid,
+  //         reference,
+  //         paystackReference: reference,
+  //         status: FundingStatus.PENDING,
+  //         raw: data,
+  //       });
 
-  //     // Move to processing (prevents race conditions)
+  //       await fundingRepo.save(funding);
+  //     }
+
+  //     // ---------------------------------------------------
+  //     // IF STILL NO FUNDING RECORD → INVALID
+  //     // ---------------------------------------------------
+
+  //     if (!funding) {
+  //       console.log(`Funding record not found for ${reference}`);
+  //       return;
+  //     }
+
+  //     // ---------------------------------------------------
+  //     // IDEMPOTENCY CHECK
+  //     // ---------------------------------------------------
+
+  //     if (
+  //       funding.status === FundingStatus.SUCCESS ||
+  //       funding.status === FundingStatus.PROCESSING
+  //     ) {
+  //       return;
+  //     }
+
+  //     // ---------------------------------------------------
+  //     // MOVE TO PROCESSING
+  //     // ---------------------------------------------------
+
   //     funding.status = FundingStatus.PROCESSING;
   //     await fundingRepo.save(funding);
 
   //     const userId = funding.userId ?? funding.user?.id;
-  //     if (!userId) return;
 
-  //     // Validate amount (important security check)
-  //     if (Number(funding.amount) !== amountPaid) {
-  //       console.log(
-  //         `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
-  //       );
+  //     if (!userId) {
+  //       funding.status = FundingStatus.FAILED;
+  //       await fundingRepo.save(funding);
   //       return;
   //     }
 
-  //     // Validate currency using data (not rawPayload.data)
+  //     // ---------------------------------------------------
+  //     // VALIDATE AMOUNT
+  //     // ONLY FOR NORMAL CHECKOUT PAYMENTS
+  //     // ---------------------------------------------------
+
+  //     if (!isVirtualAccountFunding) {
+  //       if (Number(funding.amount) !== Number(amountPaid)) {
+  //         console.log(
+  //           `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
+  //         );
+
+  //         funding.status = FundingStatus.FAILED;
+  //         await fundingRepo.save(funding);
+
+  //         return;
+  //       }
+  //     }
+
+  //     // ---------------------------------------------------
+  //     // VALIDATE CURRENCY
+  //     // ---------------------------------------------------
+
   //     if (data?.currency !== 'NGN') {
+  //       funding.status = FundingStatus.FAILED;
+  //       await fundingRepo.save(funding);
+
   //       return;
   //     }
+
+  //     // ---------------------------------------------------
+  //     // LOCK WALLET
+  //     // ---------------------------------------------------
 
   //     const wallet = await walletRepo.findOne({
   //       where: { userId },
   //       lock: { mode: 'pessimistic_write' },
   //     });
 
-  //     if (!wallet) return;
+  //     if (!wallet) {
+  //       funding.status = FundingStatus.FAILED;
+  //       await fundingRepo.save(funding);
 
-  //     // Use KOBO (integer)
-  //     const currentBalanceKobo = Number(wallet.availableBalance ?? 0);
-  //     const amountPaidKobo = Number(funding.amount);
-  //     const newBalanceKobo = currentBalanceKobo + amountPaidKobo;
+  //       return;
+  //     }
 
-  //     wallet.availableBalance = newBalanceKobo;
+  //     // ---------------------------------------------------
+  //     // CREDIT CORRECT BALANCE
+  //     // ---------------------------------------------------
+
+  //     const amountKobo = Number(amountPaid);
+
+  //     if (isVirtualAccountFunding) {
+  //       // CREDIT ESCROW
+  //       wallet.escrowBalance = Number(wallet.escrowBalance ?? 0) + amountKobo;
+  //     } else {
+  //       // CREDIT AVAILABLE BALANCE
+  //       wallet.availableBalance =
+  //         Number(wallet.availableBalance ?? 0) + amountKobo;
+  //     }
+
   //     await walletRepo.save(wallet);
 
-  //     // Mark success
+  //     // ---------------------------------------------------
+  //     // MARK SUCCESS
+  //     // ---------------------------------------------------
+
   //     funding.status = FundingStatus.SUCCESS;
-  //     funding.paystackReference = data.reference; // better than using param blindly
-  //     funding.raw = data; // store only relevant payload
+  //     funding.paystackReference = reference;
+  //     funding.raw = data;
 
   //     await fundingRepo.save(funding);
 
-  //     // Log transaction
+  //     // ---------------------------------------------------
+  //     // LOG TRANSACTION
+  //     // ---------------------------------------------------
+
   //     await this.txService.logTransaction(
   //       {
   //         user: { id: userId } as User,
   //         type: TransactionType.CREDIT,
   //         amount: amountPaid,
-  //         description: 'Wallet funding via Paystack',
+  //         description: isVirtualAccountFunding
+  //           ? 'Funding via virtual account'
+  //           : 'Wallet funding via Paystack',
   //         reference,
   //         status: TransactionStatus.SUCCESSFUL,
   //       },
@@ -119,11 +225,13 @@ export class WalletFundingService {
   ) {
     await this.dataSource.transaction(async (manager) => {
       const fundingRepo = manager.getRepository(WalletFunding);
+
       const walletRepo = manager.getRepository(Wallet);
+
       const virtualAccountRepo = manager.getRepository(VirtualAccount);
 
       // ---------------------------------------------------
-      // CHECK IF THIS IS A VIRTUAL ACCOUNT TRANSFER
+      // CHECK IF THIS IS VIRTUAL ACCOUNT FUNDING
       // ---------------------------------------------------
 
       const receiverAccountNumber =
@@ -142,7 +250,7 @@ export class WalletFundingService {
       const isVirtualAccountFunding = !!virtualAccount;
 
       // ---------------------------------------------------
-      // FIND EXISTING FUNDING RECORD
+      // FIND FUNDING RECORD
       // ---------------------------------------------------
 
       let funding = await fundingRepo.findOne({
@@ -168,11 +276,12 @@ export class WalletFundingService {
       }
 
       // ---------------------------------------------------
-      // IF STILL NO FUNDING RECORD → INVALID
+      // INVALID FUNDING
       // ---------------------------------------------------
 
       if (!funding) {
         console.log(`Funding record not found for ${reference}`);
+
         return;
       }
 
@@ -192,28 +301,39 @@ export class WalletFundingService {
       // ---------------------------------------------------
 
       funding.status = FundingStatus.PROCESSING;
+
       await fundingRepo.save(funding);
+
+      // ---------------------------------------------------
+      // GET USER ID
+      // ---------------------------------------------------
 
       const userId = funding.userId ?? funding.user?.id;
 
       if (!userId) {
         funding.status = FundingStatus.FAILED;
+
         await fundingRepo.save(funding);
+
         return;
       }
 
       // ---------------------------------------------------
       // VALIDATE AMOUNT
-      // ONLY FOR NORMAL CHECKOUT PAYMENTS
+      // PAYSTACK MAY RETURN AMOUNT + FEES
       // ---------------------------------------------------
 
       if (!isVirtualAccountFunding) {
-        if (Number(funding.amount) !== Number(amountPaid)) {
+        // funding.amount = original intended amount
+        // amountPaid = amount returned by Paystack
+
+        if (Number(amountPaid) < Number(funding.amount)) {
           console.log(
-            `Amount mismatch: expected ${funding.amount}, got ${amountPaid}`,
+            `Insufficient payment: expected at least ${funding.amount}, got ${amountPaid}`,
           );
 
           funding.status = FundingStatus.FAILED;
+
           await fundingRepo.save(funding);
 
           return;
@@ -226,6 +346,7 @@ export class WalletFundingService {
 
       if (data?.currency !== 'NGN') {
         funding.status = FundingStatus.FAILED;
+
         await fundingRepo.save(funding);
 
         return;
@@ -242,16 +363,18 @@ export class WalletFundingService {
 
       if (!wallet) {
         funding.status = FundingStatus.FAILED;
+
         await fundingRepo.save(funding);
 
         return;
       }
 
       // ---------------------------------------------------
-      // CREDIT CORRECT BALANCE
+      // CREDIT ONLY ORIGINAL FUNDING AMOUNT
+      // NOT PAYSTACK AMOUNT WITH FEES
       // ---------------------------------------------------
 
-      const amountKobo = Number(amountPaid);
+      const amountKobo = Number(funding.amount);
 
       if (isVirtualAccountFunding) {
         // CREDIT ESCROW
@@ -269,7 +392,9 @@ export class WalletFundingService {
       // ---------------------------------------------------
 
       funding.status = FundingStatus.SUCCESS;
+
       funding.paystackReference = reference;
+
       funding.raw = data;
 
       await fundingRepo.save(funding);
@@ -282,11 +407,16 @@ export class WalletFundingService {
         {
           user: { id: userId } as User,
           type: TransactionType.CREDIT,
-          amount: amountPaid,
+
+          // LOG ONLY ORIGINAL FUNDING AMOUNT
+          amount: funding.amount,
+
           description: isVirtualAccountFunding
             ? 'Funding via virtual account'
             : 'Wallet funding via Paystack',
+
           reference,
+
           status: TransactionStatus.SUCCESSFUL,
         },
         manager,
@@ -295,41 +425,115 @@ export class WalletFundingService {
   }
 
   /** Initiates wallet funding with Paystack */
+
+  // async initiateFunding(userId: number, amount: number) {
+  //   // Validate amount
+  //   if (amount <= 999)
+  //     throw new BadRequestException('Minimum funding amount is 1000 Naira');
+
+  //   // Fetch user
+  //   const user = await this.userRepo.findOne({ where: { id: userId } });
+  //   if (!user) throw new BadRequestException('User not found');
+
+  //   // Ensure wallet exists
+  //   await this.walletService.getOrCreateWallet(userId);
+
+  //   // Generate unique reference
+  //   const reference = `FUND-${generateTransactionRef()}`;
+
+  //   // convert naira to kobo for storage
+  //   const amountKobo = this.currencyConvert.toKobo(amount);
+
+  //   // Create pending funding record (idempotency is by unique reference)
+  //   await this.fundingRepo.save(
+  //     this.fundingRepo.create({
+  //       user: { id: userId },
+  //       amount: amountKobo,
+  //       reference,
+  //       status: FundingStatus.PENDING,
+  //     }),
+  //   );
+
+  //   // Initialize Paystack transaction
+  //   const init = await this.paystack.initializeTransaction({
+  //     email: user.email,
+  //     amountNaira: amount,
+  //     reference,
+  //     callback_url: `${this.config.get('APP_URL')}`,
+  //     metadata: { userId },
+  //   });
+
+  //   return {
+  //     reference,
+  //     authorizationUrl: init.authorizationUrl,
+  //   };
+  // }
+
   async initiateFunding(userId: number, amount: number) {
-    // Validate amount
-    if (amount <= 999)
+    // ---------------------------------------------
+    // VALIDATE AMOUNT
+    // ---------------------------------------------
+
+    if (amount <= 999) {
       throw new BadRequestException('Minimum funding amount is 1000 Naira');
+    }
 
-    // Fetch user
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
+    // ---------------------------------------------
+    // FETCH USER
+    // ---------------------------------------------
 
-    // Ensure wallet exists
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // ---------------------------------------------
+    // ENSURE WALLET EXISTS
+    // ---------------------------------------------
+
     await this.walletService.getOrCreateWallet(userId);
 
-    // Generate unique reference
+    // ---------------------------------------------
+    // GENERATE REFERENCE
+    // ---------------------------------------------
+
     const reference = `FUND-${generateTransactionRef()}`;
 
-    // convert naira to kobo for storage
+    // ---------------------------------------------
+    // CONVERT TO KOBO
+    // ---------------------------------------------
+
     const amountKobo = this.currencyConvert.toKobo(amount);
 
-    // Create pending funding record (idempotency is by unique reference)
+    // ---------------------------------------------
+    // CREATE PENDING FUNDING RECORD
+    // ---------------------------------------------
+
     await this.fundingRepo.save(
       this.fundingRepo.create({
         user: { id: userId },
-        amount: amountKobo,
+        amount: amountKobo, // original funding amount only
         reference,
         status: FundingStatus.PENDING,
       }),
     );
 
-    // Initialize Paystack transaction
+    // ---------------------------------------------
+    // INITIALIZE PAYSTACK
+    // Paystack automatically adds charges
+    // ---------------------------------------------
+
     const init = await this.paystack.initializeTransaction({
       email: user.email,
       amountNaira: amount,
       reference,
       callback_url: `${this.config.get('APP_URL')}`,
-      metadata: { userId },
+      metadata: {
+        userId,
+      },
     });
 
     return {
@@ -342,16 +546,33 @@ export class WalletFundingService {
    * Paystack webhook handler core logic.
    * Call this from controller after verifying signature.
    */
+
+  // async handleSuccessfulCharge(data: any) {
+  //   if (!data) return;
+
+  //   const reference = data.reference;
+  //   if (!reference) return;
+
+  //   // Ensure it's actually successful
+  //   if (data.status !== 'success') return;
+
+  //   // Paystack sends amount in kobo → convert to naira
+  //   const amountPaid = Number(data.amount ?? 0);
+
+  //   await this.finalizeFunding(reference, amountPaid, data);
+  // }
+
   async handleSuccessfulCharge(data: any) {
     if (!data) return;
 
     const reference = data.reference;
+
     if (!reference) return;
 
-    // Ensure it's actually successful
+    // Ensure payment was successful
     if (data.status !== 'success') return;
 
-    // Paystack sends amount in kobo → convert to naira
+    // Paystack returns amount in kobo
     const amountPaid = Number(data.amount ?? 0);
 
     await this.finalizeFunding(reference, amountPaid, data);
