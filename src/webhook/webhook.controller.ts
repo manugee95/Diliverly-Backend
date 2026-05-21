@@ -53,8 +53,8 @@ export class WebhookController {
     @Headers('x-paystack-signature') signature: string,
   ) {
     try {
-      console.log('Webhook hit');
-      console.log('Signature:', signature);
+      // console.log('Webhook hit');
+      // console.log('Signature:', signature);
 
       await this.paystackService.verifyWebhookSignature(req.rawBody, signature);
 

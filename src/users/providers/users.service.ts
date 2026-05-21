@@ -122,7 +122,7 @@ export class UsersService {
           name: firstName,
           code: verificationCode,
         },
-        `Please verify your email address to complete your signup`
+        `Please verify your email address to complete your signup`,
       );
 
       return { message: 'Verification code sent to your email.' };
@@ -309,7 +309,7 @@ export class UsersService {
         name: createdUser.firstName,
         dashboardUrl: 'https://google.com', // TODO: Update with actual dashboard URL
       },
-      `Welcome to Dilivaly, ${createdUser.firstName}! Your account has been successfully created.`
+      `Welcome to Dilivaly, ${createdUser.firstName}! Your account has been successfully created.`,
     );
 
     return {
@@ -329,7 +329,10 @@ export class UsersService {
 
     let user: User | null;
     try {
-      user = await this.userRepository.findOneBy({ id });
+      user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['virtualAccount'],
+      });
     } catch (error) {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',

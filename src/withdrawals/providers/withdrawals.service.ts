@@ -151,7 +151,7 @@ export class WithdrawalsService {
 
     const amountKobo = this.currencyConvert.toKobo(amount);
     const feeKobo = this.currencyConvert.toKobo(FLAT_WITHDRAWAL_FEE);
-    const totalDebitKobo = amountKobo + feeKobo;
+    // const totalDebitKobo = amountKobo + feeKobo;
 
     const netAmountKobo = amountKobo - feeKobo;
     const netAmount = this.currencyConvert.toNaira(netAmountKobo);
@@ -177,18 +177,18 @@ export class WithdrawalsService {
 
       const availableBalanceKobo = Number(wallet.availableBalance ?? 0);
 
-      if (availableBalanceKobo < totalDebitKobo) {
+      if (availableBalanceKobo < amountKobo) {
         throw new BadRequestException('Insufficient wallet balance');
       }
 
       // Debit wallet
-      wallet.availableBalance = availableBalanceKobo - totalDebitKobo;
+      wallet.availableBalance = availableBalanceKobo - amountKobo;
       await walletRepo.save(wallet);
 
       // Create withdrawal
       const withdrawal = withdrawalRepo.create({
         user: { id: userId } as any,
-        amount: netAmountKobo,
+        amount: amountKobo,
         reference,
         status: WithdrawalStatus.PROCESSING,
       });
@@ -250,7 +250,7 @@ export class WithdrawalsService {
         await walletRepo.increment(
           { user: { id: userId } },
           'availableBalance',
-          totalDebitKobo,
+          amountKobo,
         );
 
         // Mark withdrawal as failed
@@ -264,7 +264,7 @@ export class WithdrawalsService {
             user,
             reference: savedWithdrawal.reference,
             type: TransactionType.REFUND,
-            amount: totalDebitKobo,
+            amount: amountKobo,
             status: TransactionStatus.SUCCESSFUL,
             description: 'Withdrawal failed - amount refunded',
           },

@@ -39,7 +39,10 @@ export class Agent {
   @Column({ type: 'text', nullable: true })
   bio?: string;
 
-  @Column('simple-array', { nullable: true })
+  @Column('text', {
+    array: true,
+    nullable: true,
+  })
   statesCovered?: string[];
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })

@@ -90,7 +90,7 @@ export class AgentService {
   async getAgentProfile(userId: number): Promise<Agent> {
     const agent = await this.agentRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['user', 'reviews'],
+      relations: ['user', 'user.virtualAccount'],
     });
     if (!agent) throw new NotFoundException('Agent profile not found');
     return agent;
@@ -109,8 +109,8 @@ export class AgentService {
         agent = await this.agentRepository.findOne({
           where: { id: agentId },
           relations: [
-            'reviews',
             'user',
+            'user.virtualAccount',
             'favoriteByVendors',
             'favoriteByVendors.vendor.user',
           ],

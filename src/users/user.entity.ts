@@ -15,6 +15,7 @@ import { Transaction } from '../transactions/transaction.entity';
 import { Bank_Account } from '../bank-account/bank-account.entity';
 import { Agent } from '../agent/agent.entity';
 import { Wallet } from '../wallets/entities/wallet.entity';
+import { VirtualAccount } from '../virtual-account/virtual-account.entity';
 
 @Entity()
 export class User {
@@ -87,6 +88,11 @@ export class User {
 
   @Column({ default: false })
   isKycVerified!: boolean;
+
+  @OneToOne(() => VirtualAccount, (virtualAccount) => virtualAccount.user, {
+    onDelete: 'CASCADE',
+  })
+  virtualAccount?: VirtualAccount;
 
   @CreateDateColumn()
   createdAt!: Date;

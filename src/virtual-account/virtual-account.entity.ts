@@ -13,7 +13,7 @@ export class VirtualAccount {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @OneToOne(() => User, { onDelete: 'CASCADE' })
+  @OneToOne(() => User, (user) => user.virtualAccount, { onDelete: 'CASCADE' })
   @JoinColumn()
   user!: User;
 
