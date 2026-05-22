@@ -431,13 +431,21 @@ export class QuotesService {
    * Check if an agent already submitted a quote
    */
   async hasAgentSubmittedQuote(
-    agentId: number,
+    userId: number,
     requestId: number,
   ): Promise<boolean> {
+    const agent = await this.agentRepo.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
     const existingQuote = await this.quoteRepo.findOne({
       where: {
         agent: {
-          id: agentId,
+          id: agent.id,
         },
         request: {
           id: requestId,

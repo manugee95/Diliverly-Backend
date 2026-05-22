@@ -199,8 +199,8 @@ export class QuotesController {
     @Param('requestId')
     requestId: number,
   ) {
-    const agentId = req.user.id;
+    const userId = req.user.id;
 
-    return await this.quotesService.hasAgentSubmittedQuote(agentId, requestId);
+    return await this.quotesService.hasAgentSubmittedQuote(userId, requestId);
   }
 }

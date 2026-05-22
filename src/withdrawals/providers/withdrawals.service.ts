@@ -155,7 +155,7 @@ export class WithdrawalsService {
 
     const netAmountKobo = amountKobo - feeKobo;
     const netAmount = this.currencyConvert.toNaira(netAmountKobo);
-    const formattedAmount = this.currencyConvert.formatNaira(amountKobo); 
+    const formattedAmount = this.currencyConvert.formatNaira(netAmountKobo); 
 
     const reference = `WD-${generateTransactionRef()}`;
 
