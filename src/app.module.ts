@@ -56,7 +56,7 @@ import { DisputeModule } from './dispute/dispute.module';
       database: process.env.DATABASE_NAME,
 
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: false,
       ssl: false,
 
       extra: {
